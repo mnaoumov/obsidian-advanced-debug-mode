@@ -1,10 +1,10 @@
 {
   "author": "mnaoumov",
   "authorUrl": "https://github.com/mnaoumov/",
-  "description": "Does something awesome.",
+  "description": "Enhances Obsidian debug mode.",
   "fundingUrl": "https://www.buymeacoffee.com/mnaoumov",
-  "id": "advanced-debugger",
+  "id": "advanced-debug-mode",
   "isDesktopOnly": false,
-  "name": "Advanced Debugger",
+  "name": "Advanced Debug Mode",
   "version": "0.0.0"
 }

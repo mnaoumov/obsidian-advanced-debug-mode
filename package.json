@@ -1,7 +1,7 @@
 {
-  "name": "advanced-debugger",
+  "name": "advanced-debug-mode",
   "version": "0.0.0",
-  "description": "Does something awesome.",
+  "description": "Enhances Obsidian debug mode.",
   "keywords": [],
   "license": "MIT",
   "author": "mnaoumov",
