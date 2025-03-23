@@ -2,36 +2,41 @@ import { around } from 'monkey-around';
 import { Plugin } from 'obsidian';
 import { getStackTrace } from 'obsidian-dev-utils/Error';
 
-type SetTimeoutFn = Window['setTimeout'];
-type SetTimeoutHandler = (...args: unknown[]) => void;
+type SetIntervalOrTimeoutFn = Window['setTimeout'];
+type SetIntervalOrTimeoutHandler = (...args: unknown[]) => void;
 
 export function registerLongStackTraces(plugin: Plugin): void {
   plugin.register(around(window as Window, {
-    setTimeout: (next: SetTimeoutFn): SetTimeoutFn => {
+    setInterval: (next: SetIntervalOrTimeoutFn): SetIntervalOrTimeoutFn => {
+      return function patchedSetInterval(handler, timeout, ...args: unknown[]): number {
+        return setIntervalOrTimeout(next, 'setInterval', handler, timeout, ...args);
+      };
+    },
+    setTimeout: (next: SetIntervalOrTimeoutFn): SetIntervalOrTimeoutFn => {
       return function patchedSetTimeout(handler, timeout, ...args: unknown[]): number {
-        return setTimeout(next, handler, timeout, ...args);
+        return setIntervalOrTimeout(next, 'setTimeout', handler, timeout, ...args);
       };
     }
   }));
 }
 
-function setTimeout(next: SetTimeoutFn, handler: TimerHandler, timeout: number | undefined, ...args: unknown[]): number {
+function setIntervalOrTimeout(next: SetIntervalOrTimeoutFn, name: string, handler: TimerHandler, timeout: number | undefined, ...args: unknown[]): number {
   if (typeof handler === 'string') {
     // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
     handler = new Function(handler);
   }
 
   const handlerWithArgs = (): void => {
-    (handler as SetTimeoutHandler)(...args);
+    (handler as SetIntervalOrTimeoutHandler)(...args);
   };
-  return next(wrapFunction(handlerWithArgs), timeout);
+  return next(wrapFunction(handlerWithArgs, name), timeout);
 }
 
-function wrapFunction(fn: () => void): () => void {
+function wrapFunction(fn: () => void, name: string): () => void {
   /**
    * Skip stack frames
    * - at wrapFunction
-   * - at setTimeout2 (overridden setTimeout)
+   * - at setIntervalOrTimeout
    * - at patchedSetTimeout
    * - at wrapper
    */
@@ -57,7 +62,7 @@ function wrapFunction(fn: () => void): () => void {
       const SKIP_LAST_FRAMES = 2;
       lines = lines.slice(0, -SKIP_LAST_FRAMES);
 
-      lines.push('    at --- setTimeout --- (0)');
+      lines.push(`    at --- ${name} --- (0)`);
       lines.push(parentStack);
       error.stack = lines.join('\n');
       return error;
