@@ -3,7 +3,7 @@ import type { PluginSettingTab } from 'obsidian';
 import { EmptySettings } from 'obsidian-dev-utils/obsidian/Plugin/EmptySettings';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
-import { registerLongStackTraces } from './LongStackTraces.ts';
+import { getPlatformDependencies } from './PlatformDependencies.ts';
 
 export class AdvancedDebugModePlugin extends PluginBase {
   protected override createPluginSettings(): EmptySettings {
@@ -20,8 +20,9 @@ export class AdvancedDebugModePlugin extends PluginBase {
     this.showNotice(`Obsidian Debug Mode is ${state}. You can change it using command "${command}"`);
   }
 
-  protected override onloadComplete(): void {
-    registerLongStackTraces(this);
+  protected override async onloadComplete(): Promise<void> {
+    const platformDependencies = await getPlatformDependencies();
+    platformDependencies.longStackTracesHandler.registerLongStackTraces(this);
 
     this.addCommand({
       checkCallback: (checking) => this.toggleDebugModeWithCheck(true, checking),
