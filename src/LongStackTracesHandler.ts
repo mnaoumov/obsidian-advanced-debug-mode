@@ -76,6 +76,14 @@ export abstract class LongStackTracesHandler {
         stackFrameTitle: methodName
       });
     }
+
+    this.patchWithLongStackTraces({
+      framesToSkip: 0,
+      handlerArgIndex: 1,
+      methodName: 'addEventListener',
+      obj: EventTarget.prototype,
+      stackFrameTitle: 'addEventListener'
+    });
   }
 
   protected patchWithLongStackTraces<Obj extends object>(options: PatchOptions<Obj>): void {
