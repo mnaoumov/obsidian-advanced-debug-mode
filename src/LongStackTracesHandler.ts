@@ -73,6 +73,13 @@ export abstract class LongStackTracesHandler {
       obj: window,
       stackFrameTitle: 'setInterval'
     });
+    this.patchWithLongStackTraces({
+      framesToSkip: 0,
+      handlerArgIndex: 0,
+      methodName: 'queueMicrotask',
+      obj: window,
+      stackFrameTitle: 'queueMicrotask'
+    });
   }
 
   protected patchWithLongStackTraces<Obj extends object>(options: PatchOptions<Obj>): void {
