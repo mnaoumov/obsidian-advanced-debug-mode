@@ -21,6 +21,21 @@ export function around<Obj extends object>(obj: Obj, factories: Factories<Obj>):
   return originalAround(obj as Record<string, unknown>, factories as OriginalFactories<Record<string, unknown>>);
 }
 
-export function registerPatch<Obj extends object>(plugin: Plugin, obj: Obj, factories: Factories<Obj>): void {
-  plugin.register(around(obj, factories));
+export function registerPatch<Obj extends object>(plugin: Plugin, obj: Obj, factories: Factories<Obj>): Uninstaller {
+  const uninstaller = around(obj, factories);
+  let isUninstalled = false;
+
+  function uninstallerWrapper(): void {
+    if (isUninstalled) {
+      return;
+    }
+    try {
+      uninstaller();
+    } finally {
+      isUninstalled = true;
+    }
+  }
+
+  plugin.register(uninstallerWrapper);
+  return uninstaller;
 }
