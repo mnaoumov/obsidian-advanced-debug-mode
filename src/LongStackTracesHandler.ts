@@ -163,7 +163,7 @@ export abstract class LongStackTracesHandler {
 
   private errorWithParentStack(options: ErrorWithParentStackOptions): Error {
     const error = new options.next(options.message, options.errorOptions);
-    Error.captureStackTrace(error, this.errorWithParentStack.bind(this));
+    Error.captureStackTrace(error);
     const lines = error.stack?.split('\n') ?? [];
 
     /**
