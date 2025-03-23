@@ -8,7 +8,7 @@ type SetTimeoutHandler = (...args: unknown[]) => void;
 export function registerLongStackTraces(plugin: Plugin): void {
   plugin.register(around(window as Window, {
     setTimeout: (next: SetTimeoutFn): SetTimeoutFn => {
-      return (handler, timeout, ...args: unknown[]): number => {
+      return function patchedSetTimeout(handler, timeout, ...args: unknown[]): number {
         return setTimeout(next, handler, timeout, ...args);
       };
     }
@@ -21,16 +21,24 @@ function setTimeout(next: SetTimeoutFn, handler: TimerHandler, timeout: number |
     handler = new Function(handler);
   }
 
+  const handlerWithArgs = (): void => {
+    (handler as SetTimeoutHandler)(...args);
+  };
+  return next(wrapFunction(handlerWithArgs), timeout);
+}
+
+function wrapFunction(fn: () => void): () => void {
   /**
    * Skip stack frames
-   * - at setTimeout2 // patched setTimeout
-   * - at eval // intermediate
-   * - at wrapper // from monkey-around
+   * - at wrapFunction
+   * - at setTimeout2 (overridden setTimeout)
+   * - at patchedSetTimeout
+   * - at wrapper
    */
-  const PARENT_STACK_SKIP_FRAMES = 3;
+  const PARENT_STACK_SKIP_FRAMES = 4;
   const parentStack = getStackTrace(PARENT_STACK_SKIP_FRAMES);
 
-  const wrappedHandler = (): void => {
+  function wrappedFn(): void {
     const OriginalError = window.Error;
 
     function ErrorWrapper(this: unknown, message?: string, options?: ErrorOptions): Error {
@@ -39,13 +47,15 @@ function setTimeout(next: SetTimeoutFn, handler: TimerHandler, timeout: number |
       }
       const error = new OriginalError(message, options);
       OriginalError.captureStackTrace(error, ErrorWrapper);
-      const lines = error.stack?.split('\n') ?? [];
+      let lines = error.stack?.split('\n') ?? [];
 
       /**
-       * Skip stack frame
-       * - at wrappedHandler
+       * Skip stack frames
+       * - at handlerWithArgs
+       * - at wrappedFn
        */
-      lines.pop();
+      const SKIP_LAST_FRAMES = 2;
+      lines = lines.slice(0, -SKIP_LAST_FRAMES);
 
       lines.push('    at --- setTimeout --- (0)');
       lines.push(parentStack);
@@ -56,11 +66,11 @@ function setTimeout(next: SetTimeoutFn, handler: TimerHandler, timeout: number |
     window.Error = Object.assign(ErrorWrapper, OriginalError) as ErrorConstructor;
 
     try {
-      (handler as SetTimeoutHandler)(...args);
+      fn();
     } finally {
       window.Error = OriginalError;
     }
-  };
+  }
 
-  return next(wrappedHandler, timeout);
+  return wrappedFn;
 }
