@@ -6,7 +6,7 @@ import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
 
 import { registerPatch } from './MonkeyAround.ts';
 
-export type GenericFunction = (this: unknown, ...args: unknown[]) => unknown;
+export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction};
 
 interface ErrorWithParentStackOptions {
   errorOptions: ErrorOptions | undefined;
@@ -155,7 +155,7 @@ export abstract class LongStackTracesHandler {
       });
     }
 
-    return wrappedFn;
+    return Object.assign(wrappedFn, { originalFn: options.fn }) as GenericFunction;
   }
 
   private errorWithParentStack(options: ErrorWithParentStackOptions): Error {
