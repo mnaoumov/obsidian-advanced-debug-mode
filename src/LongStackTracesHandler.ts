@@ -59,34 +59,23 @@ export abstract class LongStackTracesHandler {
 
   public registerLongStackTraces(plugin: AdvancedDebugModePlugin): void {
     this.plugin = plugin;
-    this.patchWithLongStackTraces({
-      framesToSkip: 0,
-      handlerArgIndex: 0,
-      methodName: 'setTimeout',
-      obj: window,
-      stackFrameTitle: 'setTimeout'
-    });
-    this.patchWithLongStackTraces({
-      framesToSkip: 0,
-      handlerArgIndex: 0,
-      methodName: 'setInterval',
-      obj: window,
-      stackFrameTitle: 'setInterval'
-    });
-    this.patchWithLongStackTraces({
-      framesToSkip: 0,
-      handlerArgIndex: 0,
-      methodName: 'queueMicrotask',
-      obj: window,
-      stackFrameTitle: 'queueMicrotask'
-    });
-    this.patchWithLongStackTraces({
-      framesToSkip: 0,
-      handlerArgIndex: 0,
-      methodName: 'requestAnimationFrame',
-      obj: window,
-      stackFrameTitle: 'requestAnimationFrame'
-    });
+
+    const methodNames: ConditionalKeys<Window & typeof globalThis, Function>[] = [
+      'setTimeout',
+      'setInterval',
+      'queueMicrotask',
+      'requestAnimationFrame'
+    ];
+
+    for (const methodName of methodNames) {
+      this.patchWithLongStackTraces({
+        framesToSkip: 0,
+        handlerArgIndex: 0,
+        methodName,
+        obj: window,
+        stackFrameTitle: methodName
+      });
+    }
   }
 
   protected patchWithLongStackTraces<Obj extends object>(options: PatchOptions<Obj>): void {
