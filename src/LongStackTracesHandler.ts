@@ -6,7 +6,9 @@ import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
 
 import { registerPatch } from './MonkeyAround.ts';
 
-export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction};
+export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction };
+
+const functionWrappersMap = new WeakMap<GenericFunction, GenericFunction[]>();
 
 interface ErrorWithParentStackOptions {
   errorOptions: ErrorOptions | undefined;
@@ -39,6 +41,8 @@ interface PatchOptions<Obj extends object> {
   stackFrameTitle: string;
 }
 
+type RemoveEventListenerFn = EventTarget['removeEventListener'];
+
 interface WrapWithStackTracesImplOptions {
   args: unknown[];
   fn: GenericFunction;
@@ -60,7 +64,7 @@ export abstract class LongStackTracesHandler {
   public registerLongStackTraces(plugin: AdvancedDebugModePlugin): void {
     this.plugin = plugin;
 
-    const methodNames: ConditionalKeys<Window & typeof globalThis, Function>[] = [
+    const methodNames: ConditionalKeys<typeof globalThis & Window, Function>[] = [
       'setTimeout',
       'setInterval',
       'queueMicrotask',
@@ -83,6 +87,20 @@ export abstract class LongStackTracesHandler {
       methodName: 'addEventListener',
       obj: EventTarget.prototype,
       stackFrameTitle: 'addEventListener'
+    });
+
+    const removeEventListener = this.removeEventListener.bind(this);
+    registerPatch(this.plugin, EventTarget.prototype, {
+      removeEventListener: (next: RemoveEventListenerFn): RemoveEventListenerFn => {
+        return function patchedRemoveEventListener(
+          this: EventTarget,
+          type: string,
+          callback: EventListenerOrEventListenerObject | null,
+          options?: boolean | EventListenerOptions
+        ): void {
+          removeEventListener(next, this, type, callback, options);
+        };
+      }
     });
   }
 
@@ -155,6 +173,13 @@ export abstract class LongStackTracesHandler {
       });
     }
 
+    let wrappers = functionWrappersMap.get(options.fn);
+    if (!wrappers) {
+      wrappers = [];
+      functionWrappersMap.set(options.fn, wrappers);
+    }
+    wrappers.push(wrappedFn);
+
     return Object.assign(wrappedFn, { originalFn: options.fn }) as GenericFunction;
   }
 
@@ -188,6 +213,30 @@ export abstract class LongStackTracesHandler {
     return error;
   }
 
+  private removeEventListener(
+    next: RemoveEventListenerFn,
+    eventTarget: EventTarget,
+    type: string,
+    callback: EventListenerOrEventListenerObject | null,
+    options?: boolean | EventListenerOptions
+  ): void {
+    next.call(eventTarget, type, callback, options);
+    const handler = isEventListenerObject(callback) ? callback.handleEvent : callback;
+
+    if (typeof handler !== 'function') {
+      return;
+    }
+
+    const wrappers = functionWrappersMap.get(handler as GenericFunction);
+    if (!wrappers) {
+      return;
+    }
+
+    for (const wrapper of wrappers) {
+      next.call(eventTarget, type, wrapper, options);
+    }
+  }
+
   private wrapWithStackTracesImpl(options: WrapWithStackTracesImplOptions): unknown {
     const errorWithParentStack = this.errorWithParentStack.bind(this);
     const errorPatchUninstaller = registerPatch(this.plugin, window as ErrorWrapper, {
@@ -217,4 +266,8 @@ export abstract class LongStackTracesHandler {
       errorPatchUninstaller();
     }
   }
+}
+
+function isEventListenerObject(value: unknown): value is EventListenerObject {
+  return (value as Partial<EventListenerObject>).handleEvent !== undefined;
 }
