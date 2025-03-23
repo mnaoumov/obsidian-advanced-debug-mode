@@ -2,48 +2,71 @@ import { around } from 'monkey-around';
 import { Plugin } from 'obsidian';
 import { getStackTrace } from 'obsidian-dev-utils/Error';
 
+type Callback = (...args: unknown[]) => void;
+interface GlobalEx {
+  setImmediate: SetImmediateFn;
+}
+type SetImmediateFn = typeof global.setImmediate<unknown[]>;
+
 type SetIntervalOrTimeoutFn = Window['setTimeout'];
-type SetIntervalOrTimeoutHandler = (...args: unknown[]) => void;
 
 export function registerLongStackTraces(plugin: Plugin): void {
   plugin.register(around(window as Window, {
     setInterval: (next: SetIntervalOrTimeoutFn): SetIntervalOrTimeoutFn => {
       return function patchedSetInterval(handler, timeout, ...args: unknown[]): number {
-        return setIntervalOrTimeout(next, 'setInterval', handler, timeout, ...args);
+        return setIntervalOrTimeout(next, 'setInterval', handler, timeout, args);
       };
     },
     setTimeout: (next: SetIntervalOrTimeoutFn): SetIntervalOrTimeoutFn => {
       return function patchedSetTimeout(handler, timeout, ...args: unknown[]): number {
-        return setIntervalOrTimeout(next, 'setTimeout', handler, timeout, ...args);
+        return setIntervalOrTimeout(next, 'setTimeout', handler, timeout, args);
       };
     }
   }));
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (global) {
+    plugin.register(around(global as GlobalEx, {
+      setImmediate: (next: SetImmediateFn): SetImmediateFn => {
+        function patchedSetImmediate(callback: Callback, ...args: unknown[]): NodeJS.Immediate {
+          return setImmediate(next, callback, args);
+        }
+        return Object.assign(patchedSetImmediate, next) as SetImmediateFn;
+      }
+    }));
+  }
 }
 
-function setIntervalOrTimeout(next: SetIntervalOrTimeoutFn, name: string, handler: TimerHandler, timeout: number | undefined, ...args: unknown[]): number {
+function setImmediate(next: SetImmediateFn, callback: Callback, args: unknown[]): NodeJS.Immediate {
+  /**
+   * Skip stack frames
+   * - Immediate.wrappedCallback [as _onImmediate]
+   */
+  const FRAMES_TO_SKIP = 1;
+  return next(wrapWithStackTraces(callback, args, 'setImmediate', FRAMES_TO_SKIP));
+}
+
+function setIntervalOrTimeout(next: SetIntervalOrTimeoutFn, name: string, handler: TimerHandler, timeout: number | undefined, args: unknown[]): number {
   if (typeof handler === 'string') {
     // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
     handler = new Function(handler);
   }
 
-  const handlerWithArgs = (): void => {
-    (handler as SetIntervalOrTimeoutHandler)(...args);
-  };
-  return next(wrapFunction(handlerWithArgs, name), timeout);
+  return next(wrapWithStackTraces(handler as Callback, args, name), timeout);
 }
 
-function wrapFunction(fn: () => void, name: string): () => void {
+function wrapWithStackTraces(callback: Callback, args: unknown[], name: string, framesToSkip = 0): () => void {
   /**
    * Skip stack frames
-   * - at wrapFunction
+   * - at wrapWithStackTraces
    * - at setIntervalOrTimeout
-   * - at patchedSetTimeout
-   * - at wrapper
+   * - at patched...
+   * - at wrapper (from monkey-around)
    */
   const PARENT_STACK_SKIP_FRAMES = 4;
   const parentStack = getStackTrace(PARENT_STACK_SKIP_FRAMES);
 
-  function wrappedFn(): void {
+  function wrappedCallback(): void {
     const OriginalError = window.Error;
 
     function ErrorWrapper(this: unknown, message?: string, options?: ErrorOptions): Error {
@@ -56,11 +79,9 @@ function wrapFunction(fn: () => void, name: string): () => void {
 
       /**
        * Skip stack frames
-       * - at handlerWithArgs
        * - at wrappedFn
        */
-      const SKIP_LAST_FRAMES = 2;
-      lines = lines.slice(0, -SKIP_LAST_FRAMES);
+      lines = lines.slice(0, -1 - framesToSkip);
 
       lines.push(`    at --- ${name} --- (0)`);
       lines.push(parentStack);
@@ -71,11 +92,11 @@ function wrapFunction(fn: () => void, name: string): () => void {
     window.Error = Object.assign(ErrorWrapper, OriginalError) as ErrorConstructor;
 
     try {
-      fn();
+      callback(...args);
     } finally {
       window.Error = OriginalError;
     }
   }
 
-  return wrappedFn;
+  return wrappedCallback;
 }
