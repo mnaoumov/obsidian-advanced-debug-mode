@@ -134,6 +134,8 @@ export abstract class LongStackTracesHandler {
       fn = new Function(handler) as GenericFunction;
     } else if (typeof handler === 'function') {
       fn = handler as GenericFunction;
+    } else if (isEventListenerObject(handler)) {
+      fn = handler.handleEvent as GenericFunction;
     } else {
       console.warn('Handler is not a function. Cannot instrument long stack traces.', handler);
       return options.next.call(options.thisArg, ...options.args);
