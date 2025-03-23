@@ -3,8 +3,7 @@ import { getStackTrace } from 'obsidian-dev-utils/Error';
 import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
 import type { Factories } from './MonkeyAround.ts';
 
-// Import { around } from 'monkey-around';
-import { around } from './MonkeyAround.ts';
+import { registerPatch } from './MonkeyAround.ts';
 
 export type Callback = (...args: unknown[]) => void;
 
@@ -20,7 +19,7 @@ export abstract class LongStackTracesHandler {
   }
 
   protected patch<Obj extends object>(obj: Obj, factories: Factories<Obj>): void {
-    this.plugin.register(around(obj, factories));
+    registerPatch(this.plugin, obj, factories);
   }
 
   protected wrapWithStackTraces(callback: Callback, args: unknown[], name: string, framesToSkip = 0): () => void {
