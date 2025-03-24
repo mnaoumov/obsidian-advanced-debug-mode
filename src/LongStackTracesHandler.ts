@@ -204,6 +204,10 @@ export abstract class LongStackTracesHandler {
     return options.next.call(options.originalFnThisArg, ...argsWithWrappedHandler);
   }
 
+  protected register(callback: () => void): void {
+    this.plugin.register(callback);
+  }
+
   protected wrapWithStackTraces(options: WrapWithStackTracesOptions): GenericFunction {
     /**
      * Skip stack frames
