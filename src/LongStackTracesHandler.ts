@@ -17,6 +17,7 @@ interface ErrorWithParentStackOptions {
   next: ErrorConstructor;
   parentStack: string;
   stackFrameTitle: string;
+  thisArg: unknown;
 }
 
 interface ErrorWrapper {
@@ -186,6 +187,10 @@ export abstract class LongStackTracesHandler {
   }
 
   private errorWithParentStack(options: ErrorWithParentStackOptions): Error {
+    if (!(options.thisArg instanceof Error)) {
+      return Error(options.message, options.errorOptions);
+    }
+
     const error = new options.next(options.message, options.errorOptions);
     Error.captureStackTrace(error);
     const lines = error.stack?.split('\n') ?? [];
@@ -250,11 +255,9 @@ export abstract class LongStackTracesHandler {
             message,
             next,
             parentStack: options.parentStack,
-            stackFrameTitle: options.stackFrameTitle
+            stackFrameTitle: options.stackFrameTitle,
+            thisArg: this
           };
-          if (!(this instanceof Error)) {
-            return new Error(message, errorOptions);
-          }
           return errorWithParentStack(errorWithParentStackOptions);
         }
 
