@@ -1,7 +1,10 @@
 import { convertAsyncToSync } from 'obsidian-dev-utils/Async';
+
 import type { AdvancedDebugModePlugin } from '../AdvancedDebugModePlugin.ts';
+
 import { DevTools } from '../DevTools.ts';
 import { DevToolsView } from './DevToolsView.ts';
+
 class DevToolsImpl extends DevTools {
   public override registerDevTools(plugin: AdvancedDebugModePlugin): void {
     super.registerDevTools(plugin);
