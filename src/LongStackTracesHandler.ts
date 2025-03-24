@@ -5,10 +5,18 @@ import { getStackTrace } from 'obsidian-dev-utils/Error';
 import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
 
 import { registerPatch } from './MonkeyAround.ts';
+import { MultiWeakMap } from './MultiWeakMap.ts';
 
 export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction };
 
-const functionWrappersMap = new WeakMap<GenericFunction, GenericFunction[]>();
+type AfterPatchFn = (options: AfterPatchOptions) => void;
+
+interface AfterPatchOptions {
+  fn: GenericFunction;
+  originalFnArgs: unknown[];
+  originalFnThisArg: unknown;
+  wrappedFn: GenericFunction;
+}
 
 interface ErrorWithParentStackOptions {
   errorOptions: ErrorOptions | undefined;
@@ -16,24 +24,16 @@ interface ErrorWithParentStackOptions {
   message: string | undefined;
   next: ErrorConstructor;
   parentStack: string;
+  patchedErrorWithParentStackThisArg: unknown;
   stackFrameTitle: string;
-  thisArg: unknown;
 }
 
 interface ErrorWrapper {
   Error: ErrorConstructor;
 }
 
-interface Patch2Options {
-  args: unknown[];
-  framesToSkip: number;
-  handlerArgIndex: number;
-  next: GenericFunction;
-  stackFrameTitle: string;
-  thisArg: unknown;
-}
-
 interface PatchOptions<Obj extends object> {
+  afterPatch?: AfterPatchFn | undefined;
   framesToSkip: number;
   handlerArgIndex: number;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
@@ -41,23 +41,37 @@ interface PatchOptions<Obj extends object> {
   obj: Obj;
   stackFrameTitle: string;
 }
+interface PatchWithLongStackTracesImplOptions {
+  afterPatch?: AfterPatchFn | undefined;
+  framesToSkip: number;
+  handlerArgIndex: number;
+  next: GenericFunction;
+  originalFnArgs: unknown[];
+  originalFnThisArg: unknown;
+  stackFrameTitle: string;
+}
 
 type RemoveEventListenerFn = EventTarget['removeEventListener'];
 
 interface WrapWithStackTracesImplOptions {
-  args: unknown[];
   fn: GenericFunction;
   framesToSkip: number;
   parentStack: string;
   stackFrameTitle: string;
-  thisArg: unknown;
+  wrappedFnArgs: unknown[];
+  wrappedFnThisArg: unknown;
 }
 
 interface WrapWithStackTracesOptions {
+  afterPatch?: AfterPatchFn | undefined;
   fn: GenericFunction;
   framesToSkip: number;
+  originalFnArgs: unknown[];
+  originalFnThisArg: unknown;
   stackFrameTitle: string;
 }
+
+const eventHandlersMap = new MultiWeakMap<[EventTarget, string, GenericFunction], GenericFunction>();
 
 export abstract class LongStackTracesHandler {
   private plugin!: AdvancedDebugModePlugin;
@@ -65,6 +79,7 @@ export abstract class LongStackTracesHandler {
   public registerLongStackTraces(plugin: AdvancedDebugModePlugin): void {
     this.plugin = plugin;
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     const methodNames: ConditionalKeys<typeof globalThis & Window, Function>[] = [
       'setTimeout',
       'setInterval',
@@ -83,6 +98,7 @@ export abstract class LongStackTracesHandler {
     }
 
     this.patchWithLongStackTraces({
+      afterPatch: this.afterPatchAddEventListener.bind(this),
       framesToSkip: 0,
       handlerArgIndex: 1,
       methodName: 'addEventListener',
@@ -112,22 +128,23 @@ export abstract class LongStackTracesHandler {
 
     registerPatch(this.plugin, genericObj, {
       [options.methodName]: (next: GenericFunction): GenericFunction => {
-        return function patchedFn(this: unknown, ...args: unknown[]): unknown {
+        return function patchedFn(this: unknown, ...originalFnArgs: unknown[]): unknown {
           return patchWithLongStackTracesImpl({
-            args,
+            afterPatch: options.afterPatch,
             framesToSkip: options.framesToSkip,
             handlerArgIndex: options.handlerArgIndex,
             next,
-            stackFrameTitle: options.stackFrameTitle,
-            thisArg: this
+            originalFnArgs,
+            originalFnThisArg: this,
+            stackFrameTitle: options.stackFrameTitle
           });
         };
       }
     });
   }
 
-  protected patchWithLongStackTracesImpl(options: Patch2Options): unknown {
-    const handler = options.args[options.handlerArgIndex];
+  protected patchWithLongStackTracesImpl(options: PatchWithLongStackTracesImplOptions): unknown {
+    const handler = options.originalFnArgs[options.handlerArgIndex];
     let fn: GenericFunction;
 
     if (typeof handler === 'string') {
@@ -136,20 +153,24 @@ export abstract class LongStackTracesHandler {
     } else if (typeof handler === 'function') {
       fn = handler as GenericFunction;
     } else if (isEventListenerObject(handler)) {
-      fn = handler.handleEvent as GenericFunction;
+      fn = handler.handleEvent.bind(handler) as GenericFunction;
     } else {
       console.warn('Handler is not a function. Cannot instrument long stack traces.', handler);
-      return options.next.call(options.thisArg, ...options.args);
+      return options.next.call(options.originalFnThisArg, ...options.originalFnArgs);
     }
 
     const wrappedHandler = this.wrapWithStackTraces({
+      afterPatch: options.afterPatch,
       fn,
       framesToSkip: options.framesToSkip,
+      originalFnArgs: options.originalFnArgs,
+      originalFnThisArg: options.originalFnThisArg,
       stackFrameTitle: options.stackFrameTitle
     });
-    options.args[options.handlerArgIndex] = wrappedHandler;
 
-    return options.next.call(options.thisArg, ...options.args);
+    const argsWithWrappedHandler = options.originalFnArgs.slice();
+    argsWithWrappedHandler[options.handlerArgIndex] = wrappedHandler;
+    return options.next.call(options.originalFnThisArg, ...argsWithWrappedHandler);
   }
 
   protected wrapWithStackTraces(options: WrapWithStackTracesOptions): GenericFunction {
@@ -165,29 +186,41 @@ export abstract class LongStackTracesHandler {
 
     const wrapWithStackTracesImpl = this.wrapWithStackTracesImpl.bind(this);
 
-    function wrappedFn(this: unknown, ...args: unknown[]): unknown {
+    function wrappedFn(this: unknown, ...wrappedFnArgs: unknown[]): unknown {
       return wrapWithStackTracesImpl({
-        args,
         fn: options.fn,
         framesToSkip: options.framesToSkip,
         parentStack,
         stackFrameTitle: options.stackFrameTitle,
-        thisArg: this
+        wrappedFnArgs,
+        wrappedFnThisArg: this
       });
     }
 
-    let wrappers = functionWrappersMap.get(options.fn);
-    if (!wrappers) {
-      wrappers = [];
-      functionWrappersMap.set(options.fn, wrappers);
-    }
-    wrappers.push(wrappedFn);
+    options.afterPatch?.({
+      fn: options.fn,
+      originalFnArgs: options.originalFnArgs,
+      originalFnThisArg: options.originalFnThisArg,
+      wrappedFn
+    });
 
     return Object.assign(wrappedFn, { originalFn: options.fn }) as GenericFunction;
   }
 
+  private afterPatchAddEventListener(options: AfterPatchOptions): void {
+    const eventTarget = options.originalFnThisArg as EventTarget;
+    const type = options.originalFnArgs[0] as string;
+    const keys: [EventTarget, string, GenericFunction] = [eventTarget, type, options.fn];
+    const previousWrappedHandler = eventHandlersMap.get(keys);
+
+    if (previousWrappedHandler) {
+      eventTarget.removeEventListener(type, previousWrappedHandler);
+    }
+    eventHandlersMap.set(keys, options.wrappedFn);
+  }
+
   private errorWithParentStack(options: ErrorWithParentStackOptions): Error {
-    if (!(options.thisArg instanceof Error)) {
+    if (!(options.patchedErrorWithParentStackThisArg instanceof Error)) {
       return Error(options.message, options.errorOptions);
     }
 
@@ -227,20 +260,19 @@ export abstract class LongStackTracesHandler {
     callback: EventListenerOrEventListenerObject | null,
     options?: boolean | EventListenerOptions
   ): void {
-    next.call(eventTarget, type, callback, options);
-    const handler = isEventListenerObject(callback) ? callback.handleEvent : callback;
+    const handler = isEventListenerObject(callback) ? callback.handleEvent.bind(callback) : callback;
 
-    if (typeof handler !== 'function') {
+    if (!handler) {
+      next.call(eventTarget, type, callback, options);
       return;
     }
 
-    const wrappers = functionWrappersMap.get(handler as GenericFunction);
-    if (!wrappers) {
-      return;
-    }
+    const wrappedHandler = eventHandlersMap.get([eventTarget, type, handler as GenericFunction]);
 
-    for (const wrapper of wrappers) {
-      next.call(eventTarget, type, wrapper, options);
+    if (wrappedHandler) {
+      next.call(eventTarget, type, wrappedHandler, options);
+    } else {
+      next.call(eventTarget, type, callback, options);
     }
   }
 
@@ -255,8 +287,8 @@ export abstract class LongStackTracesHandler {
             message,
             next,
             parentStack: options.parentStack,
-            stackFrameTitle: options.stackFrameTitle,
-            thisArg: this
+            patchedErrorWithParentStackThisArg: this,
+            stackFrameTitle: options.stackFrameTitle
           };
           return errorWithParentStack(errorWithParentStackOptions);
         }
@@ -266,7 +298,7 @@ export abstract class LongStackTracesHandler {
     });
 
     try {
-      return options.fn.call(options.thisArg, ...options.args);
+      return options.fn.call(options.wrappedFnThisArg, ...options.wrappedFnArgs);
     } finally {
       errorPatchUninstaller();
     }
