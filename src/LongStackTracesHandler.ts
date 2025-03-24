@@ -1,6 +1,7 @@
 import type { ConditionalKeys } from 'type-fest';
 
 import { getStackTrace } from 'obsidian-dev-utils/Error';
+import { assignWithNonEnumerableProperties } from 'obsidian-dev-utils/Object';
 
 import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
 
@@ -288,9 +289,7 @@ export abstract class LongStackTracesHandler {
       return error;
     }
 
-    return Object.assign(errorWithParentStackTrackingFactory, {
-      captureStackTrace: this.originalError.captureStackTrace.bind(this.originalError)
-    }) as ErrorConstructor;
+    return assignWithNonEnumerableProperties(errorWithParentStackTrackingFactory, this.originalError);
   }
 
   private removeEventListener(
