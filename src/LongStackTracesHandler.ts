@@ -23,6 +23,7 @@ interface MakeErrorWithParentStackTrackingFactoryOptions {
   framesToSkip: number;
   parentStack: string;
   patchedErrorWithParentStackThisArg: unknown;
+  previousErrorConstructor: ErrorConstructor;
   stackFrameTitle: string;
 }
 
@@ -70,12 +71,15 @@ interface WrapWithStackTracesOptions {
 const eventHandlersMap = new MultiWeakMap<[EventTarget, string, GenericFunction], GenericFunction>();
 
 export abstract class LongStackTracesHandler {
-  private originalError!: ErrorConstructor;
+  private Error!: ErrorConstructor;
   private plugin!: AdvancedDebugModePlugin;
 
   public registerLongStackTraces(plugin: AdvancedDebugModePlugin): void {
     this.plugin = plugin;
-    this.originalError = window.Error;
+    this.Error = window.Error;
+    this.register(() => {
+      window.Error = this.Error;
+    });
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     const methodNames: ConditionalKeys<typeof globalThis & Window, Function>[] = [
@@ -170,78 +174,6 @@ export abstract class LongStackTracesHandler {
     });
   }
 
-  protected patchWithLongStackTracesImpl(options: PatchWithLongStackTracesImplOptions): unknown {
-    const handlerArgIndices = Array.isArray(options.handlerArgIndex) ? options.handlerArgIndex : [options.handlerArgIndex];
-    const argsWithWrappedHandler = options.originalFnArgs.slice();
-
-    for (const handlerArgIndex of handlerArgIndices) {
-      const handler = options.originalFnArgs[handlerArgIndex];
-
-      let fn: GenericFunction;
-
-      if (typeof handler === 'string' && options.shouldConvertStringToFunction) {
-        // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
-        fn = new Function(handler) as GenericFunction;
-      } else if (typeof handler === 'function') {
-        fn = handler as GenericFunction;
-      } else if (isEventListenerObject(handler)) {
-        fn = handler.handleEvent.bind(handler) as GenericFunction;
-      } else {
-        continue;
-      }
-
-      const wrappedHandler = this.wrapWithStackTraces({
-        afterPatch: options.afterPatch,
-        fn,
-        framesToSkip: options.framesToSkip,
-        originalFnArgs: options.originalFnArgs,
-        originalFnThisArg: options.originalFnThisArg,
-        stackFrameTitle: options.stackFrameTitle
-      });
-
-      argsWithWrappedHandler[handlerArgIndex] = wrappedHandler;
-    }
-
-    return options.next.call(options.originalFnThisArg, ...argsWithWrappedHandler);
-  }
-
-  protected register(callback: () => void): void {
-    this.plugin.register(callback);
-  }
-
-  protected wrapWithStackTraces(options: WrapWithStackTracesOptions): GenericFunction {
-    /**
-     * Skip stack frames
-     * - at LongStackTracesHandlerImpl2.wrapWithStackTraces
-     * - at LongStackTracesHandlerImpl2.patchWithLongStackTracesImpl
-     * - at patchedFn
-     * - at wrapper (from monkey-around)
-     */
-    const PARENT_STACK_SKIP_FRAMES = 4;
-    const parentStack = getStackTrace(PARENT_STACK_SKIP_FRAMES);
-
-    const that = this;
-    function wrappedFn(this: unknown, ...wrappedFnArgs: unknown[]): unknown {
-      return that.wrapWithStackTracesImpl({
-        fn: options.fn,
-        framesToSkip: options.framesToSkip,
-        parentStack,
-        stackFrameTitle: options.stackFrameTitle,
-        wrappedFnArgs,
-        wrappedFnThisArg: this
-      });
-    }
-
-    options.afterPatch?.({
-      fn: options.fn,
-      originalFnArgs: options.originalFnArgs,
-      originalFnThisArg: options.originalFnThisArg,
-      wrappedFn
-    });
-
-    return Object.assign(wrappedFn, { originalFn: options.fn }) as GenericFunction;
-  }
-
   private adjustStackLines(lines: string[], options: MakeErrorWithParentStackTrackingFactoryOptions): void {
     /**
      * Skip prefix stack frames
@@ -283,14 +215,53 @@ export abstract class LongStackTracesHandler {
         return new (errorWithParentStackTrackingFactory as ErrorConstructor)(message, errorOptions);
       }
 
-      const error = new that.originalError(message, errorOptions);
+      const error = new options.previousErrorConstructor(message, errorOptions);
       const lines = error.stack?.split('\n') ?? [];
       that.adjustStackLines(lines, options);
       error.stack = lines.join('\n');
       return error;
     }
 
-    return assignWithNonEnumerableProperties(errorWithParentStackTrackingFactory, this.originalError);
+    return assignWithNonEnumerableProperties(errorWithParentStackTrackingFactory, this.Error);
+  }
+
+  private patchWithLongStackTracesImpl(options: PatchWithLongStackTracesImplOptions): unknown {
+    const handlerArgIndices = Array.isArray(options.handlerArgIndex) ? options.handlerArgIndex : [options.handlerArgIndex];
+    const argsWithWrappedHandler = options.originalFnArgs.slice();
+
+    for (const handlerArgIndex of handlerArgIndices) {
+      const handler = options.originalFnArgs[handlerArgIndex];
+
+      let fn: GenericFunction;
+
+      if (typeof handler === 'string' && options.shouldConvertStringToFunction) {
+        // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
+        fn = new Function(handler) as GenericFunction;
+      } else if (typeof handler === 'function') {
+        fn = handler as GenericFunction;
+      } else if (isEventListenerObject(handler)) {
+        fn = handler.handleEvent.bind(handler) as GenericFunction;
+      } else {
+        continue;
+      }
+
+      const wrappedHandler = this.wrapWithStackTraces({
+        afterPatch: options.afterPatch,
+        fn,
+        framesToSkip: options.framesToSkip,
+        originalFnArgs: options.originalFnArgs,
+        originalFnThisArg: options.originalFnThisArg,
+        stackFrameTitle: options.stackFrameTitle
+      });
+
+      argsWithWrappedHandler[handlerArgIndex] = wrappedHandler;
+    }
+
+    return options.next.call(options.originalFnThisArg, ...argsWithWrappedHandler);
+  }
+
+  private register(callback: () => void): void {
+    this.plugin.register(callback);
   }
 
   private removeEventListener(
@@ -316,19 +287,53 @@ export abstract class LongStackTracesHandler {
     }
   }
 
+  private wrapWithStackTraces(options: WrapWithStackTracesOptions): GenericFunction {
+    /**
+     * Skip stack frames
+     * - at LongStackTracesHandlerImpl2.wrapWithStackTraces
+     * - at LongStackTracesHandlerImpl2.patchWithLongStackTracesImpl
+     * - at patchedFn
+     * - at wrapper (from monkey-around)
+     */
+    const PARENT_STACK_SKIP_FRAMES = 4;
+    const parentStack = getStackTrace(PARENT_STACK_SKIP_FRAMES);
+
+    const that = this;
+    function wrappedFn(this: unknown, ...wrappedFnArgs: unknown[]): unknown {
+      return that.wrapWithStackTracesImpl({
+        fn: options.fn,
+        framesToSkip: options.framesToSkip,
+        parentStack,
+        stackFrameTitle: options.stackFrameTitle,
+        wrappedFnArgs,
+        wrappedFnThisArg: this
+      });
+    }
+
+    options.afterPatch?.({
+      fn: options.fn,
+      originalFnArgs: options.originalFnArgs,
+      originalFnThisArg: options.originalFnThisArg,
+      wrappedFn
+    });
+
+    return Object.assign(wrappedFn, { originalFn: options.fn }) as GenericFunction;
+  }
+
   private wrapWithStackTracesImpl(options: WrapWithStackTracesImplOptions): unknown {
-    const currentError = window.Error;
+    const previousErrorConstructor = window.Error;
     window.Error = this.makeErrorWithParentStackTrackingFactory({
       framesToSkip: options.framesToSkip,
       parentStack: options.parentStack,
       patchedErrorWithParentStackThisArg: this,
+      previousErrorConstructor,
       stackFrameTitle: options.stackFrameTitle
     });
 
     try {
       return options.fn.call(options.wrappedFnThisArg, ...options.wrappedFnArgs);
     } finally {
-      window.Error = currentError;
+      window.Error = previousErrorConstructor;
     }
   }
 }
