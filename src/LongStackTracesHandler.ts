@@ -122,6 +122,30 @@ export abstract class LongStackTracesHandler {
         };
       }
     });
+
+    this.patchWithLongStackTraces({
+      framesToSkip: 0,
+      handlerArgIndex: [0, 1],
+      methodName: 'then',
+      obj: Promise.prototype,
+      stackFrameTitle: 'Promise.then'
+    });
+
+    this.patchWithLongStackTraces({
+      framesToSkip: 0,
+      handlerArgIndex: 0,
+      methodName: 'catch',
+      obj: Promise.prototype,
+      stackFrameTitle: 'Promise.catch'
+    });
+
+    this.patchWithLongStackTraces({
+      framesToSkip: 0,
+      handlerArgIndex: 0,
+      methodName: 'finally',
+      obj: Promise.prototype,
+      stackFrameTitle: 'Promise.finally'
+    });
   }
 
   protected patchWithLongStackTraces<Obj extends object>(options: PatchOptions<Obj>): void {
