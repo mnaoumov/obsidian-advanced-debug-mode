@@ -1,8 +1,10 @@
 import { Platform } from 'obsidian';
 
 import type { LongStackTracesHandler } from './LongStackTracesHandler.ts';
+import type { DevTools } from './DevTools.ts';
 
 export interface PlatformDependencies {
+  devTools: DevTools;
   longStackTracesHandler: LongStackTracesHandler;
 }
 

@@ -23,6 +23,7 @@
   "devDependencies": {
     "@tsconfig/strictest": "^2.0.5",
     "@types/node": "^22.13.11",
+    "eruda": "^3.4.1",
     "jiti": "^2.4.2",
     "monkey-around": "^3.0.0",
     "obsidian": "^1.8.7",
