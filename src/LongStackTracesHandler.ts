@@ -18,18 +18,11 @@ interface AfterPatchOptions {
   wrappedFn: GenericFunction;
 }
 
-interface ErrorWithParentStackOptions {
-  errorOptions: ErrorOptions | undefined;
+interface MakeErrorWithParentStackTrackingFactoryOptions {
   framesToSkip: number;
-  message: string | undefined;
-  next: ErrorConstructor;
   parentStack: string;
   patchedErrorWithParentStackThisArg: unknown;
   stackFrameTitle: string;
-}
-
-interface ErrorWrapper {
-  Error: ErrorConstructor;
 }
 
 interface PatchOptions<Obj extends object> {
@@ -74,10 +67,12 @@ interface WrapWithStackTracesOptions {
 const eventHandlersMap = new MultiWeakMap<[EventTarget, string, GenericFunction], GenericFunction>();
 
 export abstract class LongStackTracesHandler {
+  private originalError!: ErrorConstructor;
   private plugin!: AdvancedDebugModePlugin;
 
   public registerLongStackTraces(plugin: AdvancedDebugModePlugin): void {
     this.plugin = plugin;
+    this.originalError = window.Error;
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     const methodNames: ConditionalKeys<typeof globalThis & Window, Function>[] = [
@@ -219,38 +214,45 @@ export abstract class LongStackTracesHandler {
     eventHandlersMap.set(keys, options.wrappedFn);
   }
 
-  private errorWithParentStack(options: ErrorWithParentStackOptions): Error {
-    if (!(options.patchedErrorWithParentStackThisArg instanceof Error)) {
-      return Error(options.message, options.errorOptions);
+  private makeErrorWithParentStackTrackingFactory(options: MakeErrorWithParentStackTrackingFactoryOptions): ErrorConstructor {
+    const originalError = this.originalError;
+    function errorWithParentStackTrackingFactory(this: unknown, message?: string, errorOptions?: ErrorOptions): Error {
+      if (!(this instanceof errorWithParentStackTrackingFactory)) {
+        return new (errorWithParentStackTrackingFactory as ErrorConstructor)(message, errorOptions);
+      }
+
+      const error = new originalError(message, errorOptions);
+      Error.captureStackTrace(error);
+
+      const lines = error.stack?.split('\n') ?? [];
+
+      /**
+       * Skip prefix stack frames
+       * - at errorWithParentStackTrackingFactory
+       */
+      const PREFIX_FRAMES_TO_SKIP = 1;
+
+      /**
+       * Skip stack frames
+       * - at LongStackTracesHandlerImpl2.wrapWithStackTracesImpl
+       * - at wrappedFn
+       */
+      const SUFFIX_FRAMES_TO_SKIP = 2;
+      const totalSuffixFramesToSkip = SUFFIX_FRAMES_TO_SKIP + options.framesToSkip;
+
+      lines.splice(1, PREFIX_FRAMES_TO_SKIP);
+      lines.splice(-totalSuffixFramesToSkip, totalSuffixFramesToSkip);
+
+      lines.push(`    at --- ${options.stackFrameTitle} --- (0)`);
+      lines.push(options.parentStack);
+      error.stack = lines.join('\n');
+
+      return error;
     }
 
-    const error = new options.next(options.message, options.errorOptions);
-    Error.captureStackTrace(error);
-    const lines = error.stack?.split('\n') ?? [];
-
-    /**
-     * Skip prefix stack frames
-     * - at LongStackTracesHandlerImpl2.errorWithParentStack
-     * - at LongStackTracesHandlerImpl2.patchedErrorWithParentStack
-     * - new wrapper (from monkey-around)
-     */
-    const PREFIX_FRAMES_TO_SKIP = 3;
-
-    /**
-     * Skip stack frames
-     * - at LongStackTracesHandlerImpl2.wrapWithStackTracesImpl
-     * - at wrappedFn
-     */
-    const SUFFIX_FRAMES_TO_SKIP = 2;
-    const totalSuffixFramesToSkip = SUFFIX_FRAMES_TO_SKIP + options.framesToSkip;
-
-    lines.splice(1, PREFIX_FRAMES_TO_SKIP);
-    lines.splice(-totalSuffixFramesToSkip, totalSuffixFramesToSkip);
-
-    lines.push(`    at --- ${options.stackFrameTitle} --- (0)`);
-    lines.push(options.parentStack);
-    error.stack = lines.join('\n');
-    return error;
+    return Object.assign(errorWithParentStackTrackingFactory, {
+      captureStackTrace: originalError.captureStackTrace.bind(originalError)
+    }) as ErrorConstructor;
   }
 
   private removeEventListener(
@@ -277,30 +279,18 @@ export abstract class LongStackTracesHandler {
   }
 
   private wrapWithStackTracesImpl(options: WrapWithStackTracesImplOptions): unknown {
-    const errorWithParentStack = this.errorWithParentStack.bind(this);
-    const errorPatchUninstaller = registerPatch(this.plugin, window as ErrorWrapper, {
-      Error: (next: ErrorConstructor): ErrorConstructor => {
-        function patchedErrorWithParentStack(this: unknown, message?: string, errorOptions?: ErrorOptions): Error {
-          const errorWithParentStackOptions: ErrorWithParentStackOptions = {
-            errorOptions,
-            framesToSkip: options.framesToSkip,
-            message,
-            next,
-            parentStack: options.parentStack,
-            patchedErrorWithParentStackThisArg: this,
-            stackFrameTitle: options.stackFrameTitle
-          };
-          return errorWithParentStack(errorWithParentStackOptions);
-        }
-
-        return Object.assign(patchedErrorWithParentStack, next) as ErrorConstructor;
-      }
+    const currentError = window.Error;
+    window.Error = this.makeErrorWithParentStackTrackingFactory({
+      framesToSkip: options.framesToSkip,
+      parentStack: options.parentStack,
+      patchedErrorWithParentStackThisArg: this,
+      stackFrameTitle: options.stackFrameTitle
     });
 
     try {
       return options.fn.call(options.wrappedFnThisArg, ...options.wrappedFnArgs);
     } finally {
-      errorPatchUninstaller();
+      window.Error = currentError;
     }
   }
 }
