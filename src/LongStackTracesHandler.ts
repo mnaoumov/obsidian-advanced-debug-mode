@@ -28,19 +28,21 @@ interface MakeErrorWithParentStackTrackingFactoryOptions {
 interface PatchOptions<Obj extends object> {
   afterPatch?: AfterPatchFn | undefined;
   framesToSkip: number;
-  handlerArgIndex: number;
+  handlerArgIndex: number | number[];
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   methodName: ConditionalKeys<Obj, Function>;
   obj: Obj;
+  shouldConvertStringToFunction?: boolean;
   stackFrameTitle: string;
 }
 interface PatchWithLongStackTracesImplOptions {
   afterPatch?: AfterPatchFn | undefined;
   framesToSkip: number;
-  handlerArgIndex: number;
+  handlerArgIndex: number | number[];
   next: GenericFunction;
   originalFnArgs: unknown[];
   originalFnThisArg: unknown;
+  shouldConvertStringToFunction?: boolean;
   stackFrameTitle: string;
 }
 
@@ -82,12 +84,18 @@ export abstract class LongStackTracesHandler {
       'requestAnimationFrame'
     ];
 
+    const methodNamesWithPossibleStringHandlers = [
+      'setTimeout',
+      'setInterval'
+    ];
+
     for (const methodName of methodNames) {
       this.patchWithLongStackTraces({
         framesToSkip: 0,
         handlerArgIndex: 0,
         methodName,
         obj: window,
+        shouldConvertStringToFunction: methodNamesWithPossibleStringHandlers.includes(methodName),
         stackFrameTitle: methodName
       });
     }
@@ -139,32 +147,37 @@ export abstract class LongStackTracesHandler {
   }
 
   protected patchWithLongStackTracesImpl(options: PatchWithLongStackTracesImplOptions): unknown {
-    const handler = options.originalFnArgs[options.handlerArgIndex];
-    let fn: GenericFunction;
+    const handlerArgIndices = Array.isArray(options.handlerArgIndex) ? options.handlerArgIndex : [options.handlerArgIndex];
+    const argsWithWrappedHandler = options.originalFnArgs.slice();
 
-    if (typeof handler === 'string') {
-      // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
-      fn = new Function(handler) as GenericFunction;
-    } else if (typeof handler === 'function') {
-      fn = handler as GenericFunction;
-    } else if (isEventListenerObject(handler)) {
-      fn = handler.handleEvent.bind(handler) as GenericFunction;
-    } else {
-      console.warn('Handler is not a function. Cannot instrument long stack traces.', handler);
-      return options.next.call(options.originalFnThisArg, ...options.originalFnArgs);
+    for (const handlerArgIndex of handlerArgIndices) {
+      const handler = options.originalFnArgs[handlerArgIndex];
+
+      let fn: GenericFunction;
+
+      if (typeof handler === 'string' && options.shouldConvertStringToFunction) {
+        // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
+        fn = new Function(handler) as GenericFunction;
+      } else if (typeof handler === 'function') {
+        fn = handler as GenericFunction;
+      } else if (isEventListenerObject(handler)) {
+        fn = handler.handleEvent.bind(handler) as GenericFunction;
+      } else {
+        continue;
+      }
+
+      const wrappedHandler = this.wrapWithStackTraces({
+        afterPatch: options.afterPatch,
+        fn,
+        framesToSkip: options.framesToSkip,
+        originalFnArgs: options.originalFnArgs,
+        originalFnThisArg: options.originalFnThisArg,
+        stackFrameTitle: options.stackFrameTitle
+      });
+
+      argsWithWrappedHandler[handlerArgIndex] = wrappedHandler;
     }
 
-    const wrappedHandler = this.wrapWithStackTraces({
-      afterPatch: options.afterPatch,
-      fn,
-      framesToSkip: options.framesToSkip,
-      originalFnArgs: options.originalFnArgs,
-      originalFnThisArg: options.originalFnThisArg,
-      stackFrameTitle: options.stackFrameTitle
-    });
-
-    const argsWithWrappedHandler = options.originalFnArgs.slice();
-    argsWithWrappedHandler[options.handlerArgIndex] = wrappedHandler;
     return options.next.call(options.originalFnThisArg, ...argsWithWrappedHandler);
   }
 
