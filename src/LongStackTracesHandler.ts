@@ -261,7 +261,6 @@ export abstract class LongStackTracesHandler {
       }
 
       const error = new that.originalError(message, errorOptions);
-      Error.captureStackTrace(error);
 
       const lines = error.stack?.split('\n') ?? [];
 
