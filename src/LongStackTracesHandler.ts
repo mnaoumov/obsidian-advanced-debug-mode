@@ -242,6 +242,28 @@ export abstract class LongStackTracesHandler {
     return Object.assign(wrappedFn, { originalFn: options.fn }) as GenericFunction;
   }
 
+  private adjustStackLines(lines: string[], options: MakeErrorWithParentStackTrackingFactoryOptions): void {
+    /**
+     * Skip prefix stack frames
+     * - at errorWithParentStackTrackingFactory
+     */
+    const PREFIX_FRAMES_TO_SKIP = 1;
+
+    /**
+     * Skip stack frames
+     * - at LongStackTracesHandlerImpl2.wrapWithStackTracesImpl
+     * - at wrappedFn
+     */
+    const SUFFIX_FRAMES_TO_SKIP = 2;
+    const totalSuffixFramesToSkip = SUFFIX_FRAMES_TO_SKIP + options.framesToSkip;
+
+    lines.splice(1, PREFIX_FRAMES_TO_SKIP);
+    lines.splice(-totalSuffixFramesToSkip, totalSuffixFramesToSkip);
+
+    lines.push(`    at --- ${options.stackFrameTitle} --- (0)`);
+    lines.push(options.parentStack);
+  }
+
   private afterPatchAddEventListener(options: AfterPatchOptions): void {
     const eventTarget = options.originalFnThisArg as EventTarget;
     const type = options.originalFnArgs[0] as string;
@@ -262,30 +284,9 @@ export abstract class LongStackTracesHandler {
       }
 
       const error = new that.originalError(message, errorOptions);
-
       const lines = error.stack?.split('\n') ?? [];
-
-      /**
-       * Skip prefix stack frames
-       * - at errorWithParentStackTrackingFactory
-       */
-      const PREFIX_FRAMES_TO_SKIP = 1;
-
-      /**
-       * Skip stack frames
-       * - at LongStackTracesHandlerImpl2.wrapWithStackTracesImpl
-       * - at wrappedFn
-       */
-      const SUFFIX_FRAMES_TO_SKIP = 2;
-      const totalSuffixFramesToSkip = SUFFIX_FRAMES_TO_SKIP + options.framesToSkip;
-
-      lines.splice(1, PREFIX_FRAMES_TO_SKIP);
-      lines.splice(-totalSuffixFramesToSkip, totalSuffixFramesToSkip);
-
-      lines.push(`    at --- ${options.stackFrameTitle} --- (0)`);
-      lines.push(options.parentStack);
+      that.adjustStackLines(lines, options);
       error.stack = lines.join('\n');
-
       return error;
     }
 
