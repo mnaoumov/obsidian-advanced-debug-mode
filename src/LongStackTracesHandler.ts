@@ -109,7 +109,7 @@ export abstract class LongStackTracesHandler {
       stackFrameTitle: 'addEventListener'
     });
 
-    const removeEventListener = this.removeEventListener.bind(this);
+    const that = this;
     registerPatch(this.plugin, EventTarget.prototype, {
       removeEventListener: (next: RemoveEventListenerFn): RemoveEventListenerFn => {
         return function patchedRemoveEventListener(
@@ -118,7 +118,7 @@ export abstract class LongStackTracesHandler {
           callback: EventListenerOrEventListenerObject | null,
           options?: boolean | EventListenerOptions
         ): void {
-          removeEventListener(next, this, type, callback, options);
+          that.removeEventListener(next, this, type, callback, options);
         };
       }
     });
@@ -151,12 +151,11 @@ export abstract class LongStackTracesHandler {
   protected patchWithLongStackTraces<Obj extends object>(options: PatchOptions<Obj>): void {
     const genericObj = options.obj as Record<string, GenericFunction>;
 
-    const patchWithLongStackTracesImpl = this.patchWithLongStackTracesImpl.bind(this);
-
+    const that = this;
     registerPatch(this.plugin, genericObj, {
       [options.methodName]: (next: GenericFunction): GenericFunction => {
         return function patchedFn(this: unknown, ...originalFnArgs: unknown[]): unknown {
-          return patchWithLongStackTracesImpl({
+          return that.patchWithLongStackTracesImpl({
             afterPatch: options.afterPatch,
             framesToSkip: options.framesToSkip,
             handlerArgIndex: options.handlerArgIndex,
@@ -216,10 +215,9 @@ export abstract class LongStackTracesHandler {
     const PARENT_STACK_SKIP_FRAMES = 4;
     const parentStack = getStackTrace(PARENT_STACK_SKIP_FRAMES);
 
-    const wrapWithStackTracesImpl = this.wrapWithStackTracesImpl.bind(this);
-
+    const that = this;
     function wrappedFn(this: unknown, ...wrappedFnArgs: unknown[]): unknown {
-      return wrapWithStackTracesImpl({
+      return that.wrapWithStackTracesImpl({
         fn: options.fn,
         framesToSkip: options.framesToSkip,
         parentStack,
@@ -252,13 +250,13 @@ export abstract class LongStackTracesHandler {
   }
 
   private makeErrorWithParentStackTrackingFactory(options: MakeErrorWithParentStackTrackingFactoryOptions): ErrorConstructor {
-    const originalError = this.originalError;
+    const that = this;
     function errorWithParentStackTrackingFactory(this: unknown, message?: string, errorOptions?: ErrorOptions): Error {
       if (!(this instanceof errorWithParentStackTrackingFactory)) {
         return new (errorWithParentStackTrackingFactory as ErrorConstructor)(message, errorOptions);
       }
 
-      const error = new originalError(message, errorOptions);
+      const error = new that.originalError(message, errorOptions);
       Error.captureStackTrace(error);
 
       const lines = error.stack?.split('\n') ?? [];
@@ -288,7 +286,7 @@ export abstract class LongStackTracesHandler {
     }
 
     return Object.assign(errorWithParentStackTrackingFactory, {
-      captureStackTrace: originalError.captureStackTrace.bind(originalError)
+      captureStackTrace: this.originalError.captureStackTrace.bind(this.originalError)
     }) as ErrorConstructor;
   }
 
