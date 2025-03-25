@@ -22,8 +22,6 @@ interface AfterPatchOptions {
 
 type GenericConstructor = new (...args: unknown[]) => unknown;
 
-type WindowWithErrorConstructors = typeof window & Record<string, GenericConstructor>;
-
 interface PatchOptions<Obj extends object> {
   afterPatch?(options: AfterPatchOptions): void;
   handlerArgIndex: number | number[];
@@ -46,6 +44,7 @@ interface PatchWithLongStackTracesImplOptions {
 
 type RemoveEventListenerFn = EventTarget['removeEventListener'];
 
+type WindowWithErrorConstructors = Record<string, GenericConstructor> & typeof window;
 interface WrapWithStackTracesImplOptions {
   fn: GenericFunction;
   stackFrameGroup: StackFrameGroup;
@@ -165,14 +164,14 @@ export abstract class LongStackTracesHandler {
     registerPatch(this.plugin, genericObj, {
       [options.methodName]: (next: GenericFunction): GenericFunction => {
         return function patchedFn(this: unknown, ...originalFnArgs: unknown[]): unknown {
-          return that.patchWithLongStackTracesImpl(normalizeOptionalProperties<PatchWithLongStackTracesImplOptions>({
-            afterPatch: options.afterPatch,
+          return that.patchWithLongStackTracesImpl({
+            afterPatch: (afterPatchOptions) => options.afterPatch?.(afterPatchOptions),
             handlerArgIndex: options.handlerArgIndex,
             next,
             originalFnArgs,
             originalFnThisArg: this,
             stackFrameGroupTitle: options.stackFrameGroupTitle
-          }));
+          });
         };
       }
     });
@@ -233,7 +232,7 @@ export abstract class LongStackTracesHandler {
     Object.setPrototypeOf(PatchedError, this.OriginalError);
 
     registerPatch(this.plugin, window as WindowWithErrorConstructors, {
-      ['Error']: () => assignWithNonEnumerableProperties(PatchedError, this.OriginalError) as GenericConstructor
+      Error: () => assignWithNonEnumerableProperties(PatchedError, this.OriginalError) as GenericConstructor
     });
   }
 
@@ -341,8 +340,8 @@ export abstract class LongStackTracesHandler {
   private wrapWithStackTraces(options: WrapWithStackTracesOptions): GenericFunction {
     const parentStackTrace = getStackTrace();
     const stackFrameGroup = {
-      title: options.stackFrameGroupTitle,
-      stackFrames: parentStackTrace.split('\n')
+      stackFrames: parentStackTrace.split('\n'),
+      title: options.stackFrameGroupTitle
     };
 
     const that = this;
