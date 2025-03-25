@@ -254,10 +254,14 @@ export abstract class LongStackTracesHandler {
       }
     });
 
+    const originalStackTraceLimit = this.OriginalError.stackTraceLimit;
+
     window.Error = PatchedError as ErrorConstructor;
+    window.Error.stackTraceLimit = Infinity;
 
     this.register(() => {
       window.Error = this.OriginalError;
+      window.Error.stackTraceLimit = originalStackTraceLimit;
     });
   }
 
