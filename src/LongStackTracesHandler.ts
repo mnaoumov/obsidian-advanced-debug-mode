@@ -245,8 +245,10 @@ export abstract class LongStackTracesHandler {
     PatchedError.prototype = this.OriginalError.prototype;
     Object.setPrototypeOf(PatchedError, this.OriginalError);
 
-    registerPatch(this.plugin, window as WindowWithErrorConstructors, {
-      Error: () => assignWithNonEnumerableProperties(PatchedError, this.OriginalError) as GenericConstructor
+    window.Error = assignWithNonEnumerableProperties(PatchedError, this.OriginalError);
+
+    this.register(() => {
+      window.Error = this.OriginalError;
     });
   }
 
@@ -293,8 +295,10 @@ export abstract class LongStackTracesHandler {
 
       originalPrototypeToPatchedClassMap.set(OriginalChildError.prototype, PatchedChildError);
 
-      registerPatch(this.plugin, window as WindowWithErrorConstructors, {
-        [childErrorClassName]: () => assignWithNonEnumerableProperties(PatchedChildError, OriginalChildError)
+      windowWithErrorConstructors[childErrorClassName] = assignWithNonEnumerableProperties(PatchedChildError, OriginalChildError);
+
+      this.register(() => {
+        windowWithErrorConstructors[childErrorClassName] = OriginalChildError;
       });
     }
   }
