@@ -24,6 +24,7 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
   protected override async onloadComplete(): Promise<void> {
     const platformDependencies = await getPlatformDependencies();
     platformDependencies.longStackTracesHandler.registerLongStackTraces(this);
+    platformDependencies.devTools.registerDevTools(this);
 
     this.addCommand({
       checkCallback: (checking) => this.toggleDebugModeWithCheck(true, checking),
