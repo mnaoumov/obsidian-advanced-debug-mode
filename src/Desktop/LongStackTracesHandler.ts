@@ -9,19 +9,23 @@ class LongStackTracesHandlerImpl extends LongStackTracesHandler {
     super.registerLongStackTraces(plugin);
 
     this.patchWithLongStackTraces({
-      framesToSkip: 1,
       handlerArgIndex: 0,
       methodName: 'setImmediate',
       obj: window,
-      stackFrameTitle: 'setImmediate'
+      stackFrameGroup: {
+        previousStackFramesToSkip: 1,
+        title: 'setImmediate'
+      }
     });
 
     this.patchWithLongStackTraces({
-      framesToSkip: 1,
       handlerArgIndex: 0,
       methodName: 'nextTick',
       obj: process,
-      stackFrameTitle: 'process.nextTick'
+      stackFrameGroup: {
+        previousStackFramesToSkip: 1,
+        title: 'process.nextTick'
+      }
     });
   }
 }

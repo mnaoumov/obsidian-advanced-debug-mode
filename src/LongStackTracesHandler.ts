@@ -1,7 +1,10 @@
 import type { ConditionalKeys } from 'type-fest';
 
 import { getStackTrace } from 'obsidian-dev-utils/Error';
-import { assignWithNonEnumerableProperties } from 'obsidian-dev-utils/Object';
+import {
+  assignWithNonEnumerableProperties,
+  normalizeOptionalProperties
+} from 'obsidian-dev-utils/Object';
 
 import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
 
@@ -10,8 +13,6 @@ import { MultiWeakMap } from './MultiWeakMap.ts';
 
 export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction };
 
-type AfterPatchFn = (options: AfterPatchOptions) => void;
-
 interface AfterPatchOptions {
   fn: GenericFunction;
   originalFnArgs: unknown[];
@@ -19,67 +20,62 @@ interface AfterPatchOptions {
   wrappedFn: GenericFunction;
 }
 
-interface MakeErrorWithParentStackTrackingFactoryOptions {
-  framesToSkip: number;
-  parentStack: string;
-  patchedErrorWithParentStackThisArg: unknown;
-  previousErrorConstructor: ErrorConstructor;
-  stackFrameTitle: string;
-}
+type GenericConstructor = new (...args: unknown[]) => unknown;
 
 interface PatchOptions<Obj extends object> {
-  afterPatch?: AfterPatchFn | undefined;
-  framesToSkip: number;
+  afterPatch?(options: AfterPatchOptions): void;
   handlerArgIndex: number | number[];
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   methodName: ConditionalKeys<Obj, Function>;
   obj: Obj;
   shouldConvertStringToFunction?: boolean;
-  stackFrameTitle: string;
+  stackFrameGroup: StackFrameGroup;
 }
+
 interface PatchWithLongStackTracesImplOptions {
-  afterPatch?: AfterPatchFn | undefined;
-  framesToSkip: number;
+  afterPatch?(options: AfterPatchOptions): void;
   handlerArgIndex: number | number[];
   next: GenericFunction;
   originalFnArgs: unknown[];
   originalFnThisArg: unknown;
   shouldConvertStringToFunction?: boolean;
-  stackFrameTitle: string;
+  stackFrameGroup: StackFrameGroup;
 }
 
 type RemoveEventListenerFn = EventTarget['removeEventListener'];
 
 interface WrapWithStackTracesImplOptions {
   fn: GenericFunction;
-  framesToSkip: number;
-  parentStack: string;
-  stackFrameTitle: string;
+  stackFrameGroup: StackFrameGroup;
   wrappedFnArgs: unknown[];
   wrappedFnThisArg: unknown;
 }
 
 interface WrapWithStackTracesOptions {
-  afterPatch?: AfterPatchFn | undefined;
+  afterPatch?(options: AfterPatchOptions): void;
   fn: GenericFunction;
-  framesToSkip: number;
   originalFnArgs: unknown[];
   originalFnThisArg: unknown;
-  stackFrameTitle: string;
+  stackFrameGroup: StackFrameGroup;
 }
 
 const eventHandlersMap = new MultiWeakMap<[EventTarget, string, GenericFunction], GenericFunction>();
 
+interface StackFrameGroup {
+  previousStackFramesToSkip: number;
+  stackFrames?: string[];
+  title: string;
+}
+
 export abstract class LongStackTracesHandler {
-  private Error!: ErrorConstructor;
+  private OriginalError!: ErrorConstructor;
   private plugin!: AdvancedDebugModePlugin;
+  private stackFramesGroups: StackFrameGroup[] = [];
 
   public registerLongStackTraces(plugin: AdvancedDebugModePlugin): void {
     this.plugin = plugin;
-    this.Error = window.Error;
-    this.register(() => {
-      window.Error = this.Error;
-    });
+    this.OriginalError = window.Error;
+    this.patchErrorClasses();
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     const methodNames: ConditionalKeys<typeof globalThis & Window, Function>[] = [
@@ -96,22 +92,26 @@ export abstract class LongStackTracesHandler {
 
     for (const methodName of methodNames) {
       this.patchWithLongStackTraces({
-        framesToSkip: 0,
         handlerArgIndex: 0,
         methodName,
         obj: window,
         shouldConvertStringToFunction: methodNamesWithPossibleStringHandlers.includes(methodName),
-        stackFrameTitle: methodName
+        stackFrameGroup: {
+          previousStackFramesToSkip: 0,
+          title: methodName
+        }
       });
     }
 
     this.patchWithLongStackTraces({
       afterPatch: this.afterPatchAddEventListener.bind(this),
-      framesToSkip: 0,
       handlerArgIndex: 1,
       methodName: 'addEventListener',
       obj: EventTarget.prototype,
-      stackFrameTitle: 'addEventListener'
+      stackFrameGroup: {
+        previousStackFramesToSkip: 0,
+        title: 'addEventListener'
+      }
     });
 
     const that = this;
@@ -129,28 +129,50 @@ export abstract class LongStackTracesHandler {
     });
 
     this.patchWithLongStackTraces({
-      framesToSkip: 0,
       handlerArgIndex: [0, 1],
       methodName: 'then',
       obj: Promise.prototype,
-      stackFrameTitle: 'Promise.then'
+      stackFrameGroup: {
+        previousStackFramesToSkip: 0,
+        title: 'Promise.then'
+      }
     });
 
     this.patchWithLongStackTraces({
-      framesToSkip: 0,
       handlerArgIndex: 0,
       methodName: 'catch',
       obj: Promise.prototype,
-      stackFrameTitle: 'Promise.catch'
+      stackFrameGroup: {
+        previousStackFramesToSkip: 0,
+        title: 'Promise.catch'
+      }
     });
 
     this.patchWithLongStackTraces({
-      framesToSkip: 0,
       handlerArgIndex: 0,
       methodName: 'finally',
       obj: Promise.prototype,
-      stackFrameTitle: 'Promise.finally'
+      stackFrameGroup: {
+        previousStackFramesToSkip: 0,
+        title: 'Promise.finally'
+      }
     });
+  }
+
+  protected adjustStackLines(lines: string[]): void {
+    /**
+     * Skip stack frames
+     * - at LongStackTracesHandlerImpl2.wrapWithStackTracesImpl
+     * - at wrappedFn
+     */
+    const STACK_FRAMES_TO_SKIP = 2;
+
+    for (const stackFrameGroup of this.stackFramesGroups) {
+      const totalStackFramesToSkip = STACK_FRAMES_TO_SKIP + stackFrameGroup.previousStackFramesToSkip;
+      lines.splice(-totalStackFramesToSkip, totalStackFramesToSkip);
+      lines.push(this.generateStackTraceLine(stackFrameGroup.title));
+      lines.push(...(stackFrameGroup.stackFrames ?? []));
+    }
   }
 
   protected patchWithLongStackTraces<Obj extends object>(options: PatchOptions<Obj>): void {
@@ -160,40 +182,21 @@ export abstract class LongStackTracesHandler {
     registerPatch(this.plugin, genericObj, {
       [options.methodName]: (next: GenericFunction): GenericFunction => {
         return function patchedFn(this: unknown, ...originalFnArgs: unknown[]): unknown {
-          return that.patchWithLongStackTracesImpl({
+          return that.patchWithLongStackTracesImpl(normalizeOptionalProperties<PatchWithLongStackTracesImplOptions>({
             afterPatch: options.afterPatch,
-            framesToSkip: options.framesToSkip,
             handlerArgIndex: options.handlerArgIndex,
             next,
             originalFnArgs,
             originalFnThisArg: this,
-            stackFrameTitle: options.stackFrameTitle
-          });
+            stackFrameGroup: options.stackFrameGroup
+          }));
         };
       }
     });
   }
 
-  private adjustStackLines(lines: string[], options: MakeErrorWithParentStackTrackingFactoryOptions): void {
-    /**
-     * Skip prefix stack frames
-     * - at errorWithParentStackTrackingFactory
-     */
-    const PREFIX_FRAMES_TO_SKIP = 1;
-
-    /**
-     * Skip stack frames
-     * - at LongStackTracesHandlerImpl2.wrapWithStackTracesImpl
-     * - at wrappedFn
-     */
-    const SUFFIX_FRAMES_TO_SKIP = 2;
-    const totalSuffixFramesToSkip = SUFFIX_FRAMES_TO_SKIP + options.framesToSkip;
-
-    lines.splice(1, PREFIX_FRAMES_TO_SKIP);
-    lines.splice(-totalSuffixFramesToSkip, totalSuffixFramesToSkip);
-
-    lines.push(`    at --- ${options.stackFrameTitle} --- (0)`);
-    lines.push(options.parentStack);
+  protected register(callback: () => void): void {
+    this.plugin.register(callback);
   }
 
   private afterPatchAddEventListener(options: AfterPatchOptions): void {
@@ -208,21 +211,89 @@ export abstract class LongStackTracesHandler {
     eventHandlersMap.set(keys, options.wrappedFn);
   }
 
-  private makeErrorWithParentStackTrackingFactory(options: MakeErrorWithParentStackTrackingFactoryOptions): ErrorConstructor {
+  private generateStackTraceLine(title: string): string {
+    return `    at --- ${title} --- (0)`;
+  }
+
+  private getChildErrorClassNames(): string[] {
+    const errorClassNames: string[] = [];
+    const windowRecord = window as unknown as Record<string, unknown>;
+    for (const key of Object.getOwnPropertyNames(windowRecord)) {
+      try {
+        const value = windowRecord[key];
+        if (typeof value === 'function' && Object.prototype.isPrototypeOf.call(this.OriginalError.prototype, value.prototype)) {
+          errorClassNames.push(key);
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    return errorClassNames;
+  }
+
+  private patchBaseErrorClass(): void {
     const that = this;
-    function errorWithParentStackTrackingFactory(this: unknown, message?: string, errorOptions?: ErrorOptions): Error {
-      if (!(this instanceof errorWithParentStackTrackingFactory)) {
-        return new (errorWithParentStackTrackingFactory as ErrorConstructor)(message, errorOptions);
+    function PatchedError(this: unknown, message?: string, errorOptions?: ErrorOptions): Error {
+      if (!(this instanceof PatchedError)) {
+        return new (PatchedError as ErrorConstructor)(message, errorOptions);
       }
 
-      const error = new options.previousErrorConstructor(message, errorOptions);
+      const error = Reflect.construct(that.OriginalError, [message, errorOptions], new.target as unknown as GenericConstructor);
       const lines = error.stack?.split('\n') ?? [];
-      that.adjustStackLines(lines, options);
+      that.adjustStackLines(lines);
       error.stack = lines.join('\n');
       return error;
     }
 
-    return assignWithNonEnumerableProperties(errorWithParentStackTrackingFactory, this.Error);
+    PatchedError.prototype = this.OriginalError.prototype;
+    Object.setPrototypeOf(PatchedError, this.OriginalError);
+
+    window.Error = assignWithNonEnumerableProperties(PatchedError, this.OriginalError);
+    this.register(() => {
+      window.Error = this.OriginalError;
+    });
+  }
+
+  private patchErrorClasses(): void {
+    this.patchBaseErrorClass();
+
+    const originalPrototypeToPatchedClassMap = new Map<unknown, unknown>();
+    originalPrototypeToPatchedClassMap.set(this.OriginalError.prototype, window.Error);
+
+    const windowRecord = window as unknown as Record<string, unknown>;
+    const childErrorClassNames = this.getChildErrorClassNames();
+
+    for (const childErrorClassName of childErrorClassNames.slice()) {
+      const OriginalChildError = windowRecord[childErrorClassName] as GenericConstructor;
+      const baseClassPrototype = Object.getPrototypeOf(OriginalChildError.prototype as object);
+      const PatchedBaseError = originalPrototypeToPatchedClassMap.get(baseClassPrototype) as GenericConstructor | undefined;
+      if (!PatchedBaseError) {
+        continue;
+      }
+
+      // eslint-disable-next-line func-style
+      const PatchedChildError = function PatchedChildError(this: unknown, ...args: unknown[]): unknown {
+        if (!(this instanceof PatchedChildError)) {
+          return new (PatchedChildError as unknown as GenericConstructor)(...args);
+        }
+
+        const error = Reflect.construct(PatchedBaseError, args, new.target as unknown as GenericConstructor) as Error;
+        error.name = childErrorClassName;
+        return error;
+      };
+
+      PatchedChildError.prototype = Object.create(PatchedBaseError.prototype as object);
+      PatchedChildError.prototype.constructor = PatchedChildError;
+      Object.setPrototypeOf(PatchedChildError, OriginalChildError);
+
+      windowRecord[childErrorClassName] = assignWithNonEnumerableProperties(PatchedChildError, OriginalChildError);
+      originalPrototypeToPatchedClassMap.set(OriginalChildError.prototype, PatchedChildError);
+
+      this.register(() => {
+        windowRecord[childErrorClassName] = OriginalChildError;
+      });
+    }
   }
 
   private patchWithLongStackTracesImpl(options: PatchWithLongStackTracesImplOptions): unknown {
@@ -245,23 +316,18 @@ export abstract class LongStackTracesHandler {
         continue;
       }
 
-      const wrappedHandler = this.wrapWithStackTraces({
+      const wrappedHandler = this.wrapWithStackTraces(normalizeOptionalProperties<WrapWithStackTracesOptions>({
         afterPatch: options.afterPatch,
         fn,
-        framesToSkip: options.framesToSkip,
         originalFnArgs: options.originalFnArgs,
         originalFnThisArg: options.originalFnThisArg,
-        stackFrameTitle: options.stackFrameTitle
-      });
+        stackFrameGroup: options.stackFrameGroup
+      }));
 
       argsWithWrappedHandler[handlerArgIndex] = wrappedHandler;
     }
 
     return options.next.call(options.originalFnThisArg, ...argsWithWrappedHandler);
-  }
-
-  private register(callback: () => void): void {
-    this.plugin.register(callback);
   }
 
   private removeEventListener(
@@ -296,15 +362,17 @@ export abstract class LongStackTracesHandler {
      * - at wrapper (from monkey-around)
      */
     const PARENT_STACK_SKIP_FRAMES = 4;
-    const parentStack = getStackTrace(PARENT_STACK_SKIP_FRAMES);
+    const parentStackTrace = getStackTrace(PARENT_STACK_SKIP_FRAMES);
+    const stackFrameGroup = {
+      ...options.stackFrameGroup,
+      stackFrames: parentStackTrace.split('\n')
+    };
 
     const that = this;
     function wrappedFn(this: unknown, ...wrappedFnArgs: unknown[]): unknown {
       return that.wrapWithStackTracesImpl({
         fn: options.fn,
-        framesToSkip: options.framesToSkip,
-        parentStack,
-        stackFrameTitle: options.stackFrameTitle,
+        stackFrameGroup,
         wrappedFnArgs,
         wrappedFnThisArg: this
       });
@@ -321,19 +389,12 @@ export abstract class LongStackTracesHandler {
   }
 
   private wrapWithStackTracesImpl(options: WrapWithStackTracesImplOptions): unknown {
-    const previousErrorConstructor = window.Error;
-    window.Error = this.makeErrorWithParentStackTrackingFactory({
-      framesToSkip: options.framesToSkip,
-      parentStack: options.parentStack,
-      patchedErrorWithParentStackThisArg: this,
-      previousErrorConstructor,
-      stackFrameTitle: options.stackFrameTitle
-    });
+    this.stackFramesGroups.push(options.stackFrameGroup);
 
     try {
       return options.fn.call(options.wrappedFnThisArg, ...options.wrappedFnArgs);
     } finally {
-      window.Error = previousErrorConstructor;
+      this.stackFramesGroups.pop();
     }
   }
 }
