@@ -42,5 +42,12 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
 
         textArea.inputEl.addClass('debug-namespaces-setting-control');
       });
+
+    new Setting(this.containerEl)
+      .setName('Show internal stack frames')
+      .setDesc('Show internal stack frames in the debug output.')
+      .addToggle((toggle) => {
+        this.bind(toggle, 'shouldShowInternalStackFrames');
+      });
   }
 }

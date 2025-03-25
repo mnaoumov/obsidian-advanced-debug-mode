@@ -1,17 +1,18 @@
 import type { PluginSettingTab } from 'obsidian';
 
-import { EmptySettings } from 'obsidian-dev-utils/obsidian/Plugin/EmptySettings';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
+import { AdvancedDebugModePluginSettings } from './AdvancedDebugModePluginSettings.ts';
+import { AdvancedDebugModePluginSettingsTab } from './AdvancedDebugModePluginSettingsTab.ts';
 import { getPlatformDependencies } from './PlatformDependencies.ts';
 
-export class AdvancedDebugModePlugin extends PluginBase {
-  protected override createPluginSettings(): EmptySettings {
-    return new EmptySettings();
+export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginSettings> {
+  protected override createPluginSettings(data: unknown): AdvancedDebugModePluginSettings {
+    return new AdvancedDebugModePluginSettings(data);
   }
 
   protected override createPluginSettingsTab(): null | PluginSettingTab {
-    return null;
+    return new AdvancedDebugModePluginSettingsTab(this);
   }
 
   protected override onLayoutReady(): void {

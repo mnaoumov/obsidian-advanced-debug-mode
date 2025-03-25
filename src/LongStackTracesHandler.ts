@@ -155,10 +155,12 @@ export abstract class LongStackTracesHandler {
   }
 
   protected adjustStackLines(lines: string[]): void {
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const line = lines[i];
-      if (line && this.internalStackFrameLocations.some((location) => line.includes(location))) {
-        lines.splice(i, 1);
+    if (!this.plugin.settings.shouldShowInternalStackFrames) {
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i];
+        if (line && this.internalStackFrameLocations.some((location) => line.includes(location))) {
+          lines.splice(i, 1);
+        }
       }
     }
 
