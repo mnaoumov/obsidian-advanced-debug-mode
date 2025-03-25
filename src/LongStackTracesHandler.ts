@@ -45,6 +45,7 @@ interface PatchWithLongStackTracesImplOptions {
 type RemoveEventListenerFn = EventTarget['removeEventListener'];
 
 type WindowWithErrorConstructors = Record<string, GenericConstructor> & typeof window;
+
 interface WrapWithStackTracesImplOptions {
   fn: GenericFunction;
   stackFrameGroup: StackFrameGroup;
@@ -217,11 +218,11 @@ export abstract class LongStackTracesHandler {
   private patchBaseErrorClass(): void {
     const that = this;
     function PatchedError(this: unknown, message?: string, errorOptions?: ErrorOptions): Error {
-      if (!(this instanceof PatchedError)) {
-        return new (PatchedError as ErrorConstructor)(message, errorOptions);
+      if (!(this instanceof window.Error)) {
+        return new window.Error(message, errorOptions);
       }
 
-      const error = Reflect.construct(that.OriginalError, [message, errorOptions], new.target as unknown as GenericConstructor);
+      const error = Reflect.construct(that.OriginalError, [message, errorOptions], (new.target ?? window.Error) as unknown as GenericConstructor);
       const lines = error.stack?.split('\n') ?? [];
       that.adjustStackLines(lines);
       error.stack = lines.join('\n');
@@ -259,11 +260,16 @@ export abstract class LongStackTracesHandler {
 
       // eslint-disable-next-line func-style
       const PatchedChildError = function PatchedChildError(this: unknown, ...args: unknown[]): unknown {
-        if (!(this instanceof PatchedChildError)) {
-          return new (PatchedChildError as unknown as GenericConstructor)(...args);
+        const PatchedChildErrorWrapper = windowWithErrorConstructors[childErrorClassName];
+        if (!PatchedChildErrorWrapper) {
+          return;
         }
 
-        const error = Reflect.construct(PatchedBaseError, args, new.target as unknown as GenericConstructor) as Error;
+        if (!(this instanceof PatchedChildErrorWrapper)) {
+          return new (PatchedChildErrorWrapper as unknown as GenericConstructor)(...args);
+        }
+
+        const error = Reflect.construct(PatchedBaseError, args, (new.target ?? PatchedChildErrorWrapper) as unknown as GenericConstructor) as Error;
         error.name = childErrorClassName;
         return error;
       };
