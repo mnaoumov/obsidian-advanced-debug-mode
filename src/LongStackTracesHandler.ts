@@ -72,11 +72,18 @@ interface StackFrameGroup {
 }
 
 export abstract class LongStackTracesHandler {
+  private internalStackFrameLocations: string[] = [];
   private OriginalError!: ErrorConstructor;
   private plugin!: AdvancedDebugModePlugin;
   private stackFramesGroups: StackFrameGroup[] = [];
+
   public registerLongStackTraces(plugin: AdvancedDebugModePlugin): void {
     this.plugin = plugin;
+    this.internalStackFrameLocations = [
+      `plugin:${this.plugin.manifest.id}`,
+      'node:internal'
+    ];
+
     this.OriginalError = window.Error;
     this.patchErrorClasses();
 
@@ -150,7 +157,7 @@ export abstract class LongStackTracesHandler {
   protected adjustStackLines(lines: string[]): void {
     for (let i = lines.length - 1; i >= 0; i--) {
       const line = lines[i];
-      if (line?.includes(`plugin:${this.plugin.manifest.id}`) || line?.includes('node:internal')) {
+      if (line && this.internalStackFrameLocations.some((location) => line.includes(location))) {
         lines.splice(i, 1);
       }
     }
