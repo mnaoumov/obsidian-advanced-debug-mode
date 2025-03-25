@@ -1,6 +1,5 @@
 import type { ConditionalKeys } from 'type-fest';
 
-import { getStackTrace } from 'obsidian-dev-utils/Error';
 import {
   assignWithNonEnumerableProperties,
   normalizeOptionalProperties
@@ -374,9 +373,9 @@ export abstract class LongStackTracesHandler {
   }
 
   private wrapWithStackTraces(options: WrapWithStackTracesOptions): GenericFunction {
-    const parentStackTrace = getStackTrace();
+    const parentStackTrace = new Error().stack ?? '';
     const stackFrameGroup = {
-      stackFrames: parentStackTrace.split('\n'),
+      stackFrames: parentStackTrace.split('\n').slice(1),
       title: options.stackFrameGroupTitle
     };
 
