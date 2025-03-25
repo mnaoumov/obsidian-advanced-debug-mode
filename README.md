@@ -60,6 +60,41 @@ Uncaught Error: Error from qux
 >
 > Long stack traces for `async/await` functions work only on desktop and might contain some duplicates.
 
+```
+Uncaught Error: sync10
+    at sync10 (SamplePluginExtendedPlugin.ts:488:15)
+    at --- setTimeout --- (0)
+    at sync9 (SamplePluginExtendedPlugin.ts:484:9)
+    at sync8 (SamplePluginExtendedPlugin.ts:480:9)
+    at --- setTimeout --- (0)
+    at sync7 (SamplePluginExtendedPlugin.ts:476:9)
+    at async6 (SamplePluginExtendedPlugin.ts:472:9)
+    at async async5 (SamplePluginExtendedPlugin.ts:467:9)
+    at async async4 (SamplePluginExtendedPlugin.ts:462:9)
+    at --- async --- (0)
+    at async6 (SamplePluginExtendedPlugin.ts:471:15)
+    at async5 (SamplePluginExtendedPlugin.ts:467:15)
+    at async async4 (SamplePluginExtendedPlugin.ts:462:9)
+    at --- async --- (0)
+    at async5 (SamplePluginExtendedPlugin.ts:466:15)
+    at async4 (SamplePluginExtendedPlugin.ts:462:15)
+    at --- async --- (0)
+    at async4 (SamplePluginExtendedPlugin.ts:461:15)
+    at sync3 (SamplePluginExtendedPlugin.ts:457:9)
+    at --- setTimeout --- (0)
+    at sync2 (SamplePluginExtendedPlugin.ts:453:9)
+    at sync1 (SamplePluginExtendedPlugin.ts:449:9)
+    at Object.callback (SamplePluginExtendedPlugin.ts:447:7)
+    at pW (app.js:1:1967051)
+    at t.onChooseItem (app.js:1:2614262)
+    at t.onChooseSuggestion (app.js:1:1796358)
+    at t.selectSuggestion (app.js:1:1795828)
+    at e.useSelectedItem (app.js:1:1378470)
+    at Object.func (app.js:1:1375868)
+    at e.handleKey (app.js:1:773817)
+    at e.onKeyEvent (app.js:1:775073)
+```
+
 ### DevTools for mobile app
 
 The plugin adds DevTools for the mobile app. This helps to debug the plugins without connecting mobile to the desktop.
