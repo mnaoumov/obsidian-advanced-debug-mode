@@ -31,7 +31,7 @@ interface PatchOptions<Obj extends object> {
   methodName: ConditionalKeys<Obj, Function>;
   obj: Obj;
   shouldConvertStringToFunction?: boolean;
-  stackFrameGroup: StackFrameGroup;
+  stackFrameGroupTitle: string;
 }
 
 interface PatchWithLongStackTracesImplOptions {
@@ -41,7 +41,7 @@ interface PatchWithLongStackTracesImplOptions {
   originalFnArgs: unknown[];
   originalFnThisArg: unknown;
   shouldConvertStringToFunction?: boolean;
-  stackFrameGroup: StackFrameGroup;
+  stackFrameGroupTitle: string;
 }
 
 type RemoveEventListenerFn = EventTarget['removeEventListener'];
@@ -58,14 +58,13 @@ interface WrapWithStackTracesOptions {
   fn: GenericFunction;
   originalFnArgs: unknown[];
   originalFnThisArg: unknown;
-  stackFrameGroup: StackFrameGroup;
+  stackFrameGroupTitle: string;
 }
 
 const eventHandlersMap = new MultiWeakMap<[EventTarget, string, GenericFunction], GenericFunction>();
 
 interface StackFrameGroup {
-  previousStackFramesToSkip: number;
-  stackFrames?: string[];
+  stackFrames: string[];
   title: string;
 }
 
@@ -73,7 +72,6 @@ export abstract class LongStackTracesHandler {
   private OriginalError!: ErrorConstructor;
   private plugin!: AdvancedDebugModePlugin;
   private stackFramesGroups: StackFrameGroup[] = [];
-
   public registerLongStackTraces(plugin: AdvancedDebugModePlugin): void {
     this.plugin = plugin;
     this.OriginalError = window.Error;
@@ -98,10 +96,7 @@ export abstract class LongStackTracesHandler {
         methodName,
         obj: window,
         shouldConvertStringToFunction: methodNamesWithPossibleStringHandlers.includes(methodName),
-        stackFrameGroup: {
-          previousStackFramesToSkip: 0,
-          title: methodName
-        }
+        stackFrameGroupTitle: methodName
       });
     }
 
@@ -110,10 +105,7 @@ export abstract class LongStackTracesHandler {
       handlerArgIndex: 1,
       methodName: 'addEventListener',
       obj: EventTarget.prototype,
-      stackFrameGroup: {
-        previousStackFramesToSkip: 0,
-        title: 'addEventListener'
-      }
+      stackFrameGroupTitle: 'addEventListener'
     });
 
     const that = this;
@@ -134,46 +126,35 @@ export abstract class LongStackTracesHandler {
       handlerArgIndex: [0, 1],
       methodName: 'then',
       obj: Promise.prototype,
-      stackFrameGroup: {
-        previousStackFramesToSkip: 0,
-        title: 'Promise.then'
-      }
+      stackFrameGroupTitle: 'Promise.then'
     });
 
     this.patchWithLongStackTraces({
       handlerArgIndex: 0,
       methodName: 'catch',
       obj: Promise.prototype,
-      stackFrameGroup: {
-        previousStackFramesToSkip: 0,
-        title: 'Promise.catch'
-      }
+      stackFrameGroupTitle: 'Promise.catch'
     });
 
     this.patchWithLongStackTraces({
       handlerArgIndex: 0,
       methodName: 'finally',
       obj: Promise.prototype,
-      stackFrameGroup: {
-        previousStackFramesToSkip: 0,
-        title: 'Promise.finally'
-      }
+      stackFrameGroupTitle: 'Promise.finally'
     });
   }
 
   protected adjustStackLines(lines: string[]): void {
-    /**
-     * Skip stack frames
-     * - at LongStackTracesHandlerImpl2.wrapWithStackTracesImpl
-     * - at wrappedFn
-     */
-    const STACK_FRAMES_TO_SKIP = 2;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if (line?.includes(`plugin:${this.plugin.manifest.id}`) || line?.includes('node:internal')) {
+        lines.splice(i, 1);
+      }
+    }
 
     for (const stackFrameGroup of this.stackFramesGroups) {
-      const totalStackFramesToSkip = STACK_FRAMES_TO_SKIP + stackFrameGroup.previousStackFramesToSkip;
-      lines.splice(-totalStackFramesToSkip, totalStackFramesToSkip);
       lines.push(this.generateStackTraceLine(stackFrameGroup.title));
-      lines.push(...(stackFrameGroup.stackFrames ?? []));
+      lines.push(...stackFrameGroup.stackFrames);
     }
   }
 
@@ -190,7 +171,7 @@ export abstract class LongStackTracesHandler {
             next,
             originalFnArgs,
             originalFnThisArg: this,
-            stackFrameGroup: options.stackFrameGroup
+            stackFrameGroupTitle: options.stackFrameGroupTitle
           }));
         };
       }
@@ -325,7 +306,7 @@ export abstract class LongStackTracesHandler {
         fn,
         originalFnArgs: options.originalFnArgs,
         originalFnThisArg: options.originalFnThisArg,
-        stackFrameGroup: options.stackFrameGroup
+        stackFrameGroupTitle: options.stackFrameGroupTitle
       }));
 
       argsWithWrappedHandler[handlerArgIndex] = wrappedHandler;
@@ -358,17 +339,9 @@ export abstract class LongStackTracesHandler {
   }
 
   private wrapWithStackTraces(options: WrapWithStackTracesOptions): GenericFunction {
-    /**
-     * Skip stack frames
-     * - at LongStackTracesHandlerImpl2.wrapWithStackTraces
-     * - at LongStackTracesHandlerImpl2.patchWithLongStackTracesImpl
-     * - at patchedFn
-     * - at wrapper (from monkey-around)
-     */
-    const PARENT_STACK_SKIP_FRAMES = 4;
-    const parentStackTrace = getStackTrace(PARENT_STACK_SKIP_FRAMES);
+    const parentStackTrace = getStackTrace();
     const stackFrameGroup = {
-      ...options.stackFrameGroup,
+      title: options.stackFrameGroupTitle,
       stackFrames: parentStackTrace.split('\n')
     };
 

@@ -12,20 +12,14 @@ class LongStackTracesHandlerImpl extends LongStackTracesHandler {
       handlerArgIndex: 0,
       methodName: 'setImmediate',
       obj: window,
-      stackFrameGroup: {
-        previousStackFramesToSkip: 1,
-        title: 'setImmediate'
-      }
+      stackFrameGroupTitle: 'setImmediate'
     });
 
     this.patchWithLongStackTraces({
       handlerArgIndex: 0,
       methodName: 'nextTick',
       obj: process,
-      stackFrameGroup: {
-        previousStackFramesToSkip: 1,
-        title: 'process.nextTick'
-      }
+      stackFrameGroupTitle: 'process.nextTick'
     });
   }
 }
