@@ -70,9 +70,9 @@ interface StackFrameGroup {
 }
 
 export abstract class LongStackTracesHandler {
+  protected plugin!: AdvancedDebugModePlugin;
   private internalStackFrameLocations: string[] = [];
   private OriginalError!: ErrorConstructor;
-  private plugin!: AdvancedDebugModePlugin;
   private stackFramesGroups: StackFrameGroup[] = [];
 
   public registerLongStackTraces(plugin: AdvancedDebugModePlugin): void {
@@ -168,6 +168,10 @@ export abstract class LongStackTracesHandler {
     }
   }
 
+  protected generateStackTraceLine(title: string): string {
+    return `    at --- ${title} --- (0)`;
+  }
+
   protected patchWithLongStackTraces<Obj extends object>(options: PatchOptions<Obj>): void {
     const genericObj = options.obj as Record<string, GenericFunction>;
 
@@ -202,10 +206,6 @@ export abstract class LongStackTracesHandler {
       eventTarget.removeEventListener(type, previousWrappedHandler);
     }
     eventHandlersMap.set(keys, options.wrappedFn);
-  }
-
-  private generateStackTraceLine(title: string): string {
-    return `    at --- ${title} --- (0)`;
   }
 
   private getChildErrorClassNames(): string[] {
