@@ -14,7 +14,9 @@ Error stack traces are usually very limited and stack frames for function like `
 
 The plugin tries to preserve long stack traces as much as possible.
 
-For example,
+For example
+
+![Long stack traces](images/long-stack-traces.png)
 
 ```js
 function foo() {
@@ -72,7 +74,9 @@ async function foo() {
 >
 > Async long stack traces might contain some duplicates.
 
-For example,
+For example
+
+![Async long stack traces](images/async-long-stack-traces.png)
 
 ```js
 function foo1() {
