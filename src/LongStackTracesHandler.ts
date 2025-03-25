@@ -244,8 +244,17 @@ export abstract class LongStackTracesHandler {
 
     PatchedError.prototype = this.OriginalError.prototype;
     Object.setPrototypeOf(PatchedError, this.OriginalError);
+    assignWithNonEnumerableProperties(PatchedError, this.OriginalError);
+    Object.defineProperty(PatchedError, 'stackTraceLimit', {
+      configurable: true,
+      enumerable: true,
+      get: () => this.OriginalError.stackTraceLimit,
+      set: (value: number) => {
+        this.OriginalError.stackTraceLimit = value;
+      }
+    });
 
-    window.Error = assignWithNonEnumerableProperties(PatchedError, this.OriginalError);
+    window.Error = PatchedError as ErrorConstructor;
 
     this.register(() => {
       window.Error = this.OriginalError;
