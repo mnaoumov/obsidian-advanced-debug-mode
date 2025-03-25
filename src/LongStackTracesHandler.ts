@@ -12,7 +12,6 @@ import { MultiWeakMap } from './MultiWeakMap.ts';
 
 export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction };
 
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 type AfterPatchFn = (this: void, options: AfterPatchOptions) => void;
 
 interface AfterPatchOptions {
