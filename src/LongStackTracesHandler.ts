@@ -235,6 +235,7 @@ export abstract class LongStackTracesHandler {
       }
 
       const error = Reflect.construct(that.OriginalError, [message, errorOptions], (new.target as unknown ?? window.Error) as unknown as GenericConstructor);
+      error.name = 'Error';
       const lines = error.stack?.split('\n') ?? [];
       that.adjustStackLines(lines);
       error.stack = lines.join('\n');
