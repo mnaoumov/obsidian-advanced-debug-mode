@@ -13,6 +13,9 @@ import { MultiWeakMap } from './MultiWeakMap.ts';
 
 export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction };
 
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+type AfterPatchFn = (this: void, options: AfterPatchOptions) => void;
+
 interface AfterPatchOptions {
   fn: GenericFunction;
   originalFnArgs: unknown[];
@@ -23,7 +26,7 @@ interface AfterPatchOptions {
 type GenericConstructor = new (...args: unknown[]) => unknown;
 
 interface PatchOptions<Obj extends object> {
-  afterPatch?(options: AfterPatchOptions): void;
+  afterPatch?: AfterPatchFn;
   handlerArgIndex: number | number[];
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   methodName: ConditionalKeys<Obj, Function>;
@@ -33,7 +36,7 @@ interface PatchOptions<Obj extends object> {
 }
 
 interface PatchWithLongStackTracesImplOptions {
-  afterPatch?(options: AfterPatchOptions): void;
+  afterPatch?: AfterPatchFn;
   handlerArgIndex: number | number[];
   next: GenericFunction;
   originalFnArgs: unknown[];
@@ -54,7 +57,7 @@ interface WrapWithStackTracesImplOptions {
 }
 
 interface WrapWithStackTracesOptions {
-  afterPatch?(options: AfterPatchOptions): void;
+  afterPatch?: AfterPatchFn;
   fn: GenericFunction;
   originalFnArgs: unknown[];
   originalFnThisArg: unknown;
@@ -165,14 +168,14 @@ export abstract class LongStackTracesHandler {
     registerPatch(this.plugin, genericObj, {
       [options.methodName]: (next: GenericFunction): GenericFunction => {
         return function patchedFn(this: unknown, ...originalFnArgs: unknown[]): unknown {
-          return that.patchWithLongStackTracesImpl({
-            afterPatch: (afterPatchOptions) => options.afterPatch?.(afterPatchOptions),
+          return that.patchWithLongStackTracesImpl(normalizeOptionalProperties<PatchWithLongStackTracesImplOptions>({
+            afterPatch: options.afterPatch,
             handlerArgIndex: options.handlerArgIndex,
             next,
             originalFnArgs,
             originalFnThisArg: this,
             stackFrameGroupTitle: options.stackFrameGroupTitle
-          });
+          }));
         };
       }
     });
@@ -222,7 +225,7 @@ export abstract class LongStackTracesHandler {
         return new window.Error(message, errorOptions);
       }
 
-      const error = Reflect.construct(that.OriginalError, [message, errorOptions], (new.target ?? window.Error) as unknown as GenericConstructor);
+      const error = Reflect.construct(that.OriginalError, [message, errorOptions], (new.target as unknown ?? window.Error) as unknown as GenericConstructor);
       const lines = error.stack?.split('\n') ?? [];
       that.adjustStackLines(lines);
       error.stack = lines.join('\n');
@@ -269,7 +272,7 @@ export abstract class LongStackTracesHandler {
           return new (PatchedChildErrorWrapper as unknown as GenericConstructor)(...args);
         }
 
-        const error = Reflect.construct(PatchedBaseError, args, (new.target ?? PatchedChildErrorWrapper) as unknown as GenericConstructor) as Error;
+        const error = Reflect.construct(PatchedBaseError, args, (new.target as unknown ?? PatchedChildErrorWrapper) as unknown as GenericConstructor) as Error;
         error.name = childErrorClassName;
         return error;
       };
