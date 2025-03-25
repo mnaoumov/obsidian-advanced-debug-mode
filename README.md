@@ -58,7 +58,7 @@ Uncaught Error: Error from qux
 
 > [!WARNING]
 >
-> The plugin does not provide long stack traces for `async/await` functions. It seems to be impossible to do accurately due to the JavaScript engine limitations.
+> Long stack traces for `async/await` functions work only on desktop and might contain some duplicates.
 
 ### DevTools for mobile app
 
