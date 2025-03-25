@@ -22,6 +22,8 @@ interface AfterPatchOptions {
 
 type GenericConstructor = new (...args: unknown[]) => unknown;
 
+type WindowWithErrorConstructors = typeof window & Record<string, GenericConstructor>;
+
 interface PatchOptions<Obj extends object> {
   afterPatch?(options: AfterPatchOptions): void;
   handlerArgIndex: number | number[];
@@ -217,10 +219,10 @@ export abstract class LongStackTracesHandler {
 
   private getChildErrorClassNames(): string[] {
     const errorClassNames: string[] = [];
-    const windowRecord = window as unknown as Record<string, unknown>;
-    for (const key of Object.getOwnPropertyNames(windowRecord)) {
+    const windowWithErrorConstructors = window as WindowWithErrorConstructors;
+    for (const key of Object.getOwnPropertyNames(windowWithErrorConstructors)) {
       try {
-        const value = windowRecord[key];
+        const value = windowWithErrorConstructors[key];
         if (typeof value === 'function' && Object.prototype.isPrototypeOf.call(this.OriginalError.prototype, value.prototype)) {
           errorClassNames.push(key);
         }
@@ -249,9 +251,8 @@ export abstract class LongStackTracesHandler {
     PatchedError.prototype = this.OriginalError.prototype;
     Object.setPrototypeOf(PatchedError, this.OriginalError);
 
-    window.Error = assignWithNonEnumerableProperties(PatchedError, this.OriginalError);
-    this.register(() => {
-      window.Error = this.OriginalError;
+    registerPatch(this.plugin, window as WindowWithErrorConstructors, {
+      ['Error']: () => assignWithNonEnumerableProperties(PatchedError, this.OriginalError) as GenericConstructor
     });
   }
 
@@ -261,11 +262,15 @@ export abstract class LongStackTracesHandler {
     const originalPrototypeToPatchedClassMap = new Map<unknown, unknown>();
     originalPrototypeToPatchedClassMap.set(this.OriginalError.prototype, window.Error);
 
-    const windowRecord = window as unknown as Record<string, unknown>;
+    const windowWithErrorConstructors = window as WindowWithErrorConstructors;
     const childErrorClassNames = this.getChildErrorClassNames();
 
     for (const childErrorClassName of childErrorClassNames.slice()) {
-      const OriginalChildError = windowRecord[childErrorClassName] as GenericConstructor;
+      const OriginalChildError = windowWithErrorConstructors[childErrorClassName];
+      if (!OriginalChildError) {
+        continue;
+      }
+
       const baseClassPrototype = Object.getPrototypeOf(OriginalChildError.prototype as object);
       const PatchedBaseError = originalPrototypeToPatchedClassMap.get(baseClassPrototype) as GenericConstructor | undefined;
       if (!PatchedBaseError) {
@@ -287,11 +292,10 @@ export abstract class LongStackTracesHandler {
       PatchedChildError.prototype.constructor = PatchedChildError;
       Object.setPrototypeOf(PatchedChildError, OriginalChildError);
 
-      windowRecord[childErrorClassName] = assignWithNonEnumerableProperties(PatchedChildError, OriginalChildError);
       originalPrototypeToPatchedClassMap.set(OriginalChildError.prototype, PatchedChildError);
 
-      this.register(() => {
-        windowRecord[childErrorClassName] = OriginalChildError;
+      registerPatch(this.plugin, window as WindowWithErrorConstructors, {
+        [childErrorClassName]: () => assignWithNonEnumerableProperties(PatchedChildError, OriginalChildError)
       });
     }
   }
