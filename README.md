@@ -56,43 +56,99 @@ Uncaught Error: Error from qux
     at <anonymous>:1:1
 ```
 
+#### Async long stack traces
+
+Async long stack traces are the traces for async functions.
+
+```js
+async function foo() {
+  await bar();
+}
+```
+
 > [!WARNING]
 >
-> Long stack traces for `async/await` functions work only on desktop and might contain some duplicates.
+> The plugin adds async long stack traces only on desktop. Adding it to mobile is impossible due to the current JavaScript Engine limitations.
+>
+> Async long stack traces might contain some duplicates.
+
+For example,
+
+```js
+function foo1() {
+  foo2();
+}
+
+function foo2() {
+  setTimeout(foo3, 100);
+}
+
+function foo3() {
+  // calling async from sync
+  barAsync1();
+}
+
+async function barAsync1() {
+  await sleep(100);
+  await barAsync2();
+}
+
+async function barAsync2() {
+  await sleep(100);
+  await barAsync3();
+}
+
+async function barAsync3() {
+  await sleep(100);
+  // calling sync from async
+  foo4();
+}
+
+function foo4() {
+  foo5();
+}
+
+function foo5() {
+  throw new Error('Error from foo5');
+}
+
+foo1();
+```
+
+Without the plugin you get the error in the console
 
 ```
-Uncaught Error: sync10
-    at sync10 (SamplePluginExtendedPlugin.ts:488:15)
-    at --- setTimeout --- (0)
-    at sync9 (SamplePluginExtendedPlugin.ts:484:9)
-    at sync8 (SamplePluginExtendedPlugin.ts:480:9)
-    at --- setTimeout --- (0)
-    at sync7 (SamplePluginExtendedPlugin.ts:476:9)
-    at async6 (SamplePluginExtendedPlugin.ts:472:9)
-    at async async5 (SamplePluginExtendedPlugin.ts:467:9)
-    at async async4 (SamplePluginExtendedPlugin.ts:462:9)
+Uncaught (in promise) Error: Error from foo5
+    at foo5 (<anonymous>:35:9)
+    at foo4 (<anonymous>:31:3)
+    at barAsync3 (<anonymous>:27:3)
+    at async barAsync2 (<anonymous>:21:3)
+    at async barAsync1 (<anonymous>:16:3)
+```
+
+With the plugin you get
+
+```
+Uncaught (in promise) Error: Error from foo5
+    at foo5 (<anonymous>:35:9)
+    at foo4 (<anonymous>:31:3)
+    at barAsync3 (<anonymous>:27:3)
+    at async barAsync2 (<anonymous>:21:3)
+    at async barAsync1 (<anonymous>:16:3)
     at --- async --- (0)
-    at async6 (SamplePluginExtendedPlugin.ts:471:15)
-    at async5 (SamplePluginExtendedPlugin.ts:467:15)
-    at async async4 (SamplePluginExtendedPlugin.ts:462:9)
+    at barAsync3 (<anonymous>:25:9)
+    at barAsync2 (<anonymous>:21:9)
+    at async barAsync1 (<anonymous>:16:3)
     at --- async --- (0)
-    at async5 (SamplePluginExtendedPlugin.ts:466:15)
-    at async4 (SamplePluginExtendedPlugin.ts:462:15)
+    at barAsync2 (<anonymous>:20:9)
+    at barAsync1 (<anonymous>:16:9)
     at --- async --- (0)
-    at async4 (SamplePluginExtendedPlugin.ts:461:15)
-    at sync3 (SamplePluginExtendedPlugin.ts:457:9)
+    at barAsync1 (<anonymous>:15:9)
+    at foo3 (<anonymous>:11:3)
     at --- setTimeout --- (0)
-    at sync2 (SamplePluginExtendedPlugin.ts:453:9)
-    at sync1 (SamplePluginExtendedPlugin.ts:449:9)
-    at Object.callback (SamplePluginExtendedPlugin.ts:447:7)
-    at pW (app.js:1:1967051)
-    at t.onChooseItem (app.js:1:2614262)
-    at t.onChooseSuggestion (app.js:1:1796358)
-    at t.selectSuggestion (app.js:1:1795828)
-    at e.useSelectedItem (app.js:1:1378470)
-    at Object.func (app.js:1:1375868)
-    at e.handleKey (app.js:1:773817)
-    at e.onKeyEvent (app.js:1:775073)
+    at foo2 (<anonymous>:6:3)
+    at foo1 (<anonymous>:2:3)
+    at <anonymous>:38:1
 ```
 
 ### DevTools for mobile app
