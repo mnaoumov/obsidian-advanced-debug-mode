@@ -11,18 +11,20 @@ import { getPlatformDependencies } from './PlatformDependencies.ts';
 
 export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginSettings> {
   private longRunningTasksComponent!: LongRunningTasksComponent;
-  private longStackTracesHandler!: LongStackTracesComponent;
+  private longStackTracesComponent!: LongStackTracesComponent;
 
   public isDebugMode(): boolean {
     return this.app.loadLocalStorage('DebugMode') === '1';
   }
 
   public reloadLongRunningTasksComponent(): void {
-    this.longRunningTasksComponent.reload();
+    this.longRunningTasksComponent.unload();
+    this.longRunningTasksComponent.load();
   }
 
   public reloadLongStackTracesHandler(): void {
-    this.longStackTracesHandler.reload();
+    this.longStackTracesComponent.unload();
+    this.longStackTracesComponent.load();
   }
 
   public toggleDebugMode(isEnabled: boolean): void {
@@ -39,8 +41,8 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
 
   protected override async onloadComplete(): Promise<void> {
     const platformDependencies = await getPlatformDependencies();
-    this.longStackTracesHandler = new platformDependencies.LongStackTracesComponentConstructor(this);
-    this.addChild(this.longStackTracesHandler);
+    this.longStackTracesComponent = new platformDependencies.LongStackTracesComponentConstructor(this);
+    this.addChild(this.longStackTracesComponent);
     this.addChild(new LongRunningTasksComponent(this));
     this.addChild(new DevToolsComponent(this));
   }

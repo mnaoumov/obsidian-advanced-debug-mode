@@ -3,13 +3,13 @@ import {
   createHook,
   executionAsyncId
 } from 'node:async_hooks';
+import { Component } from 'obsidian';
 
 import type { AdvancedDebugModePlugin } from '../AdvancedDebugModePlugin.ts';
 
-import { ComponentBase } from '../Components/ComponentBase.ts';
 import { generateStackTraceLine } from '../Components/LongStackTracesComponent.ts';
 
-export class AsyncLongStackTracesComponent extends ComponentBase {
+export class AsyncLongStackTracesComponent extends Component {
   private asyncIdStackLinesMap = new Map<number, string[]>();
 
   public constructor(private plugin: AdvancedDebugModePlugin) {
@@ -37,7 +37,9 @@ export class AsyncLongStackTracesComponent extends ComponentBase {
   }
 
   public override onload(): void {
-    super.onload();
+    if (!this.isEnabled()) {
+      return;
+    }
 
     const asyncHook = createHook({
       destroy: this.asyncHookDestroy.bind(this),
@@ -47,10 +49,6 @@ export class AsyncLongStackTracesComponent extends ComponentBase {
     asyncHook.enable();
 
     this.register(() => asyncHook.disable());
-  }
-
-  protected override isEnabled(): boolean {
-    return this.plugin.settings.shouldIncludeAsyncLongStackTraces;
   }
 
   private asyncHookDestroy(asyncId: number): void {
@@ -72,5 +70,9 @@ export class AsyncLongStackTracesComponent extends ComponentBase {
     } else {
       this.asyncIdStackLinesMap.set(asyncId, stackLines);
     }
+  }
+
+  private isEnabled(): boolean {
+    return this.plugin.settings.shouldIncludeAsyncLongStackTraces;
   }
 }

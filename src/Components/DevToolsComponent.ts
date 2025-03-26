@@ -1,18 +1,22 @@
-import { Platform } from 'obsidian';
+import {
+  Component,
+  Platform
+} from 'obsidian';
 import { convertAsyncToSync } from 'obsidian-dev-utils/Async';
 
 import type { AdvancedDebugModePlugin } from '../AdvancedDebugModePlugin.ts';
 
 import { DevToolsView } from '../Views/DevToolsView.ts';
-import { ComponentBase } from './ComponentBase.ts';
 
-export class DevToolsComponent extends ComponentBase {
+export class DevToolsComponent extends Component {
   public constructor(private plugin: AdvancedDebugModePlugin) {
     super();
   }
 
   public override onload(): void {
-    super.onload();
+    if (!this.isEnabled()) {
+      return;
+    }
 
     this.plugin.registerView(DevToolsView.VIEW_TYPE, (leaf) => {
       return new DevToolsView(leaf);
@@ -25,7 +29,7 @@ export class DevToolsComponent extends ComponentBase {
     });
   }
 
-  protected override isEnabled(): boolean {
+  private isEnabled(): boolean {
     return Platform.isMobile;
   }
 

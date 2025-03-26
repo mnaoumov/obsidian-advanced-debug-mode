@@ -1,5 +1,6 @@
 import type { ConditionalKeys } from 'type-fest';
 
+import { Component } from 'obsidian';
 import {
   assignWithNonEnumerableProperties,
   normalizeOptionalProperties
@@ -9,7 +10,6 @@ import type { AdvancedDebugModePlugin } from '../AdvancedDebugModePlugin.ts';
 
 import { registerPatch } from '../MonkeyAround.ts';
 import { MultiWeakMap } from '../MultiWeakMap.ts';
-import { ComponentBase } from './ComponentBase.ts';
 
 export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction };
 
@@ -70,7 +70,7 @@ interface StackFrameGroup {
   title: string;
 }
 
-export abstract class LongStackTracesComponent extends ComponentBase {
+export abstract class LongStackTracesComponent extends Component {
   private internalStackFrameLocations: string[] = [];
   private OriginalError!: ErrorConstructor;
   private stackFramesGroups: StackFrameGroup[] = [];
@@ -80,7 +80,9 @@ export abstract class LongStackTracesComponent extends ComponentBase {
   }
 
   public override onload(): void {
-    super.onload();
+    if (!this.isEnabled()) {
+      return;
+    }
 
     this.internalStackFrameLocations = [
       `plugin:${this.plugin.manifest.id}`,
@@ -173,7 +175,7 @@ export abstract class LongStackTracesComponent extends ComponentBase {
     }
   }
 
-  protected override isEnabled(): boolean {
+  protected isEnabled(): boolean {
     return this.plugin.settings.shouldIncludeLongStackTraces;
   }
 

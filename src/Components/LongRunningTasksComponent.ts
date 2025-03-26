@@ -1,6 +1,7 @@
 import type { FileSystemAdapter } from 'obsidian';
 
 import {
+  Component,
   debounce,
   Platform
 } from 'obsidian';
@@ -8,17 +9,18 @@ import {
 import type { AdvancedDebugModePlugin } from '../AdvancedDebugModePlugin.ts';
 
 import { registerPatch } from '../MonkeyAround.ts';
-import { ComponentBase } from './ComponentBase.ts';
 
 const THINGS_HAPPENING_DEBOUNCE_TIMEOUT_IN_MS = 60_000;
 
-export class LongRunningTasksComponent extends ComponentBase {
+export class LongRunningTasksComponent extends Component {
   public constructor(private plugin: AdvancedDebugModePlugin) {
     super();
   }
 
   public override onload(): void {
-    super.onload();
+    if (!this.isEnabled()) {
+      return;
+    }
 
     const fileSystemAdapter = this.plugin.app.vault.adapter as FileSystemAdapter;
 
@@ -29,7 +31,7 @@ export class LongRunningTasksComponent extends ComponentBase {
     });
   }
 
-  protected override isEnabled(): boolean {
+  private isEnabled(): boolean {
     return !this.plugin.settings.shouldTimeoutLongRunningTasks && Platform.isDesktop;
   }
 
