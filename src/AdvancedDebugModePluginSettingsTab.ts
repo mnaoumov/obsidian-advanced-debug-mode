@@ -138,7 +138,7 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
       .addToggle((toggle) => {
         const NAMESPACE = '*:obsidian-dev-utils:Async:runWithTimeout:timeout';
         const timeoutDebugger = getDebugger(NAMESPACE);
-        toggle.setValue(timeoutDebugger.enabled);
+        toggle.setValue(!timeoutDebugger.enabled);
         toggle.onChange((value) => {
           if (value) {
             debugController.disable(NAMESPACE);
