@@ -1,5 +1,8 @@
 import { Setting } from 'obsidian';
-import { getDebugController } from 'obsidian-dev-utils/Debug';
+import {
+  getDebugController,
+  getDebugger
+} from 'obsidian-dev-utils/Debug';
 import { appendCodeBlock } from 'obsidian-dev-utils/HTMLElement';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
 
@@ -106,12 +109,43 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
         f.appendText('.');
         f.createEl('br');
         f.appendText('If enabled, long running tasks will be killed after 60 seconds (default Obsidian behavior).');
+        f.createEl('br');
+        f.appendText(
+          'If disabled, long running tasks will not be killed. It is useful when some tasks fail due to timeout while you are staying on the breakpoint.'
+        );
       }))
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldTimeoutLongRunningTasks', {
           onChanged: () => {
             this.plugin.reloadLongRunningTasksComponent();
           }
+        });
+      });
+
+    new Setting(this.containerEl)
+      .setName('Obsidian Dev Utils: Timeout long running tasks')
+      .setDesc(createFragment((f) => {
+        f.appendText('Whether to timeout long running tasks withing Obsidian Dev Utils library.');
+        f.createEl('br');
+        f.appendText('Some plugins use functionality from that library that have some default timeouts.');
+        f.createEl('br');
+        f.appendText('If enabled, long running tasks will be killed after predefined timeouts (default Obsidian Dev Utils library behavior).');
+        f.createEl('br');
+        f.appendText(
+          'If disabled, long running tasks will not be killed. It is useful when some tasks fail due to timeout while you are staying on the breakpoint.'
+        );
+      }))
+      .addToggle((toggle) => {
+        const NAMESPACE = '*:obsidian-dev-utils:Async:runWithTimeout:timeout';
+        const timeoutDebugger = getDebugger(NAMESPACE);
+        toggle.setValue(timeoutDebugger.enabled);
+        toggle.onChange((value) => {
+          if (value) {
+            debugController.enable(NAMESPACE);
+          } else {
+            debugController.disable(NAMESPACE);
+          }
+          this.display();
         });
       });
   }
