@@ -5,12 +5,12 @@ import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { AdvancedDebugModePluginSettings } from './AdvancedDebugModePluginSettings.ts';
 import { AdvancedDebugModePluginSettingsTab } from './AdvancedDebugModePluginSettingsTab.ts';
 import { LongRunningTasksComponent } from './Components/LongRunningTasksComponent.ts';
-import { LongStackTracesHandler } from './LongStackTracesHandler.ts';
+import { LongStackTracesComponent } from './Components/LongStackTracesComponent.ts';
 import { getPlatformDependencies } from './PlatformDependencies.ts';
 
 export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginSettings> {
   private longRunningTasksComponent!: LongRunningTasksComponent;
-  private longStackTracesHandler!: LongStackTracesHandler;
+  private longStackTracesHandler!: LongStackTracesComponent;
 
   public isDebugMode(): boolean {
     return this.app.loadLocalStorage('DebugMode') === '1';
@@ -38,7 +38,7 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
 
   protected override async onloadComplete(): Promise<void> {
     const platformDependencies = await getPlatformDependencies();
-    this.longStackTracesHandler = new platformDependencies.LongStackTracesHandlerClass(this);
+    this.longStackTracesHandler = new platformDependencies.LongStackTracesComponentConstructor(this);
     this.addChild(this.longStackTracesHandler);
     this.addChild(new LongRunningTasksComponent(this));
     platformDependencies.devTools.registerDevTools(this);

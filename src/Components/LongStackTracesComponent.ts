@@ -5,11 +5,11 @@ import {
   normalizeOptionalProperties
 } from 'obsidian-dev-utils/Object';
 
-import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
+import type { AdvancedDebugModePlugin } from '../AdvancedDebugModePlugin.ts';
 
-import { ComponentBase } from './Components/ComponentBase.ts';
-import { registerPatch } from './MonkeyAround.ts';
-import { MultiWeakMap } from './MultiWeakMap.ts';
+import { registerPatch } from '../MonkeyAround.ts';
+import { MultiWeakMap } from '../MultiWeakMap.ts';
+import { ComponentBase } from './ComponentBase.ts';
 
 export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction };
 
@@ -70,7 +70,7 @@ interface StackFrameGroup {
   title: string;
 }
 
-export abstract class LongStackTracesHandler extends ComponentBase {
+export abstract class LongStackTracesComponent extends ComponentBase {
   private internalStackFrameLocations: string[] = [];
   private OriginalError!: ErrorConstructor;
   private stackFramesGroups: StackFrameGroup[] = [];
@@ -80,9 +80,7 @@ export abstract class LongStackTracesHandler extends ComponentBase {
   }
 
   public override onload(): void {
-    if (!this.isEnabled()) {
-      return;
-    }
+    super.onload();
 
     this.internalStackFrameLocations = [
       `plugin:${this.plugin.manifest.id}`,
@@ -175,7 +173,7 @@ export abstract class LongStackTracesHandler extends ComponentBase {
     }
   }
 
-  protected isEnabled(): boolean {
+  protected override isEnabled(): boolean {
     return this.plugin.settings.shouldIncludeLongStackTraces;
   }
 
