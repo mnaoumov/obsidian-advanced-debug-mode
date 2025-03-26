@@ -14,8 +14,6 @@ Error stack traces are usually very limited and stack frames for function like `
 
 The plugin tries to preserve long stack traces as much as possible.
 
-For example
-
 ![Long stack traces](images/long-stack-traces.png)
 
 ```js
@@ -73,8 +71,8 @@ async function foo() {
 > The plugin adds async long stack traces only on desktop. Adding it to mobile is impossible due to the current JavaScript Engine limitations.
 >
 > Async long stack traces might contain some duplicates.
-
-For example
+>
+> When async long stack traces are enabled, the autocompletion in DevTools console stops working. It seems to be a bug in Electron.
 
 ![Async long stack traces](images/async-long-stack-traces.png)
 
