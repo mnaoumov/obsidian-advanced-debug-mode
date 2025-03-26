@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.2.1
+
+- Fix typo
+
 ## 1.2.0
 
 - Long running tasks settings
