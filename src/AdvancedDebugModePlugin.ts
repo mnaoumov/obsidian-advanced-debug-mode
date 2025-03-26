@@ -4,6 +4,7 @@ import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
 import { AdvancedDebugModePluginSettings } from './AdvancedDebugModePluginSettings.ts';
 import { AdvancedDebugModePluginSettingsTab } from './AdvancedDebugModePluginSettingsTab.ts';
+import { DevToolsComponent } from './Components/DevToolsComponent.ts';
 import { LongRunningTasksComponent } from './Components/LongRunningTasksComponent.ts';
 import { LongStackTracesComponent } from './Components/LongStackTracesComponent.ts';
 import { getPlatformDependencies } from './PlatformDependencies.ts';
@@ -41,6 +42,6 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
     this.longStackTracesHandler = new platformDependencies.LongStackTracesComponentConstructor(this);
     this.addChild(this.longStackTracesHandler);
     this.addChild(new LongRunningTasksComponent(this));
-    platformDependencies.devTools.registerDevTools(this);
+    this.addChild(new DevToolsComponent(this));
   }
 }

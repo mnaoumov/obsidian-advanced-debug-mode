@@ -4,10 +4,8 @@ import { Platform } from 'obsidian';
 
 import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
 import type { LongStackTracesComponent } from './Components/LongStackTracesComponent.ts';
-import type { DevTools } from './DevTools.ts';
 
 export interface PlatformDependencies {
-  devTools: DevTools;
   LongStackTracesComponentConstructor: Constructor<LongStackTracesComponent, [AdvancedDebugModePlugin]>;
 }
 
