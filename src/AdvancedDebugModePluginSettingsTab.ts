@@ -141,9 +141,9 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
         toggle.setValue(timeoutDebugger.enabled);
         toggle.onChange((value) => {
           if (value) {
-            debugController.enable(NAMESPACE);
-          } else {
             debugController.disable(NAMESPACE);
+          } else {
+            debugController.enable(NAMESPACE);
           }
           this.display();
         });
