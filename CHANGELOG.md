@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.2.0
+
+- Long running tasks settings
+- Add toggle for the Obsidian debug mode
+- Allow disable long stacks
+
 ## 1.1.0
 
 - Add support for async traces
