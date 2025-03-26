@@ -24,7 +24,7 @@ export class LongRunningTasksComponent extends ComponentBase {
 
     registerPatch(this, fileSystemAdapter, {
       thingsHappening: () => {
-        return debounce(this.notifyNoTimeout, THINGS_HAPPENING_DEBOUNCE_TIMEOUT_IN_MS);
+        return debounce(this.notifyNoTimeout.bind(this), THINGS_HAPPENING_DEBOUNCE_TIMEOUT_IN_MS);
       }
     });
   }
@@ -34,6 +34,8 @@ export class LongRunningTasksComponent extends ComponentBase {
   }
 
   private notifyNoTimeout(): void {
-    console.warn('Obsidian default behavior to timeout long running tasks after 60 seconds is currently disabled by the "Advanced Debug Mode" plugin. You can enable it back in the settings.');
+    console.warn(
+      'Obsidian default behavior to timeout long running tasks after 60 seconds is currently disabled by the "Advanced Debug Mode" plugin. You can enable it back in the settings.'
+    );
   }
 }
