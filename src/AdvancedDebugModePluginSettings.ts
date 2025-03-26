@@ -4,6 +4,7 @@ export class AdvancedDebugModePluginSettings extends PluginSettingsBase {
   public shouldIncludeAsyncLongStackTraces = false;
   public shouldIncludeInternalStackFrames = false;
   public shouldIncludeLongStackTraces = true;
+  public shouldTimeoutLongRunningTasks = true;
 
   public constructor(data: unknown) {
     super();

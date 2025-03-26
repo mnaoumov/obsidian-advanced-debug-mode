@@ -1,6 +1,5 @@
 import type { ConditionalKeys } from 'type-fest';
 
-import { Component } from 'obsidian';
 import {
   assignWithNonEnumerableProperties,
   normalizeOptionalProperties
@@ -8,6 +7,7 @@ import {
 
 import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
 
+import { ComponentBase } from './Components/ComponentBase.ts';
 import { registerPatch } from './MonkeyAround.ts';
 import { MultiWeakMap } from './MultiWeakMap.ts';
 
@@ -70,7 +70,7 @@ interface StackFrameGroup {
   title: string;
 }
 
-export abstract class LongStackTracesHandler extends Component {
+export abstract class LongStackTracesHandler extends ComponentBase {
   private internalStackFrameLocations: string[] = [];
   private OriginalError!: ErrorConstructor;
   private stackFramesGroups: StackFrameGroup[] = [];

@@ -97,5 +97,22 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
         this.bind(toggle, 'shouldIncludeInternalStackFrames')
           .setDisabled(!this.plugin.settings.shouldIncludeLongStackTraces);
       });
+
+    new Setting(this.containerEl)
+      .setName('Desktop: Timeout long running tasks')
+      .setDesc(createFragment((f) => {
+        f.appendText('Whether to timeout long running tasks ');
+        f.createEl('strong', { text: '(Desktop only)' });
+        f.appendText('.');
+        f.createEl('br');
+        f.appendText('If enabled, long running tasks will be killed after 60 seconds (default Obsidian behavior).');
+      }))
+      .addToggle((toggle) => {
+        this.bind(toggle, 'shouldTimeoutLongRunningTasks', {
+          onChanged: () => {
+            this.plugin.reloadLongRunningTasksComponent();
+          }
+        });
+      });
   }
 }
