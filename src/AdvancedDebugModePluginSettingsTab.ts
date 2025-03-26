@@ -125,7 +125,7 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
     new Setting(this.containerEl)
       .setName('Obsidian Dev Utils: Timeout long running tasks')
       .setDesc(createFragment((f) => {
-        f.appendText('Whether to timeout long running tasks withing Obsidian Dev Utils library.');
+        f.appendText('Whether to timeout long running tasks within Obsidian Dev Utils library.');
         f.createEl('br');
         f.appendText('Some plugins use functionality from that library that have some default timeouts.');
         f.createEl('br');
