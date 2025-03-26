@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.2.5
+
+- Ensure disabled components are not loaded
+
 ## 1.2.4
 
 - Invert timeout setting logic
