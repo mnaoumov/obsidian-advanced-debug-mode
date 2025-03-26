@@ -160,7 +160,7 @@ export abstract class LongStackTracesHandler extends Component {
   }
 
   protected adjustStackLines(lines: string[]): void {
-    if (!this.plugin.settings.shouldShowInternalStackFrames) {
+    if (!this.plugin.settings.shouldIncludeInternalStackFrames) {
       for (let i = lines.length - 1; i >= 0; i--) {
         const line = lines[i];
         if (line && this.internalStackFrameLocations.some((location) => line.includes(location))) {
@@ -176,7 +176,7 @@ export abstract class LongStackTracesHandler extends Component {
   }
 
   protected isEnabled(): boolean {
-    return this.plugin.settings.shouldShowLongStackTraces;
+    return this.plugin.settings.shouldIncludeLongStackTraces;
   }
 
   protected patchWithLongStackTraces<Obj extends object>(options: PatchOptions<Obj>): void {

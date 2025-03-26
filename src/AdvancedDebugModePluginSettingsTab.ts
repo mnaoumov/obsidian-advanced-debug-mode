@@ -61,10 +61,10 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
       });
 
     new Setting(this.containerEl)
-      .setName('Show long stack traces')
-      .setDesc('Show long stack traces for the errors.')
+      .setName('Include long stack traces')
+      .setDesc('Whether to include long stack traces to the JavaScript Error objects.')
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldShowLongStackTraces', {
+        this.bind(toggle, 'shouldIncludeLongStackTraces', {
           onChanged: () => {
             this.display();
             this.plugin.applyNewSettings();
@@ -73,27 +73,29 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
       });
 
     new Setting(this.containerEl)
-      .setName('Desktop: Show async long stack traces')
+      .setName('Desktop: Include async long stack traces')
       .setDesc(createFragment((f) => {
-        f.appendText('Show long stack traces for the errors that are related to the async operations (Desktop only).');
+        f.appendText('Whether to include long stack traces to the JavaScript Error objects from the async operations ');
+        f.createEl('strong', { text: '(Desktop only)' });
+        f.appendText('.');
         f.createEl('br');
         f.appendText('⚠️ If enabled, the autocomplete in the DevTools Console will stop working.');
       }))
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldShowAsyncLongStackTraces', {
+        this.bind(toggle, 'shouldIncludeAsyncLongStackTraces', {
           onChanged: () => {
             this.plugin.applyNewSettings();
           }
         })
-          .setDisabled(!this.plugin.settings.shouldShowLongStackTraces);
+          .setDisabled(!this.plugin.settings.shouldIncludeLongStackTraces);
       });
 
     new Setting(this.containerEl)
-      .setName('Show internal stack frames')
-      .setDesc('Show internal stack frames in the error stack traces.')
+      .setName('Include internal stack frames')
+      .setDesc('Whether to include internal stack frames to the JavaScript Error objects.')
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldShowInternalStackFrames')
-          .setDisabled(!this.plugin.settings.shouldShowLongStackTraces);
+        this.bind(toggle, 'shouldIncludeInternalStackFrames')
+          .setDisabled(!this.plugin.settings.shouldIncludeLongStackTraces);
       });
   }
 }

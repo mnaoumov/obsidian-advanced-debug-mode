@@ -63,7 +63,7 @@ export class AsyncLongStackTracesHandler extends Component {
     const stackLines = (new Error().stack ?? '').split('\n').slice(1);
 
     const INTERNAL_STACK_FRAMES_COUNT = 5;
-    const firstFrameIndex = this.plugin.settings.shouldShowInternalStackFrames ? INTERNAL_STACK_FRAMES_COUNT : 0;
+    const firstFrameIndex = this.plugin.settings.shouldIncludeInternalStackFrames ? INTERNAL_STACK_FRAMES_COUNT : 0;
 
     if (stackLines[firstFrameIndex]?.includes('at Promise.')) {
       this.asyncIdStackLinesMap.delete(asyncId);
@@ -73,6 +73,6 @@ export class AsyncLongStackTracesHandler extends Component {
   }
 
   private isEnabled(): boolean {
-    return this.plugin.settings.shouldShowAsyncLongStackTraces;
+    return this.plugin.settings.shouldIncludeAsyncLongStackTraces;
   }
 }

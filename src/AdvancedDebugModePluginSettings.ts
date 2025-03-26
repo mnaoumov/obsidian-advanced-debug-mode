@@ -1,9 +1,9 @@
 import { PluginSettingsBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsBase';
 
 export class AdvancedDebugModePluginSettings extends PluginSettingsBase {
-  public shouldShowAsyncLongStackTraces = false;
-  public shouldShowInternalStackFrames = false;
-  public shouldShowLongStackTraces = true;
+  public shouldIncludeAsyncLongStackTraces = false;
+  public shouldIncludeInternalStackFrames = false;
+  public shouldIncludeLongStackTraces = true;
 
   public constructor(data: unknown) {
     super();
