@@ -28,7 +28,7 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
         toggle.setValue(this.plugin.isDebugMode());
 
         toggle.onChange((value) => {
-          this.plugin.toggleDebugModeWithCheck(value, false);
+          this.plugin.toggleDebugMode(value);
         });
       });
 

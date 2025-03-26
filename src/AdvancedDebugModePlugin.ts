@@ -19,11 +19,8 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
     this.longStackTracesHandler.load();
   }
 
-  public toggleDebugModeWithCheck(isEnabled: boolean, checking: boolean): boolean {
-    if (!checking) {
-      this.app.debugMode(isEnabled);
-    }
-    return this.isDebugMode() !== isEnabled;
+  public toggleDebugMode(isEnabled: boolean): void {
+    this.app.debugMode(isEnabled);
   }
 
   protected override createPluginSettings(data: unknown): AdvancedDebugModePluginSettings {
@@ -39,17 +36,5 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
     this.longStackTracesHandler = new platformDependencies.LongStackTracesHandlerClass(this);
     this.addChild(this.longStackTracesHandler);
     platformDependencies.devTools.registerDevTools(this);
-
-    this.addCommand({
-      checkCallback: (checking) => this.toggleDebugModeWithCheck(true, checking),
-      id: 'enable-debug-mode',
-      name: 'Enable debug mode (this will reload the app)'
-    });
-
-    this.addCommand({
-      checkCallback: (checking) => this.toggleDebugModeWithCheck(false, checking),
-      id: 'disable-debug-mode',
-      name: 'Disable debug mode (this will reload the app)'
-    });
   }
 }
