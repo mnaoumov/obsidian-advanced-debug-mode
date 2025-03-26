@@ -16,6 +16,23 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
     const debugController = getDebugController();
 
     new Setting(this.containerEl)
+      .setName('Obsidian debug mode')
+      .setDesc(createFragment((f) => {
+        f.appendText('Enable/disable Obsidian debug mode.');
+        f.createEl('br');
+        f.appendText('When enabled, inline source maps will not be stripped from loaded plugins.');
+        f.createEl('br');
+        f.appendText('⚠️ This setting change will reload the app.');
+      }))
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.isDebugMode());
+
+        toggle.onChange((value) => {
+          this.plugin.toggleDebugModeWithCheck(value, false);
+        });
+      });
+
+    new Setting(this.containerEl)
       .setName('Debug namespaces')
       .setDesc(createFragment((f) => {
         f.appendText('Configure the debug namespaces.');

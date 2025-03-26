@@ -6,7 +6,7 @@ This is a plugin for [Obsidian](https://obsidian.md/) that enhances Obsidian deb
 
 ### Obsidian Debug mode
 
-The plugin adds an easy way to switch Obsidian debug mode on/off. This helps with trimmed sourcemaps.
+The plugin adds an easy way to switch Obsidian debug mode on/off. When active, inline source maps will not be stripped from loaded plugins.
 
 ### Long stack traces
 

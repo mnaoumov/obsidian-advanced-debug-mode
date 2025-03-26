@@ -19,9 +19,20 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
     this.addChild(this.longStackTracesHandler);
   }
 
+  public isDebugMode(): boolean {
+    return this.app.loadLocalStorage('DebugMode') === '1';
+  }
+
   public override async onExternalSettingsChange(): Promise<void> {
     await super.onExternalSettingsChange();
     this.applyNewSettings();
+  }
+
+  public toggleDebugModeWithCheck(isEnabled: boolean, checking: boolean): boolean {
+    if (!checking) {
+      this.app.debugMode(isEnabled);
+    }
+    return this.isDebugMode() !== isEnabled;
   }
 
   protected override createPluginSettings(data: unknown): AdvancedDebugModePluginSettings {
@@ -30,12 +41,6 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
 
   protected override createPluginSettingsTab(): null | PluginSettingTab {
     return new AdvancedDebugModePluginSettingsTab(this);
-  }
-
-  protected override onLayoutReady(): void {
-    const state = this.isDebugMode() ? 'enabled' : 'disabled';
-    const command = this.isDebugMode() ? 'Disable debug Mode' : 'Enable debug mode';
-    this.showNotice(`Obsidian Debug Mode is ${state}. You can change it using command "${command}"`);
   }
 
   protected override async onloadComplete(): Promise<void> {
@@ -56,16 +61,5 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
       id: 'disable-debug-mode',
       name: 'Disable debug mode (this will reload the app)'
     });
-  }
-
-  private isDebugMode(): boolean {
-    return this.app.loadLocalStorage('DebugMode') === '1';
-  }
-
-  private toggleDebugModeWithCheck(isEnabled: boolean, checking: boolean): boolean {
-    if (!checking) {
-      this.app.debugMode(isEnabled);
-    }
-    return this.isDebugMode() !== isEnabled;
   }
 }
