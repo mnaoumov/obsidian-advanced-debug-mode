@@ -1,5 +1,6 @@
 import type { ConditionalKeys } from 'type-fest';
 
+import { Component } from 'obsidian';
 import {
   assignWithNonEnumerableProperties,
   normalizeOptionalProperties
@@ -69,14 +70,20 @@ interface StackFrameGroup {
   title: string;
 }
 
-export abstract class LongStackTracesHandler {
-  protected plugin!: AdvancedDebugModePlugin;
+export abstract class LongStackTracesHandler extends Component {
   private internalStackFrameLocations: string[] = [];
   private OriginalError!: ErrorConstructor;
   private stackFramesGroups: StackFrameGroup[] = [];
 
-  public registerLongStackTraces(plugin: AdvancedDebugModePlugin): void {
-    this.plugin = plugin;
+  public constructor(private plugin: AdvancedDebugModePlugin) {
+    super();
+  }
+
+  public override onload(): void {
+    if (!this.isEnabled()) {
+      return;
+    }
+
     this.internalStackFrameLocations = [
       `plugin:${this.plugin.manifest.id}`,
       'node:internal'
@@ -117,7 +124,7 @@ export abstract class LongStackTracesHandler {
     });
 
     const that = this;
-    registerPatch(this.plugin, EventTarget.prototype, {
+    registerPatch(this, EventTarget.prototype, {
       removeEventListener: (next: RemoveEventListenerFn): RemoveEventListenerFn => {
         return function patchedRemoveEventListener(
           this: EventTarget,
@@ -163,20 +170,20 @@ export abstract class LongStackTracesHandler {
     }
 
     for (const stackFrameGroup of this.stackFramesGroups) {
-      lines.push(this.generateStackTraceLine(stackFrameGroup.title));
+      lines.push(generateStackTraceLine(stackFrameGroup.title));
       lines.push(...stackFrameGroup.stackFrames);
     }
   }
 
-  protected generateStackTraceLine(title: string): string {
-    return `    at --- ${title} --- (0)`;
+  protected isEnabled(): boolean {
+    return this.plugin.settings.shouldShowLongStackTraces;
   }
 
   protected patchWithLongStackTraces<Obj extends object>(options: PatchOptions<Obj>): void {
     const genericObj = options.obj as Record<string, GenericFunction>;
 
     const that = this;
-    registerPatch(this.plugin, genericObj, {
+    registerPatch(this, genericObj, {
       [options.methodName]: (next: GenericFunction): GenericFunction => {
         return function patchedFn(this: unknown, ...originalFnArgs: unknown[]): unknown {
           return that.patchWithLongStackTracesImpl(normalizeOptionalProperties<PatchWithLongStackTracesImplOptions>({
@@ -190,10 +197,6 @@ export abstract class LongStackTracesHandler {
         };
       }
     });
-  }
-
-  protected register(callback: () => void): void {
-    this.plugin.register(callback);
   }
 
   private afterPatchAddEventListener(options: AfterPatchOptions): void {
@@ -407,6 +410,10 @@ export abstract class LongStackTracesHandler {
       this.stackFramesGroups.pop();
     }
   }
+}
+
+export function generateStackTraceLine(title: string): string {
+  return `    at --- ${title} --- (0)`;
 }
 
 function isEventListenerObject(value: unknown): value is EventListenerObject {

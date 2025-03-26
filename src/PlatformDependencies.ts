@@ -1,11 +1,12 @@
 import { Platform } from 'obsidian';
 
+import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
 import type { DevTools } from './DevTools.ts';
 import type { LongStackTracesHandler } from './LongStackTracesHandler.ts';
 
 export interface PlatformDependencies {
   devTools: DevTools;
-  longStackTracesHandler: LongStackTracesHandler;
+  LongStackTracesHandlerClass: new (plugin: AdvancedDebugModePlugin) => LongStackTracesHandler;
 }
 
 export async function getPlatformDependencies(): Promise<PlatformDependencies> {

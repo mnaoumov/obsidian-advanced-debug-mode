@@ -3,4 +3,8 @@
     height: 200px;
     width: 300px;
   }
+
+  .checkbox-container.is-disabled {
+    opacity: 0.2;
+  }
 }

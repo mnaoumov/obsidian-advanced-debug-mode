@@ -44,10 +44,39 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
       });
 
     new Setting(this.containerEl)
-      .setName('Show internal stack frames')
-      .setDesc('Show internal stack frames in the debug output.')
+      .setName('Show long stack traces')
+      .setDesc('Show long stack traces for the errors.')
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldShowInternalStackFrames');
+        this.bind(toggle, 'shouldShowLongStackTraces', {
+          onChanged: () => {
+            this.display();
+            this.plugin.applyNewSettings();
+          }
+        });
+      });
+
+    new Setting(this.containerEl)
+      .setName('Desktop: Show async long stack traces')
+      .setDesc(createFragment((f) => {
+        f.appendText('Show long stack traces for the errors that are related to the async operations (Desktop only).');
+        f.createEl('br');
+        f.appendText('⚠️ If enabled, the autocomplete in the DevTools Console will stop working.');
+      }))
+      .addToggle((toggle) => {
+        this.bind(toggle, 'shouldShowAsyncLongStackTraces', {
+          onChanged: () => {
+            this.plugin.applyNewSettings();
+          }
+        })
+          .setDisabled(!this.plugin.settings.shouldShowLongStackTraces);
+      });
+
+    new Setting(this.containerEl)
+      .setName('Show internal stack frames')
+      .setDesc('Show internal stack frames in the error stack traces.')
+      .addToggle((toggle) => {
+        this.bind(toggle, 'shouldShowInternalStackFrames')
+          .setDisabled(!this.plugin.settings.shouldShowLongStackTraces);
       });
   }
 }

@@ -2,11 +2,28 @@ import type { PluginSettingTab } from 'obsidian';
 
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
+import type { PlatformDependencies } from './PlatformDependencies.ts';
+
 import { AdvancedDebugModePluginSettings } from './AdvancedDebugModePluginSettings.ts';
 import { AdvancedDebugModePluginSettingsTab } from './AdvancedDebugModePluginSettingsTab.ts';
+import { LongStackTracesHandler } from './LongStackTracesHandler.ts';
 import { getPlatformDependencies } from './PlatformDependencies.ts';
 
 export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginSettings> {
+  private longStackTracesHandler!: LongStackTracesHandler;
+  private platformDependencies!: PlatformDependencies;
+
+  public applyNewSettings(): void {
+    this.removeChild(this.longStackTracesHandler);
+    this.longStackTracesHandler = new this.platformDependencies.LongStackTracesHandlerClass(this);
+    this.addChild(this.longStackTracesHandler);
+  }
+
+  public override async onExternalSettingsChange(): Promise<void> {
+    await super.onExternalSettingsChange();
+    this.applyNewSettings();
+  }
+
   protected override createPluginSettings(data: unknown): AdvancedDebugModePluginSettings {
     return new AdvancedDebugModePluginSettings(data);
   }
@@ -22,9 +39,11 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
   }
 
   protected override async onloadComplete(): Promise<void> {
-    const platformDependencies = await getPlatformDependencies();
-    platformDependencies.longStackTracesHandler.registerLongStackTraces(this);
-    platformDependencies.devTools.registerDevTools(this);
+    this.platformDependencies = await getPlatformDependencies();
+    this.longStackTracesHandler = new this.platformDependencies.LongStackTracesHandlerClass(this);
+    this.addChild(this.longStackTracesHandler);
+
+    this.platformDependencies.devTools.registerDevTools(this);
 
     this.addCommand({
       checkCallback: (checking) => this.toggleDebugModeWithCheck(true, checking),
