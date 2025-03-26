@@ -2,8 +2,6 @@ import type { PluginSettingTab } from 'obsidian';
 
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
-import type { PlatformDependencies } from './PlatformDependencies.ts';
-
 import { AdvancedDebugModePluginSettings } from './AdvancedDebugModePluginSettings.ts';
 import { AdvancedDebugModePluginSettingsTab } from './AdvancedDebugModePluginSettingsTab.ts';
 import { LongStackTracesHandler } from './LongStackTracesHandler.ts';
@@ -11,21 +9,14 @@ import { getPlatformDependencies } from './PlatformDependencies.ts';
 
 export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginSettings> {
   private longStackTracesHandler!: LongStackTracesHandler;
-  private platformDependencies!: PlatformDependencies;
-
-  public applyNewSettings(): void {
-    this.removeChild(this.longStackTracesHandler);
-    this.longStackTracesHandler = new this.platformDependencies.LongStackTracesHandlerClass(this);
-    this.addChild(this.longStackTracesHandler);
-  }
 
   public isDebugMode(): boolean {
     return this.app.loadLocalStorage('DebugMode') === '1';
   }
 
-  public override async onExternalSettingsChange(): Promise<void> {
-    await super.onExternalSettingsChange();
-    this.applyNewSettings();
+  public reloadLongStackTracesHandler(): void {
+    this.longStackTracesHandler.unload();
+    this.longStackTracesHandler.load();
   }
 
   public toggleDebugModeWithCheck(isEnabled: boolean, checking: boolean): boolean {
@@ -44,11 +35,10 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
   }
 
   protected override async onloadComplete(): Promise<void> {
-    this.platformDependencies = await getPlatformDependencies();
-    this.longStackTracesHandler = new this.platformDependencies.LongStackTracesHandlerClass(this);
+    const platformDependencies = await getPlatformDependencies();
+    this.longStackTracesHandler = new platformDependencies.LongStackTracesHandlerClass(this);
     this.addChild(this.longStackTracesHandler);
-
-    this.platformDependencies.devTools.registerDevTools(this);
+    platformDependencies.devTools.registerDevTools(this);
 
     this.addCommand({
       checkCallback: (checking) => this.toggleDebugModeWithCheck(true, checking),

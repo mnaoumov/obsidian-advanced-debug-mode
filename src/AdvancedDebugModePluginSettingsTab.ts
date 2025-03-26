@@ -67,7 +67,7 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
         this.bind(toggle, 'shouldIncludeLongStackTraces', {
           onChanged: () => {
             this.display();
-            this.plugin.applyNewSettings();
+            this.plugin.reloadLongStackTracesHandler();
           }
         });
       });
@@ -84,7 +84,7 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldIncludeAsyncLongStackTraces', {
           onChanged: () => {
-            this.plugin.applyNewSettings();
+            this.plugin.reloadLongStackTracesHandler();
           }
         })
           .setDisabled(!this.plugin.settings.shouldIncludeLongStackTraces);
