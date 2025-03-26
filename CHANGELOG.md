@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.2.4
+
+- Invert timeout setting logic
+
 ## 1.2.3
 
 - Invert timeout setting logic
