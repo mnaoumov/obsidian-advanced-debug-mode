@@ -30,7 +30,7 @@ export class LongRunningTasksComponent extends ComponentBase {
   }
 
   protected override isEnabled(): boolean {
-    return this.plugin.settings.shouldTimeoutLongRunningTasks && Platform.isDesktop;
+    return !this.plugin.settings.shouldTimeoutLongRunningTasks && Platform.isDesktop;
   }
 
   private notifyNoTimeout(): void {
