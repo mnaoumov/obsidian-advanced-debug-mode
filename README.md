@@ -167,6 +167,12 @@ The plugin adds an ability to manage those debug namespaces from the UI.
 
 For more details, refer to the [documentation](https://github.com/mnaoumov/obsidian-dev-utils?tab=readme-ov-file#debugging).
 
+### Timeout long running tasks
+
+There are some default timeouts for long running tasks. Sometimes those timeouts are being hit while you are debugging some code and staying on the breakpoint for too long.
+
+The plugin allows to temporarily disable those timeouts to keep debugging.
+
 ## Installation
 
 The plugin is not available in [the official Community Plugins repository](https://obsidian.md/plugins) yet.
