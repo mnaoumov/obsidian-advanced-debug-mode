@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.3.0
+
+- Control stack trace lines
+- Fix parent init
+
 ## 1.2.5
 
 - Ensure disabled components are not loaded
