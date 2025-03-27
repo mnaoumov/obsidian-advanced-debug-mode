@@ -15,6 +15,7 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
   }
 
   public override onload(): void {
+    super.onload();
     if (!this.isEnabled()) {
       return;
     }
