@@ -5,6 +5,8 @@ export class AdvancedDebugModePluginSettings extends PluginSettingsBase {
   public shouldIncludeInternalStackFrames = false;
   public shouldIncludeLongStackTraces = true;
   public shouldTimeoutLongRunningTasks = true;
+  // eslint-disable-next-line no-magic-numbers
+  public stackTraceLimit = 100;
 
   public constructor(data: unknown) {
     super();

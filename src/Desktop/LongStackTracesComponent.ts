@@ -10,7 +10,7 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
 
   public constructor(plugin: AdvancedDebugModePlugin) {
     super(plugin);
-    this.asyncLongStackTracesHandler = new AsyncLongStackTracesComponent(plugin);
+    this.asyncLongStackTracesHandler = new AsyncLongStackTracesComponent(plugin, this);
     this.addChild(this.asyncLongStackTracesHandler);
   }
 

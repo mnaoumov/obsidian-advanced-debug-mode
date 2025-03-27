@@ -6,13 +6,14 @@ import {
 import { Component } from 'obsidian';
 
 import type { AdvancedDebugModePlugin } from '../AdvancedDebugModePlugin.ts';
+import type { LongStackTracesComponent } from '../Components/LongStackTracesComponent.ts';
 
 import { generateStackTraceLine } from '../Components/LongStackTracesComponent.ts';
 
 export class AsyncLongStackTracesComponent extends Component {
   private asyncIdStackLinesMap = new Map<number, string[]>();
 
-  public constructor(private plugin: AdvancedDebugModePlugin) {
+  public constructor(private plugin: AdvancedDebugModePlugin, private longStackTracesComponent: LongStackTracesComponent) {
     super();
   }
 
@@ -34,6 +35,8 @@ export class AsyncLongStackTracesComponent extends Component {
 
     lines.push(generateStackTraceLine('async'));
     lines.push(...stackLines);
+
+    this.longStackTracesComponent.applyStackTraceLimit(lines);
   }
 
   public override onload(): void {

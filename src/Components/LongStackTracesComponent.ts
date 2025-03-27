@@ -1,6 +1,7 @@
 import type { ConditionalKeys } from 'type-fest';
 
 import { Component } from 'obsidian';
+import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import {
   assignWithNonEnumerableProperties,
   normalizeOptionalProperties
@@ -77,6 +78,13 @@ export abstract class LongStackTracesComponent extends Component {
 
   public constructor(private plugin: AdvancedDebugModePlugin) {
     super();
+  }
+
+  public applyStackTraceLimit(lines: string[]): void {
+    if (lines.length > this.plugin.settings.stackTraceLimit) {
+      lines.splice(this.plugin.settings.stackTraceLimit);
+      lines.push(generateStackTraceLine('STACK TRACE LIMIT REACHED'));
+    }
   }
 
   public override onload(): void {
@@ -173,6 +181,8 @@ export abstract class LongStackTracesComponent extends Component {
       lines.push(generateStackTraceLine(stackFrameGroup.title));
       lines.push(...stackFrameGroup.stackFrames);
     }
+
+    this.applyStackTraceLimit(lines);
   }
 
   protected isEnabled(): boolean {
@@ -211,6 +221,11 @@ export abstract class LongStackTracesComponent extends Component {
     eventHandlersMap.set(keys, options.wrappedFn);
   }
 
+  private getAdditionalStackFramesCount(): number {
+    const MAX_ADDITIONAL_INTERNAL_STACK_FRAMES_COUNT = 10;
+    return this.plugin.settings.shouldIncludeInternalStackFrames ? 0 : MAX_ADDITIONAL_INTERNAL_STACK_FRAMES_COUNT;
+  }
+
   private getChildErrorClassNames(): string[] {
     const errorClassNames: string[] = [];
     const windowWithErrorConstructors = window as WindowWithErrorConstructors;
@@ -226,6 +241,10 @@ export abstract class LongStackTracesComponent extends Component {
     }
 
     return errorClassNames;
+  }
+
+  private getStackTraceLimit(): number {
+    return this.plugin.settings.stackTraceLimit;
   }
 
   private patchBaseErrorClass(): void {
@@ -246,23 +265,20 @@ export abstract class LongStackTracesComponent extends Component {
     PatchedError.prototype = this.OriginalError.prototype;
     Object.setPrototypeOf(PatchedError, this.OriginalError);
     assignWithNonEnumerableProperties(PatchedError, this.OriginalError);
+
     Object.defineProperty(PatchedError, 'stackTraceLimit', {
       configurable: true,
       enumerable: true,
-      get: () => this.OriginalError.stackTraceLimit,
-      set: (value: number) => {
-        this.OriginalError.stackTraceLimit = value;
-      }
+      get: that.getStackTraceLimit.bind(that),
+      set: that.setStackTraceLimit.bind(that)
     });
 
-    const originalStackTraceLimit = this.OriginalError.stackTraceLimit;
-
     window.Error = PatchedError as ErrorConstructor;
-    window.Error.stackTraceLimit = Infinity;
+    window.Error.stackTraceLimit = this.plugin.settings.stackTraceLimit || Infinity;
 
     this.register(() => {
       window.Error = this.OriginalError;
-      window.Error.stackTraceLimit = originalStackTraceLimit;
+      window.Error.stackTraceLimit = this.plugin.settings.stackTraceLimit;
     });
   }
 
@@ -371,6 +387,15 @@ export abstract class LongStackTracesComponent extends Component {
       next.call(eventTarget, type, wrappedHandler, options);
     } else {
       next.call(eventTarget, type, callback, options);
+    }
+  }
+
+  private setStackTraceLimit(value: number): void {
+    this.OriginalError.stackTraceLimit = value + this.getAdditionalStackFramesCount();
+    if (this.plugin.settings.stackTraceLimit !== value) {
+      const settingsClone = this.plugin.settingsClone;
+      settingsClone.stackTraceLimit = value;
+      invokeAsyncSafely(() => this.plugin.saveSettings(settingsClone));
     }
   }
 

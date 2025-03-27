@@ -5,6 +5,7 @@ import {
 } from 'obsidian-dev-utils/Debug';
 import { appendCodeBlock } from 'obsidian-dev-utils/HTMLElement';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
 
 import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
 
@@ -99,6 +100,26 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldIncludeInternalStackFrames')
           .setDisabled(!this.plugin.settings.shouldIncludeLongStackTraces);
+      });
+
+    new SettingEx(this.containerEl)
+      .setName('Stack trace limit')
+      .setDesc(createFragment((f) => {
+        f.appendText('The maximum number of stack frames to include in the error stack trace.');
+        f.createEl('br');
+        f.appendText('The higher the value, the more memory intensive the plugin will be.');
+        f.createEl('br');
+        f.appendText('Use 0 to disable the limit ');
+        f.createEl('strong', { text: '(not recommended)' });
+        f.appendText('.');
+      }))
+      .addNumber((numberComponent) => {
+        this.bind(numberComponent, 'stackTraceLimit', {
+          onChanged: () => {
+            this.plugin.updateStackTraceLimit();
+          }
+        });
+        numberComponent.inputEl.required = true;
       });
 
     new Setting(this.containerEl)

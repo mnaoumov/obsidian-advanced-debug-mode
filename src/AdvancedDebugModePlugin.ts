@@ -31,6 +31,10 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
     this.app.debugMode(isEnabled);
   }
 
+  public updateStackTraceLimit(): void {
+    Error.stackTraceLimit = this.settings.stackTraceLimit || Infinity;
+  }
+
   protected override createPluginSettings(data: unknown): AdvancedDebugModePluginSettings {
     return new AdvancedDebugModePluginSettings(data);
   }
@@ -40,6 +44,11 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
   }
 
   protected override async onloadComplete(): Promise<void> {
+    const originalStackTraceLimit = Error.stackTraceLimit;
+    this.register(() => {
+      Error.stackTraceLimit = originalStackTraceLimit;
+    });
+
     const platformDependencies = await getPlatformDependencies();
     this.longStackTracesComponent = new platformDependencies.LongStackTracesComponentConstructor(this);
     this.addChild(this.longStackTracesComponent);
