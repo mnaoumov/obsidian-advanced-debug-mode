@@ -138,9 +138,26 @@ export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<Ad
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldTimeoutLongRunningTasks', {
           onChanged: () => {
+            this.display();
             this.plugin.reloadLongRunningTasksComponent();
           }
         });
+      });
+
+    new Setting(this.containerEl)
+      .setName('Desktop: Include timed out tasks details')
+      .setDesc(createFragment((f) => {
+        f.appendText('Whether to include the details of timed out tasks in the console ');
+        f.createEl('strong', { text: '(Desktop only)' });
+        f.appendText('.');
+      }))
+      .addToggle((toggle) => {
+        this.bind(toggle, 'shouldIncludeTimedOutTasksDetails', {
+          onChanged: () => {
+            this.plugin.reloadLongRunningTasksComponent();
+          }
+        });
+        toggle.setDisabled(!this.plugin.settings.shouldTimeoutLongRunningTasks);
       });
 
     new Setting(this.containerEl)
