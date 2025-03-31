@@ -45,7 +45,7 @@ export class LongRunningTasksComponent extends Component {
     }
   }
 
-  private async makeNextPromise(fn: () => MaybePromise<void>): Promise<void> {
+  private async makeNextPromise<T>(fn: () => MaybePromise<T>): Promise<T> {
     const lastPromise = this.fileSystemAdapter.promise;
     try {
       await lastPromise;
@@ -53,16 +53,16 @@ export class LongRunningTasksComponent extends Component {
       // Ignore
     }
 
-    const timeoutPromise = new Promise<void>((_resolve, reject) => {
+    const timeoutPromise = new Promise<T>((_resolve, reject) => {
       this.fileSystemAdapter.killLastAction = rejectWithDetails(reject);
     });
     this.fileSystemAdapter.thingsHappening();
     let isTimedOut = true;
-    await Promise.race([timeoutPromise, run()]);
+    return await Promise.race([timeoutPromise, run()]);
 
-    async function run(): Promise<void> {
+    async function run(): Promise<T> {
       try {
-        await fn();
+        return await fn();
       } finally {
         isTimedOut = false;
       }
@@ -88,8 +88,8 @@ export class LongRunningTasksComponent extends Component {
     );
   }
 
-  private queue(fn: () => MaybePromise<void>): Promise<void> {
+  private queue<T>(fn: () => MaybePromise<T>): Promise<T> {
     this.fileSystemAdapter.promise = this.makeNextPromise(fn);
-    return this.fileSystemAdapter.promise;
+    return this.fileSystemAdapter.promise as Promise<T>;
   }
 }
