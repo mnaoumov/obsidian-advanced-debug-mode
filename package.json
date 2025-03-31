@@ -22,13 +22,13 @@
   },
   "devDependencies": {
     "@tsconfig/strictest": "^2.0.5",
-    "@types/node": "^22.13.13",
+    "@types/node": "^22.13.14",
     "eruda": "^3.4.1",
     "jiti": "^2.4.2",
     "monkey-around": "^3.0.0",
     "obsidian": "^1.8.7",
-    "obsidian-dev-utils": "^19.24.0",
-    "obsidian-typings": "^2.37.0",
+    "obsidian-dev-utils": "^20.3.0",
+    "obsidian-typings": "^2.41.2",
     "type-fest": "^4.38.0"
   },
   "overrides": {
