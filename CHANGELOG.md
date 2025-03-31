@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.4.0
+
+- Desktop: Include timed out tasks details
+- Update README
+
 ## 1.3.0
 
 - Control stack trace lines
