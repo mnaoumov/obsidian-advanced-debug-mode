@@ -63,6 +63,12 @@ export class LongRunningTasksComponent extends Component {
     async function run(): Promise<T> {
       try {
         return await fn();
+      } catch (e) {
+        console.error('Failed function', {
+          fn
+        });
+        console.error(e);
+        throw e;
       } finally {
         isTimedOut = false;
       }
@@ -89,7 +95,8 @@ export class LongRunningTasksComponent extends Component {
   }
 
   private queue<T>(fn: () => MaybePromise<T>): Promise<T> {
-    this.fileSystemAdapter.promise = this.makeNextPromise(fn);
-    return this.fileSystemAdapter.promise as Promise<T>;
+    const nextPromise = this.makeNextPromise(fn);
+    this.fileSystemAdapter.promise = nextPromise;
+    return nextPromise;
   }
 }
