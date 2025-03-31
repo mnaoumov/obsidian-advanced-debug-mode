@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.5.0
+
+- Log failing fn
+- Use generic queue
+
 ## 1.4.0
 
 - Desktop: Include timed out tasks details
