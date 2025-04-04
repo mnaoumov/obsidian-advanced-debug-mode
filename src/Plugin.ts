@@ -55,7 +55,8 @@ export class Plugin extends PluginBase<PluginSettings> {
     const platformDependencies = await getPlatformDependencies();
     this.longStackTracesComponent = new platformDependencies.LongStackTracesComponentConstructor(this);
     this.addChild(this.longStackTracesComponent);
-    this.addChild(new LongRunningTasksComponent(this));
+    this.longRunningTasksComponent = new LongRunningTasksComponent(this);
+    this.addChild(this.longRunningTasksComponent);
     this.addChild(new DevToolsComponent(this));
   }
 }
