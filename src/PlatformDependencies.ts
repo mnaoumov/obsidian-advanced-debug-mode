@@ -2,11 +2,11 @@ import type { Constructor } from 'type-fest';
 
 import { Platform } from 'obsidian';
 
-import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
 import type { LongStackTracesComponent } from './Components/LongStackTracesComponent.ts';
+import type { Plugin } from './Plugin.ts';
 
 export interface PlatformDependencies {
-  LongStackTracesComponentConstructor: Constructor<LongStackTracesComponent, [AdvancedDebugModePlugin]>;
+  LongStackTracesComponentConstructor: Constructor<LongStackTracesComponent, [Plugin]>;
 }
 
 export async function getPlatformDependencies(): Promise<PlatformDependencies> {

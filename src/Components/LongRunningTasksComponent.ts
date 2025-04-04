@@ -1,4 +1,4 @@
-import type { MaybePromise } from 'obsidian-dev-utils/Async';
+import type { Promisable } from 'type-fest';
 
 import {
   Component,
@@ -6,7 +6,7 @@ import {
   FileSystemAdapter
 } from 'obsidian';
 
-import type { AdvancedDebugModePlugin } from '../AdvancedDebugModePlugin.ts';
+import type { Plugin } from '../Plugin.ts';
 
 import { registerPatch } from '../MonkeyAround.ts';
 
@@ -17,7 +17,7 @@ type RejectFn = (e: Error) => void;
 export class LongRunningTasksComponent extends Component {
   private fileSystemAdapter!: FileSystemAdapter;
 
-  public constructor(private plugin: AdvancedDebugModePlugin) {
+  public constructor(private plugin: Plugin) {
     super();
   }
 
@@ -45,7 +45,7 @@ export class LongRunningTasksComponent extends Component {
     }
   }
 
-  private async makeNextPromise<T>(fn: () => MaybePromise<T>): Promise<T> {
+  private async makeNextPromise<T>(fn: () => Promisable<T>): Promise<T> {
     const lastPromise = this.fileSystemAdapter.promise;
     try {
       await lastPromise;
@@ -94,7 +94,7 @@ export class LongRunningTasksComponent extends Component {
     );
   }
 
-  private queue<T>(fn: () => MaybePromise<T>): Promise<T> {
+  private queue<T>(fn: () => Promisable<T>): Promise<T> {
     const nextPromise = this.makeNextPromise(fn);
     this.fileSystemAdapter.promise = nextPromise;
     return nextPromise;

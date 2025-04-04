@@ -22,14 +22,14 @@
   },
   "devDependencies": {
     "@tsconfig/strictest": "^2.0.5",
-    "@types/node": "^22.13.14",
+    "@types/node": "^22.14.0",
     "eruda": "^3.4.1",
     "jiti": "^2.4.2",
     "monkey-around": "^3.0.0",
     "obsidian": "^1.8.7",
-    "obsidian-dev-utils": "^20.3.0",
-    "obsidian-typings": "^2.41.3",
-    "type-fest": "^4.38.0"
+    "obsidian-dev-utils": "^22.1.1-beta.5",
+    "obsidian-typings": "^2.41.4",
+    "type-fest": "^4.39.1"
   },
   "overrides": {
     "boolean": "npm:dry-uninstall"

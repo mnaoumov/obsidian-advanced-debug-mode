@@ -1,6 +1,4 @@
-import { PluginSettingsBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsBase';
-
-export class AdvancedDebugModePluginSettings extends PluginSettingsBase {
+export class PluginSettings {
   public shouldIncludeAsyncLongStackTraces = false;
   public shouldIncludeInternalStackFrames = false;
   public shouldIncludeLongStackTraces = true;
@@ -8,9 +6,4 @@ export class AdvancedDebugModePluginSettings extends PluginSettingsBase {
   public shouldTimeoutLongRunningTasks = true;
   // eslint-disable-next-line no-magic-numbers
   public stackTraceLimit = 100;
-
-  public constructor(data: unknown) {
-    super();
-    this.init(data);
-  }
 }

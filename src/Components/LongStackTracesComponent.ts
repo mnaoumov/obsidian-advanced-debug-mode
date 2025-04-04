@@ -7,7 +7,7 @@ import {
   normalizeOptionalProperties
 } from 'obsidian-dev-utils/Object';
 
-import type { AdvancedDebugModePlugin } from '../AdvancedDebugModePlugin.ts';
+import type { Plugin } from '../Plugin.ts';
 
 import { registerPatch } from '../MonkeyAround.ts';
 import { MultiWeakMap } from '../MultiWeakMap.ts';
@@ -76,7 +76,7 @@ export abstract class LongStackTracesComponent extends Component {
   private OriginalError!: ErrorConstructor;
   private stackFramesGroups: StackFrameGroup[] = [];
 
-  public constructor(private plugin: AdvancedDebugModePlugin) {
+  public constructor(private plugin: Plugin) {
     super();
   }
 
@@ -393,9 +393,11 @@ export abstract class LongStackTracesComponent extends Component {
   private setStackTraceLimit(value: number): void {
     this.OriginalError.stackTraceLimit = value + this.getAdditionalStackFramesCount();
     if (this.plugin.settings.stackTraceLimit !== value) {
-      const settingsClone = this.plugin.settingsClone;
-      settingsClone.stackTraceLimit = value;
-      invokeAsyncSafely(() => this.plugin.saveSettings(settingsClone));
+      invokeAsyncSafely(() =>
+        this.plugin.settingsManager.editAndSave((x) => {
+          x.stackTraceLimit = value;
+        })
+      );
     }
   }
 

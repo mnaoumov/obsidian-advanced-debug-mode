@@ -1,6 +1,6 @@
 import { process } from 'obsidian-dev-utils/ScriptUtils/NodeModules';
 
-import type { AdvancedDebugModePlugin } from '../AdvancedDebugModePlugin.ts';
+import type { Plugin } from '../Plugin.ts';
 
 import { LongStackTracesComponent } from '../Components/LongStackTracesComponent.ts';
 import { AsyncLongStackTracesComponent } from './AsyncLongStackTracesComponent.ts';
@@ -8,7 +8,7 @@ import { AsyncLongStackTracesComponent } from './AsyncLongStackTracesComponent.t
 class LongStackTracesComponentImpl extends LongStackTracesComponent {
   private asyncLongStackTracesHandler!: AsyncLongStackTracesComponent;
 
-  public constructor(plugin: AdvancedDebugModePlugin) {
+  public constructor(plugin: Plugin) {
     super(plugin);
     this.asyncLongStackTracesHandler = new AsyncLongStackTracesComponent(plugin, this);
     this.addChild(this.asyncLongStackTracesHandler);

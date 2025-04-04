@@ -7,10 +7,10 @@ import { appendCodeBlock } from 'obsidian-dev-utils/HTMLElement';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
 import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
 
-import type { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
+import type { Plugin } from './Plugin.ts';
 
-export class AdvancedDebugModePluginSettingsTab extends PluginSettingsTabBase<AdvancedDebugModePlugin> {
-  public constructor(plugin: AdvancedDebugModePlugin) {
+export class PluginSettingsTab extends PluginSettingsTabBase<Plugin> {
+  public constructor(plugin: Plugin) {
     super(plugin);
   }
 

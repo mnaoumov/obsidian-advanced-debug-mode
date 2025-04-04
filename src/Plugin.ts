@@ -1,18 +1,21 @@
 import type { PluginSettingTab } from 'obsidian';
+import type { PluginSettingsManagerBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsManagerBase';
 
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
-import { AdvancedDebugModePluginSettings } from './AdvancedDebugModePluginSettings.ts';
-import { AdvancedDebugModePluginSettingsTab } from './AdvancedDebugModePluginSettingsTab.ts';
+import type { PluginSettings } from './PluginSettings.ts';
+
 import { DevToolsComponent } from './Components/DevToolsComponent.ts';
 import { LongRunningTasksComponent } from './Components/LongRunningTasksComponent.ts';
 import { LongStackTracesComponent } from './Components/LongStackTracesComponent.ts';
 import { getPlatformDependencies } from './PlatformDependencies.ts';
+import { PluginSettingsManager } from './PluginSettingsManager.ts';
+import { PluginSettingsTab } from './PluginSettingsTab.ts';
 
-export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginSettings> {
+export class Plugin extends PluginBase<PluginSettings> {
   private longRunningTasksComponent!: LongRunningTasksComponent;
-  private longStackTracesComponent!: LongStackTracesComponent;
 
+  private longStackTracesComponent!: LongStackTracesComponent;
   public isDebugMode(): boolean {
     return this.app.loadLocalStorage('DebugMode') === '1';
   }
@@ -35,12 +38,12 @@ export class AdvancedDebugModePlugin extends PluginBase<AdvancedDebugModePluginS
     Error.stackTraceLimit = this.settings.stackTraceLimit || Infinity;
   }
 
-  protected override createPluginSettings(data: unknown): AdvancedDebugModePluginSettings {
-    return new AdvancedDebugModePluginSettings(data);
+  protected override createPluginSettingsTab(): null | PluginSettingTab {
+    return new PluginSettingsTab(this);
   }
 
-  protected override createPluginSettingsTab(): null | PluginSettingTab {
-    return new AdvancedDebugModePluginSettingsTab(this);
+  protected override createSettingsManager(): PluginSettingsManagerBase<PluginSettings> {
+    return new PluginSettingsManager(this);
   }
 
   protected override async onloadComplete(): Promise<void> {

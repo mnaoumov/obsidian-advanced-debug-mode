@@ -5,15 +5,15 @@ import {
 } from 'node:async_hooks';
 import { Component } from 'obsidian';
 
-import type { AdvancedDebugModePlugin } from '../AdvancedDebugModePlugin.ts';
 import type { LongStackTracesComponent } from '../Components/LongStackTracesComponent.ts';
+import type { Plugin } from '../Plugin.ts';
 
 import { generateStackTraceLine } from '../Components/LongStackTracesComponent.ts';
 
 export class AsyncLongStackTracesComponent extends Component {
   private asyncIdStackLinesMap = new Map<number, string[]>();
 
-  public constructor(private plugin: AdvancedDebugModePlugin, private longStackTracesComponent: LongStackTracesComponent) {
+  public constructor(private plugin: Plugin, private longStackTracesComponent: LongStackTracesComponent) {
     super();
   }
 

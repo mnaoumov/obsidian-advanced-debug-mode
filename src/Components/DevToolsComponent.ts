@@ -4,12 +4,12 @@ import {
 } from 'obsidian';
 import { convertAsyncToSync } from 'obsidian-dev-utils/Async';
 
-import type { AdvancedDebugModePlugin } from '../AdvancedDebugModePlugin.ts';
+import type { Plugin } from '../Plugin.ts';
 
 import { DevToolsView } from '../Views/DevToolsView.ts';
 
 export class DevToolsComponent extends Component {
-  public constructor(private plugin: AdvancedDebugModePlugin) {
+  public constructor(private plugin: Plugin) {
     super();
   }
 

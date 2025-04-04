@@ -1,5 +1,5 @@
 import './styles/main.scss';
-import { AdvancedDebugModePlugin } from './AdvancedDebugModePlugin.ts';
+import { Plugin } from './Plugin.ts';
 
 // eslint-disable-next-line import-x/no-default-export
-export default AdvancedDebugModePlugin;
+export default Plugin;
