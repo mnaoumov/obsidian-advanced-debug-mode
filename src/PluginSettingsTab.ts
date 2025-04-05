@@ -119,7 +119,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<Plugin> {
             this.plugin.updateStackTraceLimit();
           }
         });
-        numberComponent.inputEl.required = true;
       });
 
     new Setting(this.containerEl)

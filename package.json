@@ -27,7 +27,7 @@
     "jiti": "^2.4.2",
     "monkey-around": "^3.0.0",
     "obsidian": "^1.8.7",
-    "obsidian-dev-utils": "^22.1.1-beta.5",
+    "obsidian-dev-utils": "^22.1.1-beta.11",
     "obsidian-typings": "^2.41.4",
     "type-fest": "^4.39.1"
   },
