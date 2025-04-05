@@ -5,10 +5,9 @@ import {
   debounce,
   FileSystemAdapter
 } from 'obsidian';
+import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
 import type { Plugin } from '../Plugin.ts';
-
-import { registerPatch } from '../MonkeyAround.ts';
 
 const THINGS_HAPPENING_DEBOUNCE_TIMEOUT_IN_MS = 60_000;
 type QueueFn = FileSystemAdapter['queue'];

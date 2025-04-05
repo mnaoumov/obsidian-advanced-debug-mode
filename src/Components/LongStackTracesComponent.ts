@@ -6,10 +6,10 @@ import {
   assignWithNonEnumerableProperties,
   normalizeOptionalProperties
 } from 'obsidian-dev-utils/Object';
+import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
 import type { Plugin } from '../Plugin.ts';
 
-import { registerPatch } from '../MonkeyAround.ts';
 import { MultiWeakMap } from '../MultiWeakMap.ts';
 
 export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction };
