@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.5.1
+
+- Switch to new template
+
 ## 1.5.0
 
 - Log failing fn
