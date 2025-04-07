@@ -1,9 +1,6 @@
-import type { PluginSettingTab } from 'obsidian';
-import type { PluginSettingsManagerBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsManagerBase';
-
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
-import type { PluginSettings } from './PluginSettings.ts';
+import type { PluginTypes } from './PluginTypes.ts';
 
 import { DevToolsComponent } from './Components/DevToolsComponent.ts';
 import { LongRunningTasksComponent } from './Components/LongRunningTasksComponent.ts';
@@ -12,7 +9,7 @@ import { getPlatformDependencies } from './PlatformDependencies.ts';
 import { PluginSettingsManager } from './PluginSettingsManager.ts';
 import { PluginSettingsTab } from './PluginSettingsTab.ts';
 
-export class Plugin extends PluginBase<PluginSettings> {
+export class Plugin extends PluginBase<PluginTypes> {
   private longRunningTasksComponent!: LongRunningTasksComponent;
 
   private longStackTracesComponent!: LongStackTracesComponent;
@@ -38,15 +35,16 @@ export class Plugin extends PluginBase<PluginSettings> {
     Error.stackTraceLimit = this.settings.stackTraceLimit || Infinity;
   }
 
-  protected override createPluginSettingsTab(): null | PluginSettingTab {
+  protected override createPluginSettingsTab(): null | PluginSettingsTab {
     return new PluginSettingsTab(this);
   }
 
-  protected override createSettingsManager(): PluginSettingsManagerBase<PluginSettings> {
+  protected override createSettingsManager(): PluginSettingsManager {
     return new PluginSettingsManager(this);
   }
 
-  protected override async onloadComplete(): Promise<void> {
+  protected override async onloadImpl(): Promise<void> {
+    await super.onloadImpl();
     const originalStackTraceLimit = Error.stackTraceLimit;
     this.register(() => {
       Error.stackTraceLimit = originalStackTraceLimit;
