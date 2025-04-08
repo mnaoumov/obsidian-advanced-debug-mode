@@ -16,6 +16,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
   }
 
   public override display(): void {
+    super.display();
     this.containerEl.empty();
 
     const debugController = getDebugController();
