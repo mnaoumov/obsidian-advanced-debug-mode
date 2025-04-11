@@ -35,12 +35,12 @@ export class Plugin extends PluginBase<PluginTypes> {
     Error.stackTraceLimit = this.settings.stackTraceLimit || Infinity;
   }
 
-  protected override createPluginSettingsTab(): null | PluginSettingsTab {
-    return new PluginSettingsTab(this);
-  }
-
   protected override createSettingsManager(): PluginSettingsManager {
     return new PluginSettingsManager(this);
+  }
+
+  protected override createSettingsTab(): null | PluginSettingsTab {
+    return new PluginSettingsTab(this);
   }
 
   protected override async onloadImpl(): Promise<void> {
