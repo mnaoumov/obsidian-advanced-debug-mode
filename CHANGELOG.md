@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.6.0
+
+- Improve performance
+- Ignore more internals
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/26.0.0
+
 ## 1.5.4
 
 - https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/24.1.1
