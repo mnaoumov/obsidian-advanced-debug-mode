@@ -17,43 +17,95 @@ The plugin tries to preserve long stack traces as much as possible.
 ![Long stack traces](images/long-stack-traces.png)
 
 ```js
-function foo() {
-  bar();
+function foo1() {
+  setTimeout(foo2, 100);
 }
 
-function bar() {
-  setTimeout(baz, 100);
+function foo2() {
+  const intervalId = setInterval(foo3, 100);
+  setTimeout(() => {
+    clearInterval(intervalId);
+  }, 150);
 }
 
-function baz() {
-  qux();
+function foo3() {
+  queueMicrotask(foo4);
 }
 
-function qux() {
-  throw new Error('Error from qux');
+function foo4() {
+  requestAnimationFrame(foo5);
 }
 
-foo();
+function foo5() {
+  process.nextTick(foo6);
+}
+
+function foo6() {
+  setImmediate(foo7);
+}
+
+function foo7() {
+  Promise.resolve().then(foo8);
+}
+
+function foo8() {
+  Promise.reject(new Error('Error from Promise')).catch(foo9);
+}
+
+function foo9() {
+  Promise.resolve().finally(foo10);
+}
+
+function foo10() {
+  const div = createDiv();
+  div.addEventListener('click', foo11);
+  div.click();
+}
+
+function foo11() {
+  throw new Error('Error from foo11');
+}
+
+foo1();
 ```
 
 Without the plugin you get the error in the console
 
 ```
-Uncaught Error: Error from qux
-    at qux (<anonymous>:14:9)
-    at baz (<anonymous>:10:3)
+Uncaught Error: Error from foo11
+    at HTMLDivElement.foo11 (<anonymous>:47:9)
+    at foo10 (<anonymous>:43:7)
+    at <anonymous>
 ```
 
 With the plugin you get
 
 ```
-Uncaught Error: Error from qux
-    at qux (<anonymous>:14:9)
-    at baz (<anonymous>:10:3)
+Uncaught Error: Error from foo11
+    at HTMLDivElement.foo11 (<anonymous>:47:9)
+    at foo10 (<anonymous>:43:7)
+    at <anonymous>
+    at --- addEventListener --- (0)
+    at foo10 (<anonymous>:42:7)
+    at --- Promise.finally --- (0)
+    at foo9 (<anonymous>:37:28)
+    at --- Promise.catch --- (0)
+    at foo8 (<anonymous>:33:56)
+    at --- Promise.then --- (0)
+    at Immediate.foo7 (<anonymous>:29:21)
+    at --- setImmediate --- (0)
+    at foo6 (<anonymous>:25:3)
+    at --- process.nextTick --- (0)
+    at foo5 (<anonymous>:21:11)
+    at --- requestAnimationFrame --- (0)
+    at foo4 (<anonymous>:17:3)
+    at --- queueMicrotask --- (0)
+    at foo3 (<anonymous>:13:3)
+    at --- setInterval --- (0)
+    at foo2 (<anonymous>:6:22)
     at --- setTimeout --- (0)
-    at bar (<anonymous>:6:3)
-    at foo (<anonymous>:2:3)
-    at <anonymous>:1:1
+    at foo1 (<anonymous>:2:3)
+    at <anonymous>:50:1
 ```
 
 #### Async long stack traces
@@ -78,40 +130,62 @@ async function foo() {
 
 ```js
 function foo1() {
-  foo2();
+  setTimeout(foo2, 100);
 }
 
 function foo2() {
-  setTimeout(foo3, 100);
+  const intervalId = setInterval(foo3, 100);
+  setTimeout(() => {
+    clearInterval(intervalId);
+  }, 150);
 }
 
 function foo3() {
-  // calling async from sync
+  queueMicrotask(foo4);
+}
+
+function foo4() {
+  requestAnimationFrame(foo5);
+}
+
+function foo5() {
+  process.nextTick(foo6);
+}
+
+function foo6() {
+  setImmediate(foo7);
+}
+
+function foo7() {
+  Promise.resolve().then(foo8);
+}
+
+function foo8() {
+  Promise.reject(new Error('Error from Promise')).catch(foo9);
+}
+
+function foo9() {
+  Promise.resolve().finally(foo10);
+}
+
+function foo10() {
+  const div = createDiv();
+  div.addEventListener('click', foo11);
+  div.click();
+}
+
+function foo11() {
   barAsync1();
 }
 
 async function barAsync1() {
-  await sleep(100);
+  await sleep(50);
   await barAsync2();
 }
 
 async function barAsync2() {
-  await sleep(100);
-  await barAsync3();
-}
-
-async function barAsync3() {
-  await sleep(100);
-  // calling sync from async
-  foo4();
-}
-
-function foo4() {
-  foo5();
-}
-
-function foo5() {
-  throw new Error('Error from foo5');
+  await sleep(50);
+  throw new Error('Error from barAsync2');
 }
 
 foo1();
@@ -120,37 +194,48 @@ foo1();
 Without the plugin you get the error in the console
 
 ```
-Uncaught (in promise) Error: Error from foo5
-    at foo5 (<anonymous>:35:9)
-    at foo4 (<anonymous>:31:3)
-    at barAsync3 (<anonymous>:27:3)
-    at async barAsync2 (<anonymous>:21:3)
-    at async barAsync1 (<anonymous>:16:3)
+Uncaught (in promise) Error: Error from barAsync2
+    at barAsync2 (<anonymous>:58:9)
+    at async barAsync1 (<anonymous>:52:3)
 ```
 
 With the plugin you get
 
 ```
-Uncaught (in promise) Error: Error from foo5
-    at foo5 (<anonymous>:35:9)
-    at foo4 (<anonymous>:31:3)
-    at barAsync3 (<anonymous>:27:3)
-    at async barAsync2 (<anonymous>:21:3)
-    at async barAsync1 (<anonymous>:16:3)
+Uncaught (in promise) Error: Error from barAsync2
+    at barAsync2 (<anonymous>:58:9)
+    at async barAsync1 (<anonymous>:52:3)
     at --- async --- (0)
-    at barAsync3 (<anonymous>:25:9)
-    at barAsync2 (<anonymous>:21:9)
-    at async barAsync1 (<anonymous>:16:3)
+    at barAsync2 (<anonymous>:57:9)
+    at barAsync1 (<anonymous>:52:9)
     at --- async --- (0)
-    at barAsync2 (<anonymous>:20:9)
-    at barAsync1 (<anonymous>:16:9)
+    at enhance.js:1:13289
     at --- async --- (0)
-    at barAsync1 (<anonymous>:15:9)
-    at foo3 (<anonymous>:11:3)
+    at barAsync1 (<anonymous>:51:9)
+    at HTMLDivElement.foo11 (<anonymous>:47:3)
+    at foo10 (<anonymous>:43:7)
+    at <anonymous>
+    at --- addEventListener --- (0)
+    at foo10 (<anonymous>:42:7)
+    at --- Promise.finally --- (0)
+    at foo9 (<anonymous>:37:28)
+    at --- Promise.catch --- (0)
+    at foo8 (<anonymous>:33:56)
+    at --- Promise.then --- (0)
+    at Immediate.foo7 (<anonymous>:29:21)
+    at --- setImmediate --- (0)
+    at foo6 (<anonymous>:25:3)
+    at --- process.nextTick --- (0)
+    at foo5 (<anonymous>:21:11)
+    at --- requestAnimationFrame --- (0)
+    at foo4 (<anonymous>:17:3)
+    at --- queueMicrotask --- (0)
+    at foo3 (<anonymous>:13:3)
+    at --- setInterval --- (0)
+    at foo2 (<anonymous>:6:22)
     at --- setTimeout --- (0)
-    at foo2 (<anonymous>:6:3)
     at foo1 (<anonymous>:2:3)
-    at <anonymous>:38:1
+    at <anonymous>:61:1
 ```
 
 ### DevTools for mobile app
