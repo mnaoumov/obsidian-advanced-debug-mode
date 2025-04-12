@@ -94,7 +94,9 @@ export abstract class LongStackTracesComponent extends Component {
 
     this.internalStackFrameLocations = [
       `plugin:${this.plugin.manifest.id}`,
-      'node:internal'
+      'node:internal',
+      'at Promise.',
+      'at new Promise'
     ];
 
     this.OriginalError = window.Error;
