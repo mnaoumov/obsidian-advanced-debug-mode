@@ -77,7 +77,7 @@ export abstract class LongStackTracesComponent extends Component {
   public parentStackFrame: StackFrame | undefined;
   private internalStackFrameLocations: string[] = [];
 
-  public constructor(private plugin: Plugin) {
+  public constructor(protected plugin: Plugin) {
     super();
   }
 

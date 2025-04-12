@@ -11,8 +11,6 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
 
   public constructor(plugin: Plugin) {
     super(plugin);
-    this.asyncLongStackTracesHandler = new AsyncLongStackTracesComponent(plugin, this);
-    this.addChild(this.asyncLongStackTracesHandler);
   }
 
   public override adjustStackLines(lines: string[], parentStackFrame: StackFrame | undefined, asyncId: number): void {
@@ -40,7 +38,8 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
       stackFrameTitle: 'process.nextTick'
     });
 
-    this.asyncLongStackTracesHandler.load();
+    this.asyncLongStackTracesHandler = new AsyncLongStackTracesComponent(this.plugin, this);
+    this.addChild(this.asyncLongStackTracesHandler);
   }
 
   protected override getAsyncId(): number {
