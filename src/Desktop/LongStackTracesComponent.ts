@@ -1,5 +1,6 @@
 import { process } from 'obsidian-dev-utils/ScriptUtils/NodeModules';
 
+import type { StackFrame } from '../Components/LongStackTracesComponent.ts';
 import type { Plugin } from '../Plugin.ts';
 
 import { LongStackTracesComponent } from '../Components/LongStackTracesComponent.ts';
@@ -14,6 +15,11 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
     this.addChild(this.asyncLongStackTracesHandler);
   }
 
+  public override adjustStackLines(lines: string[], parentStackFrame: StackFrame | undefined, asyncId: number): void {
+    super.adjustStackLines(lines, parentStackFrame, asyncId);
+    this.asyncLongStackTracesHandler.adjustStackLines(lines, asyncId);
+  }
+
   public override onload(): void {
     super.onload();
     if (!this.isEnabled()) {
@@ -24,20 +30,19 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
       handlerArgIndex: 0,
       methodName: 'setImmediate',
       obj: window,
-      stackFrameGroupTitle: 'setImmediate'
+      stackFrameTitle: 'setImmediate'
     });
 
     this.patchWithLongStackTraces({
       handlerArgIndex: 0,
       methodName: 'nextTick',
       obj: process,
-      stackFrameGroupTitle: 'process.nextTick'
+      stackFrameTitle: 'process.nextTick'
     });
   }
 
-  protected override adjustStackLines(lines: string[]): void {
-    super.adjustStackLines(lines);
-    this.asyncLongStackTracesHandler.adjustStackLines(lines);
+  protected override getAsyncId(): number {
+    return this.asyncLongStackTracesHandler.getAsyncId();
   }
 }
 

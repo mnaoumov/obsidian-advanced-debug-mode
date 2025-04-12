@@ -32,7 +32,7 @@ interface PatchOptions<Obj extends object> {
   methodName: ConditionalKeys<Obj, Function>;
   obj: Obj;
   shouldConvertStringToFunction?: boolean;
-  stackFrameGroupTitle: string;
+  stackFrameTitle: string;
 }
 
 interface PatchWithLongStackTracesImplOptions {
@@ -42,7 +42,7 @@ interface PatchWithLongStackTracesImplOptions {
   originalFnArgs: unknown[];
   originalFnThisArg: unknown;
   shouldConvertStringToFunction?: boolean;
-  stackFrameGroupTitle: string;
+  stackFrameTitle: string;
 }
 
 type RemoveEventListenerFn = EventTarget['removeEventListener'];
@@ -51,7 +51,7 @@ type WindowWithErrorConstructors = Record<string, GenericConstructor> & typeof w
 
 interface WrapWithStackTracesImplOptions {
   fn: GenericFunction;
-  stackFrameGroup: StackFrameGroup;
+  stackFrame: StackFrame;
   wrappedFnArgs: unknown[];
   wrappedFnThisArg: unknown;
 }
@@ -61,23 +61,47 @@ interface WrapWithStackTracesOptions {
   fn: GenericFunction;
   originalFnArgs: unknown[];
   originalFnThisArg: unknown;
-  stackFrameGroupTitle: string;
+  stackFrameTitle: string;
 }
 
 const eventHandlersMap = new MultiWeakMap<[EventTarget, string, GenericFunction], GenericFunction>();
 
-interface StackFrameGroup {
-  stackFrames: string[];
+export interface StackFrame {
+  parentStackError: Error;
   title: string;
 }
 
 export abstract class LongStackTracesComponent extends Component {
+  public OriginalError!: ErrorConstructor;
+  public parentStackFrame: StackFrame | undefined;
   private internalStackFrameLocations: string[] = [];
-  private OriginalError!: ErrorConstructor;
-  private stackFramesGroups: StackFrameGroup[] = [];
 
   public constructor(private plugin: Plugin) {
     super();
+  }
+
+  public adjustStackLines(lines: string[], parentStackFrame: StackFrame | undefined, _asyncId: number): void {
+    if (!this.plugin.settings.shouldIncludeInternalStackFrames) {
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i];
+        if (line && this.internalStackFrameLocations.some((location) => line.includes(location))) {
+          lines.splice(i, 1);
+        }
+      }
+    }
+
+    const linesSet = new Set(lines);
+
+    if (parentStackFrame) {
+      let parentStackFrameLines = parentStackFrame.parentStackError.stack?.split('\n').slice(1) ?? [];
+      parentStackFrameLines = parentStackFrameLines.filter((line) => !linesSet.has(line));
+      if (parentStackFrameLines.length > 0) {
+        lines.push(generateStackTraceLine(parentStackFrame.title));
+        lines.push(...parentStackFrameLines);
+      }
+    }
+
+    this.applyStackTraceLimit(lines);
   }
 
   public applyStackTraceLimit(lines: string[]): void {
@@ -121,7 +145,7 @@ export abstract class LongStackTracesComponent extends Component {
         methodName,
         obj: window,
         shouldConvertStringToFunction: methodNamesWithPossibleStringHandlers.includes(methodName),
-        stackFrameGroupTitle: methodName
+        stackFrameTitle: methodName
       });
     }
 
@@ -130,7 +154,7 @@ export abstract class LongStackTracesComponent extends Component {
       handlerArgIndex: 1,
       methodName: 'addEventListener',
       obj: EventTarget.prototype,
-      stackFrameGroupTitle: 'addEventListener'
+      stackFrameTitle: 'addEventListener'
     });
 
     const that = this;
@@ -151,40 +175,26 @@ export abstract class LongStackTracesComponent extends Component {
       handlerArgIndex: [0, 1],
       methodName: 'then',
       obj: Promise.prototype,
-      stackFrameGroupTitle: 'Promise.then'
+      stackFrameTitle: 'Promise.then'
     });
 
     this.patchWithLongStackTraces({
       handlerArgIndex: 0,
       methodName: 'catch',
       obj: Promise.prototype,
-      stackFrameGroupTitle: 'Promise.catch'
+      stackFrameTitle: 'Promise.catch'
     });
 
     this.patchWithLongStackTraces({
       handlerArgIndex: 0,
       methodName: 'finally',
       obj: Promise.prototype,
-      stackFrameGroupTitle: 'Promise.finally'
+      stackFrameTitle: 'Promise.finally'
     });
   }
 
-  protected adjustStackLines(lines: string[]): void {
-    if (!this.plugin.settings.shouldIncludeInternalStackFrames) {
-      for (let i = lines.length - 1; i >= 0; i--) {
-        const line = lines[i];
-        if (line && this.internalStackFrameLocations.some((location) => line.includes(location))) {
-          lines.splice(i, 1);
-        }
-      }
-    }
-
-    for (const stackFrameGroup of this.stackFramesGroups) {
-      lines.push(generateStackTraceLine(stackFrameGroup.title));
-      lines.push(...stackFrameGroup.stackFrames);
-    }
-
-    this.applyStackTraceLimit(lines);
+  protected getAsyncId(): number {
+    return 0;
   }
 
   protected isEnabled(): boolean {
@@ -204,7 +214,7 @@ export abstract class LongStackTracesComponent extends Component {
             next,
             originalFnArgs,
             originalFnThisArg: this,
-            stackFrameGroupTitle: options.stackFrameGroupTitle
+            stackFrameTitle: options.stackFrameTitle
           }));
         };
       }
@@ -258,9 +268,33 @@ export abstract class LongStackTracesComponent extends Component {
 
       const error = Reflect.construct(that.OriginalError, [message, errorOptions], (new.target as unknown ?? window.Error) as unknown as GenericConstructor);
       error.name = 'Error';
-      const lines = error.stack?.split('\n') ?? [];
-      that.adjustStackLines(lines);
-      error.stack = lines.join('\n');
+
+      const parentStackFrame = that.parentStackFrame;
+      const asyncId = that.getAsyncId();
+
+      let cachedStack: string | undefined = undefined;
+
+      const originalStackPropertyDescriptor = Object.getOwnPropertyDescriptor(error, 'stack');
+      Object.defineProperty(error, 'stack', {
+        configurable: true,
+        enumerable: false,
+        get() {
+          if (cachedStack !== undefined) {
+            return cachedStack;
+          }
+
+          const originalStack = (originalStackPropertyDescriptor?.get?.call(error) ?? '') as string;
+          const lines = originalStack.split('\n');
+          that.adjustStackLines(lines, parentStackFrame, asyncId);
+          cachedStack = lines.join('\n');
+          return cachedStack;
+        },
+        set(value: string) {
+          originalStackPropertyDescriptor?.set?.call(error, value);
+          cachedStack = value;
+        }
+      });
+
       return error;
     }
 
@@ -360,7 +394,7 @@ export abstract class LongStackTracesComponent extends Component {
         fn,
         originalFnArgs: options.originalFnArgs,
         originalFnThisArg: options.originalFnThisArg,
-        stackFrameGroupTitle: options.stackFrameGroupTitle
+        stackFrameTitle: options.stackFrameTitle
       }));
 
       argsWithWrappedHandler[handlerArgIndex] = wrappedHandler;
@@ -404,17 +438,16 @@ export abstract class LongStackTracesComponent extends Component {
   }
 
   private wrapWithStackTraces(options: WrapWithStackTracesOptions): GenericFunction {
-    const parentStackTrace = new Error().stack ?? '';
-    const stackFrameGroup = {
-      stackFrames: parentStackTrace.split('\n').slice(1),
-      title: options.stackFrameGroupTitle
+    const stackFrame = {
+      parentStackError: new Error(),
+      title: options.stackFrameTitle
     };
 
     const that = this;
     function wrappedFn(this: unknown, ...wrappedFnArgs: unknown[]): unknown {
       return that.wrapWithStackTracesImpl({
         fn: options.fn,
-        stackFrameGroup,
+        stackFrame,
         wrappedFnArgs,
         wrappedFnThisArg: this
       });
@@ -431,12 +464,13 @@ export abstract class LongStackTracesComponent extends Component {
   }
 
   private wrapWithStackTracesImpl(options: WrapWithStackTracesImplOptions): unknown {
-    this.stackFramesGroups.push(options.stackFrameGroup);
+    const previousParentStackFrame = this.parentStackFrame;
+    this.parentStackFrame = options.stackFrame;
 
     try {
       return options.fn.call(options.wrappedFnThisArg, ...options.wrappedFnArgs);
     } finally {
-      this.stackFramesGroups.pop();
+      this.parentStackFrame = previousParentStackFrame;
     }
   }
 }

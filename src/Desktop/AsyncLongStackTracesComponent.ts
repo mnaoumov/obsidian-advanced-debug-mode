@@ -5,38 +5,63 @@ import {
 } from 'node:async_hooks';
 import { Component } from 'obsidian';
 
-import type { LongStackTracesComponent } from '../Components/LongStackTracesComponent.ts';
+import type {
+  LongStackTracesComponent,
+  StackFrame
+} from '../Components/LongStackTracesComponent.ts';
 import type { Plugin } from '../Plugin.ts';
 
 import { generateStackTraceLine } from '../Components/LongStackTracesComponent.ts';
 
+interface AsyncStackFrame {
+  currentError: Error;
+  parentStackFrame: StackFrame | undefined;
+}
+
 export class AsyncLongStackTracesComponent extends Component {
-  private asyncIdStackLinesMap = new Map<number, string[]>();
+  private asyncIdParentMap = new Map<number, number>();
+
+  private asyncIdStackFrameMap = new Map<number, AsyncStackFrame>();
 
   public constructor(private plugin: Plugin, private longStackTracesComponent: LongStackTracesComponent) {
     super();
   }
 
-  public adjustStackLines(lines: string[]): void {
+  public adjustStackLines(lines: string[], asyncId: number): void {
     if (!this.isEnabled()) {
       return;
     }
-
-    const asyncId = executionAsyncId();
 
     if (asyncId === 0) {
       return;
     }
 
-    const stackLines = this.asyncIdStackLinesMap.get(asyncId) ?? [];
-    if (stackLines.length === 0) {
+    const asyncStackFrame = this.asyncIdStackFrameMap.get(asyncId);
+    if (!asyncStackFrame) {
       return;
     }
 
-    lines.push(generateStackTraceLine('async'));
-    lines.push(...stackLines);
+    const linesSet = new Set(lines);
 
-    this.longStackTracesComponent.applyStackTraceLimit(lines);
+    let currentErrorLines = asyncStackFrame.currentError.stack?.split('\n').slice(1) ?? [];
+    currentErrorLines = currentErrorLines.filter((line) => !linesSet.has(line));
+
+    if (currentErrorLines.length > 0) {
+      lines.push(generateStackTraceLine('async'));
+      lines.push(...currentErrorLines);
+    }
+
+    if (asyncStackFrame.parentStackFrame) {
+      this.longStackTracesComponent.adjustStackLines(lines, asyncStackFrame.parentStackFrame, 0);
+      return;
+    }
+
+    const parentAsyncId = this.asyncIdParentMap.get(asyncId) ?? 0;
+    this.longStackTracesComponent.adjustStackLines(lines, undefined, parentAsyncId);
+  }
+
+  public getAsyncId(): number {
+    return this.isEnabled() ? executionAsyncId() : 0;
   }
 
   public override onload(): void {
@@ -55,24 +80,21 @@ export class AsyncLongStackTracesComponent extends Component {
   }
 
   private asyncHookDestroy(asyncId: number): void {
-    this.asyncIdStackLinesMap.delete(asyncId);
+    this.asyncIdStackFrameMap.delete(asyncId);
+    this.asyncIdParentMap.delete(asyncId);
   }
 
-  private asyncHookInit(asyncId: number, type: string): void {
+  private asyncHookInit(asyncId: number, type: string, triggerAsyncId: number): void {
     if (type !== 'PROMISE') {
       return;
     }
 
-    const stackLines = (new Error().stack ?? '').split('\n').slice(1);
+    this.asyncIdParentMap.set(asyncId, triggerAsyncId);
 
-    const INTERNAL_STACK_FRAMES_COUNT = 5;
-    const firstFrameIndex = this.plugin.settings.shouldIncludeInternalStackFrames ? INTERNAL_STACK_FRAMES_COUNT : 0;
-
-    if (stackLines[firstFrameIndex]?.includes('at Promise.')) {
-      this.asyncIdStackLinesMap.delete(asyncId);
-    } else {
-      this.asyncIdStackLinesMap.set(asyncId, stackLines);
-    }
+    this.asyncIdStackFrameMap.set(asyncId, {
+      currentError: new this.longStackTracesComponent.OriginalError(),
+      parentStackFrame: this.longStackTracesComponent.parentStackFrame
+    });
   }
 
   private isEnabled(): boolean {
