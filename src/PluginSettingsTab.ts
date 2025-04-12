@@ -84,7 +84,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         f.createEl('strong', { text: '(Desktop only)' });
         f.appendText('.');
         f.createEl('br');
-        f.appendText('⚠️ If enabled, the autocomplete in the DevTools Console will stop working.');
+        f.appendText('⚠️ WARNING: If enabled, the autocomplete in the DevTools Console will stop working.');
       }))
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldIncludeAsyncLongStackTraces')
