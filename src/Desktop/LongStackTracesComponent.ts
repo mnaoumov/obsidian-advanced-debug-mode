@@ -39,6 +39,8 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
       obj: process,
       stackFrameTitle: 'process.nextTick'
     });
+
+    this.asyncLongStackTracesHandler.load();
   }
 
   protected override getAsyncId(): number {

@@ -73,7 +73,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         this.bind(toggle, 'shouldIncludeLongStackTraces', {
           onChanged: () => {
             this.display();
-            this.plugin.reloadLongStackTracesHandler();
           }
         });
       });
@@ -88,11 +87,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         f.appendText('⚠️ If enabled, the autocomplete in the DevTools Console will stop working.');
       }))
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldIncludeAsyncLongStackTraces', {
-          onChanged: () => {
-            this.plugin.reloadLongStackTracesHandler();
-          }
-        })
+        this.bind(toggle, 'shouldIncludeAsyncLongStackTraces')
           .setDisabled(!this.plugin.settings.shouldIncludeLongStackTraces);
       });
 
@@ -116,11 +111,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         f.appendText('.');
       }))
       .addNumber((numberComponent) => {
-        this.bind(numberComponent, 'stackTraceLimit', {
-          onChanged: () => {
-            this.plugin.updateStackTraceLimit();
-          }
-        });
+        this.bind(numberComponent, 'stackTraceLimit');
       });
 
     new Setting(this.containerEl)
@@ -140,7 +131,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         this.bind(toggle, 'shouldTimeoutLongRunningTasks', {
           onChanged: () => {
             this.display();
-            this.plugin.reloadLongRunningTasksComponent();
           }
         });
       });
@@ -153,11 +143,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         f.appendText('.');
       }))
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldIncludeTimedOutTasksDetails', {
-          onChanged: () => {
-            this.plugin.reloadLongRunningTasksComponent();
-          }
-        });
+        this.bind(toggle, 'shouldIncludeTimedOutTasksDetails');
         toggle.setDisabled(!this.plugin.settings.shouldTimeoutLongRunningTasks);
       });
 

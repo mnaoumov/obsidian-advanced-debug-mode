@@ -112,6 +112,7 @@ export abstract class LongStackTracesComponent extends Component {
   }
 
   public override onload(): void {
+    super.onload();
     if (!this.isEnabled()) {
       return;
     }

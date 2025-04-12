@@ -1,3 +1,6 @@
+import type { ExtractPluginSettingsWrapper } from 'obsidian-dev-utils/obsidian/Plugin/PluginTypesBase';
+import type { ReadonlyObjectDeep } from 'type-fest/source/readonly-deep.js';
+
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
 import type { PluginTypes } from './PluginTypes.ts';
@@ -17,22 +20,8 @@ export class Plugin extends PluginBase<PluginTypes> {
     return this.app.loadLocalStorage('DebugMode') === '1';
   }
 
-  public reloadLongRunningTasksComponent(): void {
-    this.longRunningTasksComponent.unload();
-    this.longRunningTasksComponent.load();
-  }
-
-  public reloadLongStackTracesHandler(): void {
-    this.longStackTracesComponent.unload();
-    this.longStackTracesComponent.load();
-  }
-
   public toggleDebugMode(isEnabled: boolean): void {
     this.app.debugMode(isEnabled);
-  }
-
-  public updateStackTraceLimit(): void {
-    Error.stackTraceLimit = this.settings.stackTraceLimit || Infinity;
   }
 
   protected override createSettingsManager(): PluginSettingsManager {
@@ -56,5 +45,31 @@ export class Plugin extends PluginBase<PluginTypes> {
     this.longRunningTasksComponent = new LongRunningTasksComponent(this);
     this.addChild(this.longRunningTasksComponent);
     this.addChild(new DevToolsComponent(this));
+  }
+
+  protected override async onLoadSettings(
+    loadedSettings: ReadonlyObjectDeep<ExtractPluginSettingsWrapper<PluginTypes>>,
+    isInitialLoad: boolean
+  ): Promise<void> {
+    await super.onLoadSettings(loadedSettings, isInitialLoad);
+    if (!isInitialLoad) {
+      this.reloadComponents();
+    }
+  }
+
+  protected override async onSaveSettings(
+    newSettings: ReadonlyObjectDeep<ExtractPluginSettingsWrapper<PluginTypes>>,
+    oldSettings: ReadonlyObjectDeep<ExtractPluginSettingsWrapper<PluginTypes>>,
+    context: unknown
+  ): Promise<void> {
+    await super.onSaveSettings(newSettings, oldSettings, context);
+    this.reloadComponents();
+  }
+
+  private reloadComponents(): void {
+    this.longRunningTasksComponent.unload();
+    this.longRunningTasksComponent.load();
+    this.longStackTracesComponent.unload();
+    this.longStackTracesComponent.load();
   }
 }
