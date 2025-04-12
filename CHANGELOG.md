@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.6.1
+
+- Filter duplicated frame lines preserving title
+- Ensure components are refreshed on settings changes
+
 ## 1.6.0
 
 - Improve performance
