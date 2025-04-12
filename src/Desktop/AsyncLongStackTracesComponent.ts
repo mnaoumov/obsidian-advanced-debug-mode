@@ -11,8 +11,6 @@ import type {
 } from '../Components/LongStackTracesComponent.ts';
 import type { Plugin } from '../Plugin.ts';
 
-import { generateStackTraceLine } from '../Components/LongStackTracesComponent.ts';
-
 interface AsyncStackFrame {
   currentError: Error;
   parentStackFrame: StackFrame | undefined;
@@ -41,15 +39,8 @@ export class AsyncLongStackTracesComponent extends Component {
       return;
     }
 
-    const linesSet = new Set(lines);
-
-    let currentErrorLines = asyncStackFrame.currentError.stack?.split('\n').slice(1) ?? [];
-    currentErrorLines = currentErrorLines.filter((line) => !linesSet.has(line));
-
-    if (currentErrorLines.length > 0) {
-      lines.push(generateStackTraceLine('async'));
-      lines.push(...currentErrorLines);
-    }
+    const currentErrorLines = asyncStackFrame.currentError.stack?.split('\n').slice(1) ?? [];
+    this.longStackTracesComponent.addStackFrame(lines, currentErrorLines, 'async');
 
     if (asyncStackFrame.parentStackFrame) {
       this.longStackTracesComponent.adjustStackLines(lines, asyncStackFrame.parentStackFrame, 0);

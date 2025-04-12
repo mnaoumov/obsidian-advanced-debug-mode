@@ -1,6 +1,7 @@
 import type { ConditionalKeys } from 'type-fest';
 
 import { Component } from 'obsidian';
+import { filterInPlace } from 'obsidian-dev-utils/Array';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import {
   assignWithNonEnumerableProperties,
@@ -80,25 +81,26 @@ export abstract class LongStackTracesComponent extends Component {
     super();
   }
 
-  public adjustStackLines(lines: string[], parentStackFrame: StackFrame | undefined, _asyncId: number): void {
-    if (!this.plugin.settings.shouldIncludeInternalStackFrames) {
-      for (let i = lines.length - 1; i >= 0; i--) {
-        const line = lines[i];
-        if (line && this.internalStackFrameLocations.some((location) => line.includes(location))) {
-          lines.splice(i, 1);
-        }
-      }
-    }
+  public addStackFrame(previousLines: string[], newLines: string[], title: string): void {
+    const previousLinesSet = new Set(previousLines);
+    newLines = newLines.slice();
+    this.filterInternalStackFrames(newLines);
 
-    const linesSet = new Set(lines);
+    const STACK_FRAME_TITLE_PREFIX = 'at ---';
+    filterInPlace(newLines, (line) => line.includes(STACK_FRAME_TITLE_PREFIX) || !previousLinesSet.has(line));
+    filterInPlace(newLines, (line, index) => !line.includes(STACK_FRAME_TITLE_PREFIX) || newLines[index + 1]?.includes(STACK_FRAME_TITLE_PREFIX) === false);
+
+    if (newLines.length > 0) {
+      previousLines.push(generateStackTraceLine(title));
+      previousLines.push(...newLines);
+    }
+  }
+
+  public adjustStackLines(lines: string[], parentStackFrame: StackFrame | undefined, _asyncId: number): void {
+    this.filterInternalStackFrames(lines);
 
     if (parentStackFrame) {
-      let parentStackFrameLines = parentStackFrame.parentStackError.stack?.split('\n').slice(1) ?? [];
-      parentStackFrameLines = parentStackFrameLines.filter((line) => !linesSet.has(line));
-      if (parentStackFrameLines.length > 0) {
-        lines.push(generateStackTraceLine(parentStackFrame.title));
-        lines.push(...parentStackFrameLines);
-      }
+      this.addStackFrame(lines, parentStackFrame.parentStackError.stack?.split('\n').slice(1) ?? [], parentStackFrame.title);
     }
 
     this.applyStackTraceLimit(lines);
@@ -232,6 +234,12 @@ export abstract class LongStackTracesComponent extends Component {
       eventTarget.removeEventListener(type, previousWrappedHandler);
     }
     eventHandlersMap.set(keys, options.wrappedFn);
+  }
+
+  private filterInternalStackFrames(lines: string[]): void {
+    if (!this.plugin.settings.shouldIncludeInternalStackFrames) {
+      filterInPlace(lines, (line) => !!line && this.internalStackFrameLocations.every((location) => !line.includes(location)));
+    }
   }
 
   private getAdditionalStackFramesCount(): number {
@@ -476,7 +484,7 @@ export abstract class LongStackTracesComponent extends Component {
   }
 }
 
-export function generateStackTraceLine(title: string): string {
+function generateStackTraceLine(title: string): string {
   return `    at --- ${title} --- (0)`;
 }
 
