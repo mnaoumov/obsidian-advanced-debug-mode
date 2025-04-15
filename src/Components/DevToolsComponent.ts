@@ -25,7 +25,7 @@ export class DevToolsComponent extends Component {
     this.plugin.addCommand({
       callback: convertAsyncToSync(this.openDevTools.bind(this)),
       id: 'open-dev-tools',
-      name: 'Open Dev Tools'
+      name: 'Open dev tools'
     });
   }
 

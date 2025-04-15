@@ -5,7 +5,7 @@ export class DevToolsView extends ItemView {
   public static VIEW_TYPE = 'advanced-debug-mode-dev-tools';
 
   public override getDisplayText(): string {
-    return 'Dev Tools';
+    return 'Dev tools';
   }
 
   public override getIcon(): string {
