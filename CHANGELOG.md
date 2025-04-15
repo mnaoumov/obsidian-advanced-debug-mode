@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.6.2
+
+- Update libs
+- Fix casing
+
 ## 1.6.1
 
 - Filter duplicated frame lines preserving title
