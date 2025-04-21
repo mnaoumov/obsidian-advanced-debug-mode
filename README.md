@@ -250,7 +250,7 @@ Some plugins use [debug](https://github.com/debug-js/debug) library to condition
 
 The plugin adds an ability to manage those debug namespaces from the UI.
 
-For more details, refer to the [documentation](https://github.com/mnaoumov/obsidian-dev-utils?tab=readme-ov-file#debugging).
+For more details, refer to the [documentation](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md).
 
 ### Timeout long running tasks
 

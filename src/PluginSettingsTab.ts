@@ -52,7 +52,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         f.createEl('br');
         f.appendText('For more information, see the ');
         f.createEl('a', {
-          href: 'https://github.com/mnaoumov/obsidian-dev-utils?tab=readme-ov-file#debugging',
+          href: 'https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md',
           text: 'documentation'
         });
       }))
