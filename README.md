@@ -260,7 +260,7 @@ The plugin allows to temporarily disable those timeouts to keep debugging.
 
 ## Installation
 
-The plugin is not available in [the official Community Plugins repository](https://obsidian.md/plugins) yet.
+The plugin is available in [the official Community Plugins repository](https://obsidian.md/plugins?id=advanced-debug-mode).
 
 ### Beta versions
 
