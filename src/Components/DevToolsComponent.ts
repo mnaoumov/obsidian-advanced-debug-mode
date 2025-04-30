@@ -8,7 +8,7 @@ import { throwExpression } from 'obsidian-dev-utils/Error';
 import type { Plugin } from '../Plugin.ts';
 
 export class DevToolsComponent extends Component {
-  private erudaButton!: HTMLElement;
+  private erudaButton!: HTMLDivElement;
 
   public constructor(private plugin: Plugin) {
     super();
@@ -24,7 +24,7 @@ export class DevToolsComponent extends Component {
       container: erudaDiv
     });
 
-    this.erudaButton = erudaDiv.shadowRoot?.find('.eruda-entry-btn') ?? throwExpression(new Error('Eruda button not found'));
+    this.erudaButton = erudaDiv.shadowRoot?.find('.eruda-entry-btn') as HTMLDivElement | undefined ?? throwExpression(new Error('Eruda button not found'));
     this.erudaButton.hide();
 
     this.plugin.addCommand({
