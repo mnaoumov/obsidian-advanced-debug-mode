@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.7.0
+
+- Extract eruda to main window instead of side view
+- Update libs
+
 ## 1.6.3
 
 - Update link
