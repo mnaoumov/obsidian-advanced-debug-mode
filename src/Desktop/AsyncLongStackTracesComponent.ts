@@ -1,9 +1,8 @@
-// eslint-disable-next-line import-x/no-nodejs-modules
+import { Component } from 'obsidian';
 import {
   createHook,
   executionAsyncId
-} from 'node:async_hooks';
-import { Component } from 'obsidian';
+} from 'obsidian-dev-utils/ScriptUtils/NodeModules';
 
 import type {
   LongStackTracesComponent,
