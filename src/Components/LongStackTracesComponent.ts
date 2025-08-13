@@ -6,7 +6,7 @@ import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import {
   assignWithNonEnumerableProperties,
   normalizeOptionalProperties
-} from 'obsidian-dev-utils/Object';
+} from 'obsidian-dev-utils/ObjectUtils';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
 import type { Plugin } from '../Plugin.ts';
