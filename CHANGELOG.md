@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.7.7
+
+- Update libs
+
 ## 1.7.6
 
 - Update libs
