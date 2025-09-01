@@ -1,37 +1,40 @@
 # CHANGELOG
 
+## 1.7.8
+
+- Minor changes
+
 ## 1.7.7
 
-- Update libs
+- Minor changes
 
 ## 1.7.6
 
-- Update libs
+- Minor changes
 
 ## 1.7.5
 
-- Update libs
+- Minor changes
 
 ## 1.7.4
 
-- Update libs
+- Minor changes
 
 ## 1.7.3
 
-- Update libs
+- Minor changes
 
 ## 1.7.2
 
-- Update libs
+- Minor changes
 
 ## 1.7.1
 
-- Update libs
+- Minor changes
 
 ## 1.7.0
 
 - Extract eruda to main window instead of side view
-- Update libs
 
 ## 1.6.3
 
@@ -39,7 +42,6 @@
 
 ## 1.6.2
 
-- Update libs
 - Fix casing
 
 ## 1.6.1
@@ -51,19 +53,18 @@
 
 - Improve performance
 - Ignore more internals
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/26.0.0
 
 ## 1.5.4
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/24.1.1
+- Minor changes
 
 ## 1.5.3
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/24.1.0
+- Minor changes
 
 ## 1.5.2
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/24.0.1
+- Minor changes
 
 ## 1.5.1
 
@@ -77,7 +78,6 @@
 ## 1.4.0
 
 - Desktop: Include timed out tasks details
-- Update README
 
 ## 1.3.0
 
@@ -116,7 +116,6 @@
 - Toggle `shouldShowInternalStackFrames`
 - Hide internal stack frames
 - Refactor to patch Error classes once
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/19.24.0
 
 ## 1.0.1
 
