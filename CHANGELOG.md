@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.8.0
+
+- Patch in all windows
+
 ## 1.7.11
 
 - Minor changes
