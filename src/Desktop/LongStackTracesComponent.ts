@@ -1,6 +1,9 @@
 import { process } from 'obsidian-dev-utils/ScriptUtils/NodeModules';
 
-import type { StackFrame } from '../Components/LongStackTracesComponent.ts';
+import type {
+  StackFrame,
+  WindowEx
+} from '../Components/LongStackTracesComponent.ts';
 import type { Plugin } from '../Plugin.ts';
 
 import { LongStackTracesComponent } from '../Components/LongStackTracesComponent.ts';
@@ -24,11 +27,13 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
       return;
     }
 
-    this.patchWithLongStackTraces({
-      handlerArgIndex: 0,
-      methodName: 'setImmediate',
-      obj: window,
-      stackFrameTitle: 'setImmediate'
+    this.plugin.registerDomWindowHandler((win) => {
+      this.patchWithLongStackTraces({
+        handlerArgIndex: 0,
+        methodName: 'setImmediate',
+        obj: win as WindowEx,
+        stackFrameTitle: 'setImmediate'
+      });
     });
 
     this.patchWithLongStackTraces({

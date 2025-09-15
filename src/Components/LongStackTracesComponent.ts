@@ -72,6 +72,8 @@ export interface StackFrame {
   title: string;
 }
 
+export type WindowEx = typeof globalThis & Window;
+
 export abstract class LongStackTracesComponent extends Component {
   public OriginalError!: ErrorConstructor;
   public parentStackFrame: StackFrame | undefined;
@@ -130,7 +132,7 @@ export abstract class LongStackTracesComponent extends Component {
     this.patchErrorClasses();
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-    const methodNames: ConditionalKeys<typeof globalThis & Window, Function>[] = [
+    const methodNames: ConditionalKeys<WindowEx, Function>[] = [
       'setTimeout',
       'setInterval',
       'queueMicrotask',
@@ -142,15 +144,17 @@ export abstract class LongStackTracesComponent extends Component {
       'setInterval'
     ];
 
-    for (const methodName of methodNames) {
-      this.patchWithLongStackTraces({
-        handlerArgIndex: 0,
-        methodName,
-        obj: window,
-        shouldConvertStringToFunction: methodNamesWithPossibleStringHandlers.includes(methodName),
-        stackFrameTitle: methodName
-      });
-    }
+    this.plugin.registerDomWindowHandler((win) => {
+      for (const methodName of methodNames) {
+        this.patchWithLongStackTraces({
+          handlerArgIndex: 0,
+          methodName,
+          obj: win as WindowEx,
+          shouldConvertStringToFunction: methodNamesWithPossibleStringHandlers.includes(methodName),
+          stackFrameTitle: methodName
+        });
+      }
+    });
 
     this.patchWithLongStackTraces({
       afterPatch: this.afterPatchAddEventListener.bind(this),
