@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.8.1
+
+- Minor changes
+
 ## 1.8.0
 
 - Patch in all windows
