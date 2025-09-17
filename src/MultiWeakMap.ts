@@ -28,7 +28,7 @@ class Node<Value> {
 }
 
 export class MultiWeakMap<Keys extends unknown[], Value> {
-  private rootNode = new Node<Value>();
+  private readonly rootNode = new Node<Value>();
 
   public get(keys: Keys): undefined | Value {
     let node: Node<Value> | undefined = this.rootNode;

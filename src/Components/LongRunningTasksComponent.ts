@@ -16,7 +16,7 @@ type RejectFn = (e: Error) => void;
 export class LongRunningTasksComponent extends Component {
   private fileSystemAdapter!: FileSystemAdapter;
 
-  public constructor(private plugin: Plugin) {
+  public constructor(private readonly plugin: Plugin) {
     super();
   }
 

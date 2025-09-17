@@ -16,11 +16,11 @@ interface AsyncStackFrame {
 }
 
 export class AsyncLongStackTracesComponent extends Component {
-  private asyncIdParentMap = new Map<number, number>();
+  private readonly asyncIdParentMap = new Map<number, number>();
 
-  private asyncIdStackFrameMap = new Map<number, AsyncStackFrame>();
+  private readonly asyncIdStackFrameMap = new Map<number, AsyncStackFrame>();
 
-  public constructor(private plugin: Plugin, private longStackTracesComponent: LongStackTracesComponent) {
+  public constructor(private readonly plugin: Plugin, private readonly longStackTracesComponent: LongStackTracesComponent) {
     super();
   }
 

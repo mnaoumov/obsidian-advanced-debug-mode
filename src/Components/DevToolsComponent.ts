@@ -10,7 +10,7 @@ import type { Plugin } from '../Plugin.ts';
 export class DevToolsComponent extends Component {
   private erudaButton!: HTMLDivElement;
 
-  public constructor(private plugin: Plugin) {
+  public constructor(private readonly plugin: Plugin) {
     super();
   }
 
