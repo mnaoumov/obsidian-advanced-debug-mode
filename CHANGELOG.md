@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.8.5
+
+- fix: build
+- chore: update libs
+
 ## 1.8.4
 
 - chore: enable conventional commits
