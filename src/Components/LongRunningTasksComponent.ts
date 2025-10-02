@@ -14,7 +14,14 @@ type QueueFn = FileSystemAdapter['queue'];
 type RejectFn = (e: Error) => void;
 
 export class LongRunningTasksComponent extends Component {
-  private fileSystemAdapter!: FileSystemAdapter;
+  private _fileSystemAdapter?: FileSystemAdapter;
+
+  private get fileSystemAdapter(): FileSystemAdapter {
+    if (!this._fileSystemAdapter) {
+      throw new Error('fileSystemAdapter is not set');
+    }
+    return this._fileSystemAdapter;
+  }
 
   public constructor(private readonly plugin: Plugin) {
     super();
@@ -27,7 +34,7 @@ export class LongRunningTasksComponent extends Component {
       return;
     }
 
-    this.fileSystemAdapter = fileSystemAdapter;
+    this._fileSystemAdapter = fileSystemAdapter;
 
     if (!this.plugin.settings.shouldTimeoutLongRunningTasks) {
       registerPatch(this, fileSystemAdapter, {

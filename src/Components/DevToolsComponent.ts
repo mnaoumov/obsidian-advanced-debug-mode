@@ -8,7 +8,7 @@ import { throwExpression } from 'obsidian-dev-utils/Error';
 import type { Plugin } from '../Plugin.ts';
 
 export class DevToolsComponent extends Component {
-  private erudaButton!: HTMLDivElement;
+  private erudaButton?: HTMLDivElement;
 
   public constructor(private readonly plugin: Plugin) {
     super();
@@ -48,6 +48,6 @@ export class DevToolsComponent extends Component {
   }
 
   private toggleDevToolsButton(): void {
-    this.erudaButton.toggle(!this.erudaButton.isShown());
+    this.erudaButton?.toggle(!this.erudaButton.isShown());
   }
 }

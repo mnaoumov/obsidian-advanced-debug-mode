@@ -10,7 +10,7 @@ import { LongStackTracesComponent } from '../Components/LongStackTracesComponent
 import { AsyncLongStackTracesComponent } from './AsyncLongStackTracesComponent.ts';
 
 class LongStackTracesComponentImpl extends LongStackTracesComponent {
-  private asyncLongStackTracesHandler!: AsyncLongStackTracesComponent;
+  private asyncLongStackTracesHandler?: AsyncLongStackTracesComponent;
 
   public constructor(plugin: Plugin) {
     super(plugin);
@@ -18,7 +18,7 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
 
   public override adjustStackLines(lines: string[], parentStackFrame: StackFrame | undefined, asyncId: number): void {
     super.adjustStackLines(lines, parentStackFrame, asyncId);
-    this.asyncLongStackTracesHandler.adjustStackLines(lines, asyncId);
+    this.asyncLongStackTracesHandler?.adjustStackLines(lines, asyncId);
   }
 
   public override onload(): void {
@@ -48,7 +48,7 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
   }
 
   protected override getAsyncId(): number {
-    return this.asyncLongStackTracesHandler.getAsyncId();
+    return this.asyncLongStackTracesHandler?.getAsyncId() ?? 0;
   }
 }
 

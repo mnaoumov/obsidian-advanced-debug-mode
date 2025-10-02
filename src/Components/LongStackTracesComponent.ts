@@ -29,7 +29,7 @@ type GenericConstructor = new (...args: unknown[]) => unknown;
 interface PatchOptions<Obj extends object> {
   afterPatch?: AfterPatchFn;
   handlerArgIndex: number | number[];
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- Need Function generics.
   methodName: ConditionalKeys<Obj, Function>;
   obj: Obj;
   shouldConvertStringToFunction?: boolean;
@@ -75,8 +75,16 @@ export interface StackFrame {
 export type WindowEx = typeof globalThis & Window;
 
 export abstract class LongStackTracesComponent extends Component {
-  public OriginalError!: ErrorConstructor;
   public parentStackFrame: StackFrame | undefined;
+
+  public get OriginalError(): ErrorConstructor {
+    if (!this._OriginalError) {
+      throw new Error('OriginalError is not set');
+    }
+    return this._OriginalError;
+  }
+
+  private _OriginalError?: ErrorConstructor;
   private internalStackFrameLocations: string[] = [];
 
   public constructor(protected plugin: Plugin) {
@@ -128,10 +136,10 @@ export abstract class LongStackTracesComponent extends Component {
       'at new Promise'
     ];
 
-    this.OriginalError = window.Error;
+    this._OriginalError = window.Error;
     this.patchErrorClasses();
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- Need Function generics.
     const methodNames: ConditionalKeys<WindowEx, Function>[] = [
       'setTimeout',
       'setInterval',
@@ -352,8 +360,7 @@ export abstract class LongStackTracesComponent extends Component {
         continue;
       }
 
-      // eslint-disable-next-line func-style
-      const PatchedChildError = function PatchedChildError(this: unknown, ...args: unknown[]): unknown {
+      function PatchedChildError(this: unknown, ...args: unknown[]): unknown {
         const PatchedChildErrorWrapper = windowWithErrorConstructors[childErrorClassName];
         if (!PatchedChildErrorWrapper) {
           return;
@@ -363,10 +370,14 @@ export abstract class LongStackTracesComponent extends Component {
           return new (PatchedChildErrorWrapper as unknown as GenericConstructor)(...args);
         }
 
+        if (!PatchedBaseError) {
+          return;
+        }
+
         const error = Reflect.construct(PatchedBaseError, args, (new.target as unknown ?? PatchedChildErrorWrapper) as unknown as GenericConstructor) as Error;
         error.name = childErrorClassName;
         return error;
-      };
+      }
 
       PatchedChildError.prototype = Object.create(PatchedBaseError.prototype as object);
       PatchedChildError.prototype.constructor = PatchedChildError;
@@ -392,7 +403,7 @@ export abstract class LongStackTracesComponent extends Component {
       let fn: GenericFunction;
 
       if (typeof handler === 'string' && options.shouldConvertStringToFunction) {
-        // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
+        // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func -- Need function from string overload.
         fn = new Function(handler) as GenericFunction;
       } else if (typeof handler === 'function') {
         fn = handler as GenericFunction;

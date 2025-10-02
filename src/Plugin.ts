@@ -13,9 +13,9 @@ import { PluginSettingsManager } from './PluginSettingsManager.ts';
 import { PluginSettingsTab } from './PluginSettingsTab.ts';
 
 export class Plugin extends PluginBase<PluginTypes> {
-  private longRunningTasksComponent!: LongRunningTasksComponent;
+  private longRunningTasksComponent?: LongRunningTasksComponent;
 
-  private longStackTracesComponent!: LongStackTracesComponent;
+  private longStackTracesComponent?: LongStackTracesComponent;
   public isDebugMode(): boolean {
     return this.app.loadLocalStorage('DebugMode') === '1';
   }
@@ -67,9 +67,9 @@ export class Plugin extends PluginBase<PluginTypes> {
   }
 
   private reloadComponents(): void {
-    this.longRunningTasksComponent.unload();
-    this.longRunningTasksComponent.load();
-    this.longStackTracesComponent.unload();
-    this.longStackTracesComponent.load();
+    this.longRunningTasksComponent?.unload();
+    this.longRunningTasksComponent?.load();
+    this.longStackTracesComponent?.unload();
+    this.longStackTracesComponent?.load();
   }
 }
