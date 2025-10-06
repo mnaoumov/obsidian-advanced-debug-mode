@@ -71,7 +71,7 @@ foo1();
 
 Without the plugin you get the error in the console
 
-```
+```text
 Uncaught Error: Error from foo11
     at HTMLDivElement.foo11 (<anonymous>:47:9)
     at foo10 (<anonymous>:43:7)
@@ -80,7 +80,7 @@ Uncaught Error: Error from foo11
 
 With the plugin you get
 
-```
+```text
 Uncaught Error: Error from foo11
     at HTMLDivElement.foo11 (<anonymous>:47:9)
     at foo10 (<anonymous>:43:7)
@@ -193,7 +193,7 @@ foo1();
 
 Without the plugin you get the error in the console
 
-```
+```text
 Uncaught (in promise) Error: Error from barAsync2
     at barAsync2 (<anonymous>:58:9)
     at async barAsync1 (<anonymous>:52:3)
@@ -201,7 +201,7 @@ Uncaught (in promise) Error: Error from barAsync2
 
 With the plugin you get
 
-```
+```text
 Uncaught (in promise) Error: Error from barAsync2
     at barAsync2 (<anonymous>:58:9)
     at async barAsync1 (<anonymous>:52:3)
@@ -272,7 +272,9 @@ To install the latest beta release of this plugin (regardless if it is available
 
 ## Support
 
-<a href="https://www.buymeacoffee.com/mnaoumov" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;"></a>
+<!-- markdownlint-disable MD033 -->
+<a href="https://www.buymeacoffee.com/mnaoumov" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="60" width="217"></a>
+<!-- markdownlint-enable MD033 -->
 
 ## License
 
