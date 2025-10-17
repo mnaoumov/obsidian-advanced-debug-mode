@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.9.0
+
+- chore: lint
+- feat: disable desktop-only settings on mobile
+- feat: emulate mobile mode
+- chore: lint
+- chore: enable markdownlint
+
 ## 1.8.6
 
 - fix: build
