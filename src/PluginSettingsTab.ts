@@ -39,6 +39,23 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       });
 
     new Setting(this.containerEl)
+      .setName('Desktop: Emulate mobile mode')
+      .setDesc(createFragment((f) => {
+        f.appendText('Enable/disable emulating mobile mode ');
+        f.createEl('strong', { text: '(Desktop only)' });
+        f.appendText('.');
+        f.createEl('br');
+        f.appendText('⚠️ This setting change will reload the app.');
+      }))
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.isEmulateMobileMode());
+
+        toggle.onChange((value) => {
+          this.plugin.toggleEmulateMobileMode(value);
+        });
+      });
+
+    new Setting(this.containerEl)
       .setName('Debug namespaces')
       .setDesc(createFragment((f) => {
         f.appendText('Configure the debug namespaces.');

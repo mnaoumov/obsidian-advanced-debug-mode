@@ -72,4 +72,11 @@ export class Plugin extends PluginBase<PluginTypes> {
     this.longStackTracesComponent?.unload();
     this.longStackTracesComponent?.load();
   }
+  public isEmulateMobileMode(): boolean {
+    return document.body.hasClass('emulate-mobile');
+  }
+
+  public toggleEmulateMobileMode(isEnabled: boolean): void {
+    this.app.emulateMobile(isEnabled);
+  }
 }
