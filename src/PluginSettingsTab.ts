@@ -1,4 +1,7 @@
-import { Setting } from 'obsidian';
+import {
+  Platform,
+  Setting
+} from 'obsidian';
 import {
   getDebugController,
   getDebugger
@@ -31,11 +34,11 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         f.appendText('⚠️ This setting change will reload the app.');
       }))
       .addToggle((toggle) => {
-        toggle.setValue(this.plugin.isDebugMode());
-
-        toggle.onChange((value) => {
-          this.plugin.toggleDebugMode(value);
-        });
+        toggle
+          .setValue(this.plugin.isDebugMode())
+          .onChange((value) => {
+            this.plugin.toggleDebugMode(value);
+          });
       });
 
     new Setting(this.containerEl)
@@ -48,11 +51,12 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         f.appendText('⚠️ This setting change will reload the app.');
       }))
       .addToggle((toggle) => {
-        toggle.setValue(this.plugin.isEmulateMobileMode());
-
-        toggle.onChange((value) => {
-          this.plugin.toggleEmulateMobileMode(value);
-        });
+        toggle
+          .setValue(this.plugin.isEmulateMobileMode())
+          .onChange((value) => {
+            this.plugin.toggleEmulateMobileMode(value);
+          })
+          .setDisabled(Platform.isMobile && !this.plugin.isEmulateMobileMode());
       });
 
     new Setting(this.containerEl)
@@ -74,11 +78,12 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         });
       }))
       .addTextArea((textArea) => {
-        textArea.setValue(debugController.get().join('\n'));
-        textArea.onChange((value) => {
-          const namespaces = value.split('\n');
-          debugController.set(namespaces);
-        });
+        textArea
+          .setValue(debugController.get().join('\n'))
+          .onChange((value) => {
+            const namespaces = value.split('\n');
+            debugController.set(namespaces);
+          });
 
         textArea.inputEl.addClass('debug-namespaces-setting-control');
       });
@@ -104,15 +109,17 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         f.appendText('⚠️ WARNING: If enabled, the autocomplete in the DevTools Console will stop working.');
       }))
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldIncludeAsyncLongStackTraces')
-          .setDisabled(!this.plugin.settings.shouldIncludeLongStackTraces);
+        this
+          .bind(toggle, 'shouldIncludeAsyncLongStackTraces')
+          .setDisabled(!this.plugin.settings.shouldIncludeLongStackTraces || Platform.isMobile);
       });
 
     new Setting(this.containerEl)
       .setName('Include internal stack frames')
       .setDesc('Whether to include internal stack frames to the JavaScript Error objects.')
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldIncludeInternalStackFrames')
+        this
+          .bind(toggle, 'shouldIncludeInternalStackFrames')
           .setDisabled(!this.plugin.settings.shouldIncludeLongStackTraces);
       });
 
@@ -145,11 +152,13 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         );
       }))
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldTimeoutLongRunningTasks', {
-          onChanged: () => {
-            this.display();
-          }
-        });
+        this
+          .bind(toggle, 'shouldTimeoutLongRunningTasks', {
+            onChanged: () => {
+              this.display();
+            }
+          })
+          .setDisabled(Platform.isMobile);
       });
 
     new Setting(this.containerEl)
@@ -160,8 +169,9 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         f.appendText('.');
       }))
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldIncludeTimedOutTasksDetails');
-        toggle.setDisabled(!this.plugin.settings.shouldTimeoutLongRunningTasks);
+        this
+          .bind(toggle, 'shouldIncludeTimedOutTasksDetails')
+          .setDisabled(!this.plugin.settings.shouldTimeoutLongRunningTasks || Platform.isMobile);
       });
 
     new Setting(this.containerEl)
@@ -180,15 +190,16 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       .addToggle((toggle) => {
         const NAMESPACE = '*:obsidian-dev-utils:Async:runWithTimeout:timeout';
         const timeoutDebugger = getDebugger(NAMESPACE);
-        toggle.setValue(!timeoutDebugger.enabled);
-        toggle.onChange((value) => {
-          if (value) {
-            debugController.disable(NAMESPACE);
-          } else {
-            debugController.enable(NAMESPACE);
-          }
-          this.display();
-        });
+        toggle
+          .setValue(!timeoutDebugger.enabled)
+          .onChange((value) => {
+            if (value) {
+              debugController.disable(NAMESPACE);
+            } else {
+              debugController.enable(NAMESPACE);
+            }
+            this.display();
+          });
       });
   }
 }
