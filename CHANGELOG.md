@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.9.1
+
+- chore: update libs
+
 ## 1.9.0
 
 - chore: lint
