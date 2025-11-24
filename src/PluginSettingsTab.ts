@@ -42,9 +42,11 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       });
 
     new Setting(this.containerEl)
+      // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
       .setName('Desktop: Emulate mobile mode')
       .setDesc(createFragment((f) => {
         f.appendText('Enable/disable emulating mobile mode ');
+        // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
         f.createEl('strong', { text: '(Desktop only)' });
         f.appendText('.');
         f.createEl('br');
@@ -74,6 +76,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         f.appendText('For more information, see the ');
         f.createEl('a', {
           href: 'https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md',
+          // eslint-disable-next-line obsidianmd/ui/sentence-case -- OK
           text: 'documentation'
         });
       }))
@@ -100,9 +103,11 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       });
 
     new Setting(this.containerEl)
+      // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
       .setName('Desktop: Include async long stack traces')
       .setDesc(createFragment((f) => {
         f.appendText('Whether to include long stack traces to the JavaScript Error objects from the async operations ');
+        // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
         f.createEl('strong', { text: '(Desktop only)' });
         f.appendText('.');
         f.createEl('br');
@@ -139,9 +144,11 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       });
 
     new Setting(this.containerEl)
+      // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
       .setName('Desktop: Timeout long running tasks')
       .setDesc(createFragment((f) => {
         f.appendText('Whether to timeout long running tasks ');
+        // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
         f.createEl('strong', { text: '(Desktop only)' });
         f.appendText('.');
         f.createEl('br');
@@ -162,9 +169,11 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       });
 
     new Setting(this.containerEl)
+      // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
       .setName('Desktop: Include timed out tasks details')
       .setDesc(createFragment((f) => {
         f.appendText('Whether to include the details of timed out tasks in the console ');
+        // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
         f.createEl('strong', { text: '(Desktop only)' });
         f.appendText('.');
       }))
@@ -175,6 +184,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       });
 
     new Setting(this.containerEl)
+      // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
       .setName('Obsidian Dev Utils: Timeout long running tasks')
       .setDesc(createFragment((f) => {
         f.appendText('Whether to timeout long running tasks within Obsidian Dev Utils library.');
