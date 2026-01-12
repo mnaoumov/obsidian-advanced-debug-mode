@@ -6,6 +6,6 @@
   "id": "advanced-debug-mode",
   "isDesktopOnly": false,
   "name": "Advanced Debug Mode",
-  "version": "1.9.2",
-  "minAppVersion": "1.10.6"
+  "version": "1.9.3",
+  "minAppVersion": "1.11.4"
 }
