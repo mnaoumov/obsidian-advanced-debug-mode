@@ -7,6 +7,8 @@ import { throwExpression } from 'obsidian-dev-utils/Error';
 
 import type { Plugin } from '../Plugin.ts';
 
+import { ToggleDevToolsButtonCommand } from '../Commands/ToggleDevToolsButtonCommand.ts';
+
 export class DevToolsComponent extends Component {
   private erudaButton?: HTMLDivElement;
 
@@ -27,16 +29,16 @@ export class DevToolsComponent extends Component {
     this.erudaButton = erudaDiv.shadowRoot?.find('.eruda-entry-btn') as HTMLDivElement | undefined ?? throwExpression(new Error('Eruda button not found'));
     this.erudaButton.hide();
 
-    this.plugin.addCommand({
-      callback: this.toggleDevToolsButton.bind(this),
-      id: 'toggle-dev-tools-button',
-      name: 'Toggle dev tools button'
-    });
+    new ToggleDevToolsButtonCommand(this.plugin, this).register();
 
     this.register(() => {
       erudaDiv.remove();
     });
     this.registerDomEvent(erudaDiv, 'focusin', this.onFocusIn.bind(this));
+  }
+
+  public toggleDevToolsButton(): void {
+    this.erudaButton?.toggle(!this.erudaButton.isShown());
   }
 
   private isEnabled(): boolean {
@@ -45,9 +47,5 @@ export class DevToolsComponent extends Component {
 
   private onFocusIn(evt: FocusEvent): void {
     evt.stopPropagation();
-  }
-
-  private toggleDevToolsButton(): void {
-    this.erudaButton?.toggle(!this.erudaButton.isShown());
   }
 }
