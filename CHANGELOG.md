@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.9.4
+
+- feat: extract commands
+
 ## 1.9.3
 
 - chore: update libs
