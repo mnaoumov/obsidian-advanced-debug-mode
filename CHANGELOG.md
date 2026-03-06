@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.9.5
+
+- chore: update template
+
 ## 1.9.4
 
 - feat: extract commands
