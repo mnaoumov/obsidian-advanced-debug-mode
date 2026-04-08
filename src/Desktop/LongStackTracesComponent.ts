@@ -1,4 +1,6 @@
-import { process } from 'obsidian-dev-utils/ScriptUtils/NodeModules';
+// eslint-disable-next-line import/no-nodejs-modules, import-x/no-nodejs-modules -- Deliberate, executes only on desktop.
+import process from 'node:process';
+import { AllWindowsEventHandler } from 'obsidian-dev-utils/obsidian/components/all-windows-event-handler';
 
 import type {
   StackFrame,
@@ -27,7 +29,7 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
       return;
     }
 
-    this.plugin.registerDomWindowHandler((win) => {
+    new AllWindowsEventHandler(this.plugin.app, this).registerAllWindowsHandler((win) => {
       this.patchWithLongStackTraces({
         handlerArgIndex: 0,
         methodName: 'setImmediate',

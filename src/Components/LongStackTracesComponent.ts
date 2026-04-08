@@ -1,13 +1,15 @@
 import type { ConditionalKeys } from 'type-fest';
 
 import { Component } from 'obsidian';
-import { filterInPlace } from 'obsidian-dev-utils/Array';
-import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
+import { filterInPlace } from 'obsidian-dev-utils/array';
+import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
 import {
   assignWithNonEnumerableProperties,
+  castTo,
   normalizeOptionalProperties
-} from 'obsidian-dev-utils/ObjectUtils';
-import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
+} from 'obsidian-dev-utils/object-utils';
+import { AllWindowsEventHandler } from 'obsidian-dev-utils/obsidian/components/all-windows-event-handler';
+import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 
 import type { Plugin } from '../Plugin.ts';
 
@@ -152,7 +154,7 @@ export abstract class LongStackTracesComponent extends Component {
       'setInterval'
     ];
 
-    this.plugin.registerDomWindowHandler((win) => {
+    new AllWindowsEventHandler(this.plugin.app, this).registerAllWindowsHandler((win) => {
       for (const methodName of methodNames) {
         this.patchWithLongStackTraces({
           handlerArgIndex: 0,
@@ -287,7 +289,7 @@ export abstract class LongStackTracesComponent extends Component {
         return new window.Error(message, errorOptions);
       }
 
-      const error = Reflect.construct(that.OriginalError, [message, errorOptions], (new.target as unknown ?? window.Error) as unknown as GenericConstructor);
+      const error = Reflect.construct(that.OriginalError, [message, errorOptions], castTo<GenericConstructor>(new.target as unknown ?? window.Error));
       error.name = 'Error';
 
       const parentStackFrame = that.parentStackFrame;
@@ -342,7 +344,7 @@ export abstract class LongStackTracesComponent extends Component {
   private patchErrorClasses(): void {
     this.patchBaseErrorClass();
 
-    const originalPrototypeToPatchedClassMap = new Map<unknown, unknown>();
+    const originalPrototypeToPatchedClassMap = new Map();
     originalPrototypeToPatchedClassMap.set(this.OriginalError.prototype, window.Error);
 
     const windowWithErrorConstructors = window as WindowWithErrorConstructors;
@@ -367,14 +369,14 @@ export abstract class LongStackTracesComponent extends Component {
         }
 
         if (!(this instanceof PatchedChildErrorWrapper)) {
-          return new (PatchedChildErrorWrapper as unknown as GenericConstructor)(...args);
+          return new (castTo<GenericConstructor>(PatchedChildErrorWrapper))(...args);
         }
 
         if (!PatchedBaseError) {
           return;
         }
 
-        const error = Reflect.construct(PatchedBaseError, args, (new.target as unknown ?? PatchedChildErrorWrapper) as unknown as GenericConstructor) as Error;
+        const error = Reflect.construct(PatchedBaseError, args, castTo<GenericConstructor>(new.target as unknown ?? PatchedChildErrorWrapper)) as Error;
         error.name = childErrorClassName;
         return error;
       }

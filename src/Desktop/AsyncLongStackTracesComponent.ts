@@ -1,8 +1,9 @@
-import { Component } from 'obsidian';
+// eslint-disable-next-line import/no-nodejs-modules, import-x/no-nodejs-modules -- Deliberate, executes only on desktop.
 import {
   createHook,
   executionAsyncId
-} from 'obsidian-dev-utils/ScriptUtils/NodeModules';
+} from 'node:async_hooks';
+import { Component } from 'obsidian';
 
 import type {
   LongStackTracesComponent,

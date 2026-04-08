@@ -5,7 +5,7 @@ import {
   debounce,
   FileSystemAdapter
 } from 'obsidian';
-import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
+import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 
 import type { Plugin } from '../Plugin.ts';
 
