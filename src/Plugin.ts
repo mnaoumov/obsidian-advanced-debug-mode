@@ -1,7 +1,7 @@
-import type { ExtractPluginSettingsWrapper } from 'obsidian-dev-utils/obsidian/Plugin/PluginTypesBase';
+import type { ExtractPluginSettingsWrapper } from 'obsidian-dev-utils/obsidian/plugin/plugin-types-base';
 import type { ReadonlyDeep } from 'type-fest';
 
-import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
+import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-base';
 
 import type { PluginTypes } from './PluginTypes.ts';
 

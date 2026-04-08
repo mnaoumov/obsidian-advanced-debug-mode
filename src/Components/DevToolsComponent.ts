@@ -3,7 +3,7 @@ import {
   Component,
   Platform
 } from 'obsidian';
-import { throwExpression } from 'obsidian-dev-utils/Error';
+import { throwExpression } from 'obsidian-dev-utils/error';
 
 import type { Plugin } from '../Plugin.ts';
 

@@ -11,7 +11,9 @@ export interface PlatformDependencies {
 
 export async function getPlatformDependencies(): Promise<PlatformDependencies> {
   const module = Platform.isMobile
+    // eslint-disable-next-line no-restricted-syntax -- Deliberate, platform-specific code.
     ? await import('./Mobile/Dependencies.ts')
+    // eslint-disable-next-line no-restricted-syntax -- Deliberate, platform-specific code.
     : await import('./Desktop/Dependencies.ts');
   return module.platformDependencies;
 }

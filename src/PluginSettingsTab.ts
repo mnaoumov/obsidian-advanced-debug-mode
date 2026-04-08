@@ -5,10 +5,10 @@ import {
 import {
   getDebugController,
   getDebugger
-} from 'obsidian-dev-utils/Debug';
-import { appendCodeBlock } from 'obsidian-dev-utils/HTMLElement';
-import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+} from 'obsidian-dev-utils/debug';
+import { appendCodeBlock } from 'obsidian-dev-utils/html-element';
+import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab-base';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 import type { Plugin } from './Plugin.ts';
 import type { PluginTypes } from './PluginTypes.ts';
