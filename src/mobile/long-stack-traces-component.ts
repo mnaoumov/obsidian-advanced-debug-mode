@@ -1,4 +1,4 @@
-import { LongStackTracesComponent } from '../Components/LongStackTracesComponent.ts';
+import { LongStackTracesComponent } from '../components/long-stack-traces-component.ts';
 
 class LongStackTracesComponentImpl extends LongStackTracesComponent {
 }

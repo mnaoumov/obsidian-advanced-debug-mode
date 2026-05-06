@@ -1,8 +1,8 @@
 import { CommandInvocationBase } from 'obsidian-dev-utils/obsidian/commands/command-base';
 import { NonEditorCommandBase } from 'obsidian-dev-utils/obsidian/commands/non-editor-command-base';
 
-import type { DevToolsComponent } from '../Components/DevToolsComponent.ts';
-import type { Plugin } from '../Plugin.ts';
+import type { DevToolsComponent } from '../components/dev-tools-component.ts';
+import type { Plugin } from '../plugin.ts';
 
 class ToggleDevToolsButtonCommandInvocation extends CommandInvocationBase<Plugin> {
   public constructor(plugin: Plugin, private readonly devToolsComponent: DevToolsComponent) {

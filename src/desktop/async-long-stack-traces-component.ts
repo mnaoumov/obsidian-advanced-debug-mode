@@ -8,8 +8,8 @@ import { Component } from 'obsidian';
 import type {
   LongStackTracesComponent,
   StackFrame
-} from '../Components/LongStackTracesComponent.ts';
-import type { Plugin } from '../Plugin.ts';
+} from '../components/long-stack-traces-component.ts';
+import type { Plugin } from '../plugin.ts';
 
 interface AsyncStackFrame {
   currentError: Error;

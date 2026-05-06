@@ -2,8 +2,8 @@ import type { Constructor } from 'type-fest';
 
 import { Platform } from 'obsidian';
 
-import type { LongStackTracesComponent } from './Components/LongStackTracesComponent.ts';
-import type { Plugin } from './Plugin.ts';
+import type { LongStackTracesComponent } from './components/long-stack-traces-component.ts';
+import type { Plugin } from './plugin.ts';
 
 export interface PlatformDependencies {
   LongStackTracesComponentConstructor: Constructor<LongStackTracesComponent, [Plugin]>;
@@ -12,8 +12,8 @@ export interface PlatformDependencies {
 export async function getPlatformDependencies(): Promise<PlatformDependencies> {
   const module = Platform.isMobile
     // eslint-disable-next-line no-restricted-syntax -- Deliberate, platform-specific code.
-    ? await import('./Mobile/Dependencies.ts')
+    ? await import('./mobile/dependencies.ts')
     // eslint-disable-next-line no-restricted-syntax -- Deliberate, platform-specific code.
-    : await import('./Desktop/Dependencies.ts');
+    : await import('./desktop/dependencies.ts');
   return module.platformDependencies;
 }

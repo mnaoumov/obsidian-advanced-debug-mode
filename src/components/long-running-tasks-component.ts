@@ -7,7 +7,7 @@ import {
 } from 'obsidian';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 
-import type { Plugin } from '../Plugin.ts';
+import type { Plugin } from '../plugin.ts';
 
 const THINGS_HAPPENING_DEBOUNCE_TIMEOUT_IN_MS = 60_000;
 type QueueFn = FileSystemAdapter['queue'];

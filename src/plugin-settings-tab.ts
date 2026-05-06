@@ -10,8 +10,8 @@ import { appendCodeBlock } from 'obsidian-dev-utils/html-element';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab-base';
 import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
-import type { Plugin } from './Plugin.ts';
-import type { PluginTypes } from './PluginTypes.ts';
+import type { Plugin } from './plugin.ts';
+import type { PluginTypes } from './plugin-types.ts';
 
 export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
   public constructor(plugin: Plugin) {
