@@ -5,9 +5,9 @@ import {
 } from 'obsidian';
 import { throwExpression } from 'obsidian-dev-utils/error';
 
-import type { Plugin } from '../Plugin.ts';
+import type { Plugin } from '../plugin.ts';
 
-import { ToggleDevToolsButtonCommand } from '../Commands/ToggleDevToolsButtonCommand.ts';
+import { ToggleDevToolsButtonCommand } from '../commands/toggle-dev-tools-button-command.ts';
 
 export class DevToolsComponent extends Component {
   private erudaButton?: HTMLDivElement;

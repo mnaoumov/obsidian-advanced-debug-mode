@@ -11,9 +11,9 @@ import {
 import { AllWindowsEventHandler } from 'obsidian-dev-utils/obsidian/components/all-windows-event-handler';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 
-import type { Plugin } from '../Plugin.ts';
+import type { Plugin } from '../plugin.ts';
 
-import { MultiWeakMap } from '../MultiWeakMap.ts';
+import { MultiWeakMap } from '../multi-weak-map.ts';
 
 export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction };
 

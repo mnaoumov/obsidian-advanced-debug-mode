@@ -5,11 +5,11 @@ import { AllWindowsEventHandler } from 'obsidian-dev-utils/obsidian/components/a
 import type {
   StackFrame,
   WindowEx
-} from '../Components/LongStackTracesComponent.ts';
-import type { Plugin } from '../Plugin.ts';
+} from '../components/long-stack-traces-component.ts';
+import type { Plugin } from '../plugin.ts';
 
-import { LongStackTracesComponent } from '../Components/LongStackTracesComponent.ts';
-import { AsyncLongStackTracesComponent } from './AsyncLongStackTracesComponent.ts';
+import { LongStackTracesComponent } from '../components/long-stack-traces-component.ts';
+import { AsyncLongStackTracesComponent } from './async-long-stack-traces-component.ts';
 
 class LongStackTracesComponentImpl extends LongStackTracesComponent {
   private asyncLongStackTracesHandler?: AsyncLongStackTracesComponent;

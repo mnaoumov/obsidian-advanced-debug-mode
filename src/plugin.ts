@@ -3,14 +3,14 @@ import type { ReadonlyDeep } from 'type-fest';
 
 import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-base';
 
-import type { PluginTypes } from './PluginTypes.ts';
+import type { PluginTypes } from './plugin-types.ts';
 
-import { DevToolsComponent } from './Components/DevToolsComponent.ts';
-import { LongRunningTasksComponent } from './Components/LongRunningTasksComponent.ts';
-import { LongStackTracesComponent } from './Components/LongStackTracesComponent.ts';
-import { getPlatformDependencies } from './PlatformDependencies.ts';
-import { PluginSettingsManager } from './PluginSettingsManager.ts';
-import { PluginSettingsTab } from './PluginSettingsTab.ts';
+import { DevToolsComponent } from './components/dev-tools-component.ts';
+import { LongRunningTasksComponent } from './components/long-running-tasks-component.ts';
+import { LongStackTracesComponent } from './components/long-stack-traces-component.ts';
+import { getPlatformDependencies } from './platform-dependencies.ts';
+import { PluginSettingsManager } from './plugin-settings-manager.ts';
+import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
 export class Plugin extends PluginBase<PluginTypes> {
   private longRunningTasksComponent?: LongRunningTasksComponent;
