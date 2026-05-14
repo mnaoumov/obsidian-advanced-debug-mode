@@ -23,6 +23,14 @@
     "spellcheck": "jiti scripts/spellcheck.ts",
     "version": "jiti scripts/version.ts"
   },
+  "overrides": {
+    "@antfu/utils": "9.2.0",
+    "boolean": "npm:dry-uninstall",
+    "dompurify": "3.0.1",
+    "eslint": "latest",
+    "type-fest": "latest",
+    "typescript": "latest"
+  },
   "devDependencies": {
     "@commitlint/cli": "latest",
     "@commitlint/config-conventional": "latest",
@@ -31,8 +39,7 @@
     "@tsconfig/strictest": "latest",
     "@types/node": "25.0.3",
     "better-typescript-lib": "latest",
-    "commitizen": "latest",
-    "cz-conventional-changelog": "latest",
+    "czg": "latest",
     "eruda": "latest",
     "eslint": "latest",
     "husky": "latest",
@@ -42,13 +49,5 @@
     "obsidian-dev-utils": "latest",
     "obsidian-typings": "obsidian-public-latest",
     "type-fest": "latest"
-  },
-  "overrides": {
-    "@antfu/utils": "9.2.0",
-    "boolean": "npm:dry-uninstall",
-    "dompurify": "3.0.1",
-    "eslint": "latest",
-    "type-fest": "latest",
-    "typescript": "latest"
   }
 }
