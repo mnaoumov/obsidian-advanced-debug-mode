@@ -46,7 +46,7 @@
     "jiti": "^2.7.0",
     "nano-staged": "^1.0.2",
     "obsidian": "^1.12.3",
-    "obsidian-dev-utils": "^63.0.1",
+    "obsidian-dev-utils": "^63.1.0",
     "obsidian-typings": "obsidian-public-latest",
     "type-fest": "^5.6.0"
   }
