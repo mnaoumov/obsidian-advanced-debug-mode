@@ -47,7 +47,10 @@ export class Plugin extends PluginBase {
       new CommandHandlerComponent({
         activeFileProvider: new AppActiveFileProvider(app),
         commandHandlers: [
-          new OpenSettingsCommandHandler(pluginSettingsTab),
+          new OpenSettingsCommandHandler({
+            app,
+            settingTab: pluginSettingsTab
+          }),
           new ToggleDevToolsButtonCommandHandler(devToolsComponent)
         ],
         commandRegistrar: new PluginCommandRegistrar(this),
