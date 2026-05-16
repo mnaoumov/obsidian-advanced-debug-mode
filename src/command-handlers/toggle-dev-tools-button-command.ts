@@ -1,6 +1,6 @@
 import { GlobalCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/global-command-handler';
 
-import type { DevToolsComponent } from '../components/dev-tools-component.ts';
+import type { DevToolsComponent } from '../dev-tools-component.ts';
 
 export class ToggleDevToolsButtonCommandHandler extends GlobalCommandHandler {
   public constructor(private readonly devToolsComponent: DevToolsComponent) {
