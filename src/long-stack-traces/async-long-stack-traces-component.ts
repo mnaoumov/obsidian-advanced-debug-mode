@@ -5,11 +5,11 @@ import {
 } from 'node:async_hooks';
 import { Component } from 'obsidian';
 
+import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import type {
   LongStackTracesComponentBase,
   StackFrame
-} from '../components/long-stack-traces-component.ts';
-import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
+} from './long-stack-traces-component-desktop.ts';
 
 interface AsyncLongStackTracesComponentConstructorParams {
   readonly longStackTracesComponent: LongStackTracesComponentBase;
