@@ -6,10 +6,15 @@ import {
 import { Component } from 'obsidian';
 
 import type {
-  LongStackTracesComponent,
+  LongStackTracesComponentBase,
   StackFrame
 } from '../components/long-stack-traces-component.ts';
-import type { Plugin } from '../plugin.ts';
+import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
+
+interface AsyncLongStackTracesComponentConstructorParams {
+  readonly longStackTracesComponent: LongStackTracesComponentBase;
+  readonly pluginSettingsComponent: PluginSettingsComponent;
+}
 
 interface AsyncStackFrame {
   currentError: Error;
@@ -18,11 +23,16 @@ interface AsyncStackFrame {
 
 export class AsyncLongStackTracesComponent extends Component {
   private readonly asyncIdParentMap = new Map<number, number>();
-
   private readonly asyncIdStackFrameMap = new Map<number, AsyncStackFrame>();
 
-  public constructor(private readonly plugin: Plugin, private readonly longStackTracesComponent: LongStackTracesComponent) {
+  private readonly longStackTracesComponent: LongStackTracesComponentBase;
+
+  private readonly pluginSettingsComponent: PluginSettingsComponent;
+
+  public constructor(params: AsyncLongStackTracesComponentConstructorParams) {
     super();
+    this.longStackTracesComponent = params.longStackTracesComponent;
+    this.pluginSettingsComponent = params.pluginSettingsComponent;
   }
 
   public adjustStackLines(lines: string[], asyncId: number): void {
@@ -56,6 +66,7 @@ export class AsyncLongStackTracesComponent extends Component {
   }
 
   public override onload(): void {
+    super.onload();
     if (!this.isEnabled()) {
       return;
     }
@@ -89,6 +100,6 @@ export class AsyncLongStackTracesComponent extends Component {
   }
 
   private isEnabled(): boolean {
-    return this.plugin.settings.shouldIncludeAsyncLongStackTraces;
+    return this.pluginSettingsComponent.settings.shouldIncludeAsyncLongStackTraces;
   }
 }

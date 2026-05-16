@@ -6,17 +6,12 @@ import type {
   StackFrame,
   WindowEx
 } from '../components/long-stack-traces-component.ts';
-import type { Plugin } from '../plugin.ts';
 
-import { LongStackTracesComponent } from '../components/long-stack-traces-component.ts';
+import { LongStackTracesComponentBase } from '../components/long-stack-traces-component.ts';
 import { AsyncLongStackTracesComponent } from './async-long-stack-traces-component.ts';
 
-class LongStackTracesComponentImpl extends LongStackTracesComponent {
+class LongStackTracesComponentDesktop extends LongStackTracesComponentBase {
   private asyncLongStackTracesHandler?: AsyncLongStackTracesComponent;
-
-  public constructor(plugin: Plugin) {
-    super(plugin);
-  }
 
   public override adjustStackLines(lines: string[], parentStackFrame: StackFrame | undefined, asyncId: number): void {
     super.adjustStackLines(lines, parentStackFrame, asyncId);
@@ -29,7 +24,7 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
       return;
     }
 
-    new AllWindowsEventHandler(this.plugin.app, this).registerAllWindowsHandler((win) => {
+    new AllWindowsEventHandler(this.app, this).registerAllWindowsHandler((win) => {
       this.patchWithLongStackTraces({
         handlerArgIndex: 0,
         methodName: 'setImmediate',
@@ -45,13 +40,17 @@ class LongStackTracesComponentImpl extends LongStackTracesComponent {
       stackFrameTitle: 'process.nextTick'
     });
 
-    this.asyncLongStackTracesHandler = new AsyncLongStackTracesComponent(this.plugin, this);
+    this.asyncLongStackTracesHandler = new AsyncLongStackTracesComponent({
+      longStackTracesComponent: this,
+      pluginSettingsComponent: this.pluginSettingsComponent
+    });
     this.addChild(this.asyncLongStackTracesHandler);
   }
 
   protected override getAsyncId(): number {
+    super.getAsyncId();
     return this.asyncLongStackTracesHandler?.getAsyncId() ?? 0;
   }
 }
 
-export const LongStackTracesComponentConstructor = LongStackTracesComponentImpl;
+export const LongStackTracesComponentConstructor = LongStackTracesComponentDesktop;

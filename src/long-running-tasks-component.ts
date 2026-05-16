@@ -5,50 +5,63 @@ import {
   debounce,
   FileSystemAdapter
 } from 'obsidian';
+import { registerAsyncEvent } from 'obsidian-dev-utils/obsidian/components/async-events-component';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 
-import type { Plugin } from '../plugin.ts';
+import type { PluginSettingsComponent } from './plugin-settings-component.ts';
 
 const THINGS_HAPPENING_DEBOUNCE_TIMEOUT_IN_MS = 60_000;
+interface LongRunningTasksComponentConstructorParams {
+  readonly fileSystemAdapter: FileSystemAdapter;
+  readonly pluginSettingsComponent: PluginSettingsComponent;
+}
 type QueueFn = FileSystemAdapter['queue'];
+
 type RejectFn = (e: Error) => void;
 
 export class LongRunningTasksComponent extends Component {
-  private _fileSystemAdapter?: FileSystemAdapter;
+  private readonly fileSystemAdapter: FileSystemAdapter;
+  private readonly pluginSettingsComponent: PluginSettingsComponent;
 
-  private get fileSystemAdapter(): FileSystemAdapter {
-    if (!this._fileSystemAdapter) {
-      throw new Error('fileSystemAdapter is not set');
-    }
-    return this._fileSystemAdapter;
-  }
-
-  public constructor(private readonly plugin: Plugin) {
+  public constructor(params: LongRunningTasksComponentConstructorParams) {
     super();
+    this.fileSystemAdapter = params.fileSystemAdapter;
+    this.pluginSettingsComponent = params.pluginSettingsComponent;
   }
 
   public override onload(): void {
-    const fileSystemAdapter = this.plugin.app.vault.adapter;
-
-    if (!(fileSystemAdapter instanceof FileSystemAdapter)) {
-      return;
-    }
-
-    this._fileSystemAdapter = fileSystemAdapter;
-
-    if (!this.plugin.settings.shouldTimeoutLongRunningTasks) {
-      registerPatch(this, fileSystemAdapter, {
+    super.onload();
+    if (!this.pluginSettingsComponent.settings.shouldTimeoutLongRunningTasks) {
+      registerPatch(this, this.fileSystemAdapter, {
         thingsHappening: () => {
           return debounce(this.notifyNoTimeout.bind(this), THINGS_HAPPENING_DEBOUNCE_TIMEOUT_IN_MS);
         }
       });
     }
 
-    if (this.plugin.settings.shouldIncludeTimedOutTasksDetails) {
-      registerPatch(this, fileSystemAdapter, {
+    if (this.pluginSettingsComponent.settings.shouldIncludeTimedOutTasksDetails) {
+      registerPatch(this, this.fileSystemAdapter, {
         queue: (): QueueFn => this.queue.bind(this)
       });
     }
+
+    registerAsyncEvent(
+      this,
+      this.pluginSettingsComponent.on('loadSettings', (_loadedState, isInitialLoad) => {
+        if (!isInitialLoad) {
+          this.unload();
+          this.load();
+        }
+      })
+    );
+
+    registerAsyncEvent(
+      this,
+      this.pluginSettingsComponent.on('saveSettings', () => {
+        this.unload();
+        this.load();
+      })
+    );
   }
 
   private async makeNextPromise<T>(fn: () => Promisable<T>): Promise<T> {

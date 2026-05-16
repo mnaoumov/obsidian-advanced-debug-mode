@@ -3,33 +3,29 @@ import {
   Component,
   Platform
 } from 'obsidian';
-import { throwExpression } from 'obsidian-dev-utils/error';
-
-import type { Plugin } from '../plugin.ts';
-
-import { ToggleDevToolsButtonCommand } from '../commands/toggle-dev-tools-button-command.ts';
+import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
 export class DevToolsComponent extends Component {
   private erudaButton?: HTMLDivElement;
 
-  public constructor(private readonly plugin: Plugin) {
+  public constructor() {
     super();
   }
 
   public override onload(): void {
+    super.onload();
     if (!this.isEnabled()) {
       return;
     }
 
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need root document.
     const erudaDiv = document.body.createDiv();
     eruda.init({
       container: erudaDiv
     });
 
-    this.erudaButton = erudaDiv.shadowRoot?.find('.eruda-entry-btn') as HTMLDivElement | undefined ?? throwExpression(new Error('Eruda button not found'));
+    this.erudaButton = ensureNonNullable(erudaDiv.shadowRoot?.find('.eruda-entry-btn') as HTMLDivElement | undefined);
     this.erudaButton.hide();
-
-    new ToggleDevToolsButtonCommand(this.plugin, this).register();
 
     this.register(() => {
       erudaDiv.remove();

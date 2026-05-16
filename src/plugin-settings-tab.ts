@@ -1,3 +1,5 @@
+import type { PluginSettingsTabBaseConstructorParams } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
+
 import {
   Platform,
   Setting
@@ -7,15 +9,26 @@ import {
   getDebugger
 } from 'obsidian-dev-utils/debug';
 import { appendCodeBlock } from 'obsidian-dev-utils/html-element';
-import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab-base';
+import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
 import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
-import type { Plugin } from './plugin.ts';
-import type { PluginTypes } from './plugin-types.ts';
+import type { DebugMode } from './debug-mode.ts';
+import type { EmulateMobileMode } from './emulate-mobile-mode.ts';
+import type { PluginSettings } from './plugin-settings.ts';
 
-export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
-  public constructor(plugin: Plugin) {
-    super(plugin);
+interface PluginSettingsTabConstructorParams extends PluginSettingsTabBaseConstructorParams<PluginSettings> {
+  readonly debugMode: DebugMode;
+  readonly emulateMobileMode: EmulateMobileMode;
+}
+
+export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
+  private readonly debugMode: DebugMode;
+  private readonly emulateMobileMode: EmulateMobileMode;
+
+  public constructor(params: PluginSettingsTabConstructorParams) {
+    super(params);
+    this.debugMode = params.debugMode;
+    this.emulateMobileMode = params.emulateMobileMode;
   }
 
   public override display(): void {
@@ -35,18 +48,17 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       }))
       .addToggle((toggle) => {
         toggle
-          .setValue(this.plugin.isDebugMode())
+          .setValue(this.debugMode.isDebugMode())
           .onChange((value) => {
-            this.plugin.toggleDebugMode(value);
+            this.debugMode.toggleDebugMode(value);
           });
       });
 
     new Setting(this.containerEl)
-      // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
       .setName('Desktop: Emulate mobile mode')
       .setDesc(createFragment((f) => {
         f.appendText('Enable/disable emulating mobile mode ');
-        // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
+
         f.createEl('strong', { text: '(Desktop only)' });
         f.appendText('.');
         f.createEl('br');
@@ -54,11 +66,11 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       }))
       .addToggle((toggle) => {
         toggle
-          .setValue(this.plugin.isEmulateMobileMode())
+          .setValue(this.emulateMobileMode.isEmulateMobileMode())
           .onChange((value) => {
-            this.plugin.toggleEmulateMobileMode(value);
+            this.emulateMobileMode.toggleEmulateMobileMode(value);
           })
-          .setDisabled(Platform.isMobile && !this.plugin.isEmulateMobileMode());
+          .setDisabled(Platform.isMobile && !this.emulateMobileMode.isEmulateMobileMode());
       });
 
     new Setting(this.containerEl)
@@ -103,11 +115,10 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       });
 
     new Setting(this.containerEl)
-      // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
       .setName('Desktop: Include async long stack traces')
       .setDesc(createFragment((f) => {
         f.appendText('Whether to include long stack traces to the JavaScript Error objects from the async operations ');
-        // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
+
         f.createEl('strong', { text: '(Desktop only)' });
         f.appendText('.');
         f.createEl('br');
@@ -116,7 +127,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       .addToggle((toggle) => {
         this
           .bind(toggle, 'shouldIncludeAsyncLongStackTraces')
-          .setDisabled(!this.plugin.settings.shouldIncludeLongStackTraces || Platform.isMobile);
+          .setDisabled(!this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces || Platform.isMobile);
       });
 
     new Setting(this.containerEl)
@@ -125,7 +136,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       .addToggle((toggle) => {
         this
           .bind(toggle, 'shouldIncludeInternalStackFrames')
-          .setDisabled(!this.plugin.settings.shouldIncludeLongStackTraces);
+          .setDisabled(!this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces);
       });
 
     new SettingEx(this.containerEl)
@@ -136,7 +147,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         f.appendText('The higher the value, the more memory intensive the plugin will be.');
         f.createEl('br');
         f.appendText('Use 0 to disable the limit ');
-        f.createEl('strong', { text: '(not recommended)' });
+        f.createEl('strong', { text: '(Not recommended)' });
         f.appendText('.');
       }))
       .addNumber((numberComponent) => {
@@ -144,11 +155,10 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       });
 
     new Setting(this.containerEl)
-      // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
       .setName('Desktop: Timeout long running tasks')
       .setDesc(createFragment((f) => {
         f.appendText('Whether to timeout long running tasks ');
-        // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
+
         f.createEl('strong', { text: '(Desktop only)' });
         f.appendText('.');
         f.createEl('br');
@@ -169,18 +179,17 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       });
 
     new Setting(this.containerEl)
-      // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
       .setName('Desktop: Include timed out tasks details')
       .setDesc(createFragment((f) => {
         f.appendText('Whether to include the details of timed out tasks in the console ');
-        // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
+
         f.createEl('strong', { text: '(Desktop only)' });
         f.appendText('.');
       }))
       .addToggle((toggle) => {
         this
           .bind(toggle, 'shouldIncludeTimedOutTasksDetails')
-          .setDisabled(!this.plugin.settings.shouldTimeoutLongRunningTasks || Platform.isMobile);
+          .setDisabled(!this.pluginSettingsComponent.settings.shouldTimeoutLongRunningTasks || Platform.isMobile);
       });
 
     new Setting(this.containerEl)
