@@ -65,6 +65,8 @@ export class Plugin extends PluginBase {
 
     this.addChild(
       new LongStackTracesComponent({
+        app,
+        pluginId: manifest.id,
         pluginSettingsComponent
       })
     );
