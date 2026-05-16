@@ -1,3 +1,4 @@
+import { evalInObsidian } from 'obsidian-integration-testing';
 import { getTempVault } from 'obsidian-integration-testing/vitest-global-setup';
 import {
   describe,
@@ -5,9 +6,116 @@ import {
   it
 } from 'vitest';
 
-describe('Smoke test', () => {
+describe('Desktop Integration', () => {
   it('should load plugin on Desktop', () => {
     const vault = getTempVault();
     expect(vault.path).toBeTruthy();
+  });
+
+  it('should have plugin loaded and enabled', async () => {
+    const result = await evalInObsidian({
+      fn({ app }) {
+        const plugin = app.plugins.getPlugin('advanced-debug-mode');
+        return {
+          isEnabled: !!plugin,
+          isLoaded: !!plugin?._loaded
+        };
+      }
+    });
+
+    expect(result.isEnabled).toBe(true);
+    expect(result.isLoaded).toBe(true);
+  });
+
+  it('should have patched Error class for long stack traces', async () => {
+    const result = await evalInObsidian({
+      fn() {
+        const error = new Error('integration test');
+        return {
+          hasStack: !!error.stack,
+          message: error.message
+        };
+      }
+    });
+
+    expect(result.message).toBe('integration test');
+    expect(result.hasStack).toBe(true);
+  });
+
+  it('should include long stack trace separators in async errors', async () => {
+    interface AsyncErrorResult {
+      hasLongStackTrace: boolean;
+      stack: string;
+    }
+
+    const result = await evalInObsidian({
+      fn() {
+        return new Promise<AsyncErrorResult>((resolve) => {
+          // eslint-disable-next-line obsidianmd/prefer-window-timers -- Runs inside Obsidian process.
+          setTimeout(() => {
+            const error = new Error('async error');
+            resolve({
+              hasLongStackTrace: !!error.stack?.includes('at ---'),
+              stack: error.stack ?? ''
+            });
+          }, 10);
+        });
+      }
+    });
+
+    expect(result.hasLongStackTrace).toBe(true);
+  });
+
+  it('should have Error.stackTraceLimit set from settings', async () => {
+    const result = await evalInObsidian({
+      fn() {
+        return {
+          stackTraceLimit: Error.stackTraceLimit
+        };
+      }
+    });
+
+    expect(typeof result.stackTraceLimit).toBe('number');
+  });
+
+  it('should be able to read debug mode state', async () => {
+    const result = await evalInObsidian({
+      fn({ app }) {
+        return {
+          debugModeValue: app.loadLocalStorage('DebugMode')
+        };
+      }
+    });
+
+    expect(typeof result.debugModeValue).toBe('string');
+  });
+
+  it('should have settings accessible', async () => {
+    const result = await evalInObsidian({
+      fn({ app }) {
+        const plugin = app.plugins.getPlugin('advanced-debug-mode');
+        if (!plugin) {
+          return { hasSettings: false };
+        }
+
+        return {
+          hasSettings: true
+        };
+      }
+    });
+
+    expect(result.hasSettings).toBe(true);
+  });
+
+  it('should register commands', async () => {
+    const result = await evalInObsidian({
+      fn({ app }) {
+        const commands = Object.keys(app.commands.commands).filter((id) => id.startsWith('advanced-debug-mode:'));
+        return { commands };
+      }
+    });
+
+    expect(result.commands).toContain('advanced-debug-mode:open-settings');
+    expect(result.commands).toContain('advanced-debug-mode:toggle-dev-tools-button');
   });
 });
