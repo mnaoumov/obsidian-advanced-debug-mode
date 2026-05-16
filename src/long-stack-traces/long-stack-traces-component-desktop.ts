@@ -75,12 +75,6 @@ interface WrapWithStackTracesOptions {
 
 const eventHandlersMap = new MultiWeakMap<[EventTarget, string, GenericFunction], GenericFunction>();
 
-export interface LongStackTracesComponentBaseConstructorParams {
-  readonly app: App;
-  readonly pluginId: string;
-  readonly pluginSettingsComponent: PluginSettingsComponent;
-}
-
 export interface StackFrame {
   parentStackError: Error;
   title: string;
@@ -88,8 +82,15 @@ export interface StackFrame {
 
 export type WindowEx = typeof window & Window;
 
-export abstract class LongStackTracesComponentBase extends Component {
+interface LongStackTracesComponentConstructorParams {
+  readonly app: App;
+  readonly pluginId: string;
+  readonly pluginSettingsComponent: PluginSettingsComponent;
+}
+
+export class LongStackTracesComponentDesktop extends Component {
   public parentStackFrame: StackFrame | undefined;
+
   public get OriginalError(): ErrorConstructor {
     if (!this._OriginalError) {
       throw new Error('OriginalError is not set');
@@ -98,15 +99,16 @@ export abstract class LongStackTracesComponentBase extends Component {
   }
 
   protected readonly app: App;
-
   protected readonly pluginSettingsComponent: PluginSettingsComponent;
 
   private _OriginalError?: ErrorConstructor;
 
-  private internalStackFrameLocations: string[] = [];
-  private readonly pluginId: string;
+  private asyncLongStackTracesComponent?: AsyncLongStackTracesComponent;
 
-  public constructor(params: LongStackTracesComponentBaseConstructorParams) {
+  private internalStackFrameLocations: string[] = [];
+
+  private readonly pluginId: string;
+  public constructor(params: LongStackTracesComponentConstructorParams) {
     super();
     this.app = params.app;
     this.pluginId = params.pluginId;
@@ -128,7 +130,7 @@ export abstract class LongStackTracesComponentBase extends Component {
     }
   }
 
-  public adjustStackLines(lines: string[], parentStackFrame: StackFrame | undefined, _asyncId: number): void {
+  public adjustStackLines(lines: string[], parentStackFrame: StackFrame | undefined, asyncId: number): void {
     this.filterInternalStackFrames(lines);
 
     if (parentStackFrame) {
@@ -136,6 +138,7 @@ export abstract class LongStackTracesComponentBase extends Component {
     }
 
     this.applyStackTraceLimit(lines);
+    this.asyncLongStackTracesComponent?.adjustStackLines(lines, asyncId);
   }
 
   public applyStackTraceLimit(lines: string[]): void {
@@ -228,10 +231,32 @@ export abstract class LongStackTracesComponentBase extends Component {
       obj: Promise.prototype,
       stackFrameTitle: 'Promise.finally'
     });
+
+    new AllWindowsEventHandler(this.app, this).registerAllWindowsHandler((win) => {
+      this.patchWithLongStackTraces({
+        handlerArgIndex: 0,
+        methodName: 'setImmediate',
+        obj: win as WindowEx,
+        stackFrameTitle: 'setImmediate'
+      });
+    });
+
+    this.patchWithLongStackTraces({
+      handlerArgIndex: 0,
+      methodName: 'nextTick',
+      obj: process,
+      stackFrameTitle: 'process.nextTick'
+    });
+
+    this.asyncLongStackTracesComponent = new AsyncLongStackTracesComponent({
+      longStackTracesComponent: this,
+      pluginSettingsComponent: this.pluginSettingsComponent
+    });
+    this.addChild(this.asyncLongStackTracesComponent);
   }
 
   protected getAsyncId(): number {
-    return 0;
+    return this.asyncLongStackTracesComponent?.getAsyncId() ?? 0;
   }
 
   protected isEnabled(): boolean {
@@ -518,49 +543,6 @@ export abstract class LongStackTracesComponentBase extends Component {
     } finally {
       this.parentStackFrame = previousParentStackFrame;
     }
-  }
-}
-
-export class LongStackTracesComponentDesktop extends LongStackTracesComponentBase {
-  private asyncLongStackTracesHandler?: AsyncLongStackTracesComponent;
-
-  public override adjustStackLines(lines: string[], parentStackFrame: StackFrame | undefined, asyncId: number): void {
-    super.adjustStackLines(lines, parentStackFrame, asyncId);
-    this.asyncLongStackTracesHandler?.adjustStackLines(lines, asyncId);
-  }
-
-  public override onload(): void {
-    super.onload();
-    if (!this.isEnabled()) {
-      return;
-    }
-
-    new AllWindowsEventHandler(this.app, this).registerAllWindowsHandler((win) => {
-      this.patchWithLongStackTraces({
-        handlerArgIndex: 0,
-        methodName: 'setImmediate',
-        obj: win as WindowEx,
-        stackFrameTitle: 'setImmediate'
-      });
-    });
-
-    this.patchWithLongStackTraces({
-      handlerArgIndex: 0,
-      methodName: 'nextTick',
-      obj: process,
-      stackFrameTitle: 'process.nextTick'
-    });
-
-    this.asyncLongStackTracesHandler = new AsyncLongStackTracesComponent({
-      longStackTracesComponent: this,
-      pluginSettingsComponent: this.pluginSettingsComponent
-    });
-    this.addChild(this.asyncLongStackTracesHandler);
-  }
-
-  protected override getAsyncId(): number {
-    super.getAsyncId();
-    return this.asyncLongStackTracesHandler?.getAsyncId() ?? 0;
   }
 }
 
