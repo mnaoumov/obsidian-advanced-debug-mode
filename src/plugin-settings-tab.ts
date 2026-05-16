@@ -1,13 +1,11 @@
+import type { DebugController } from 'obsidian-dev-utils/debug-controller';
 import type { PluginSettingsTabBaseConstructorParams } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
 
 import {
   Platform,
   Setting
 } from 'obsidian';
-import {
-  getDebugController,
-  getDebugger
-} from 'obsidian-dev-utils/debug';
+import { getDebugger } from 'obsidian-dev-utils/debug';
 import { appendCodeBlock } from 'obsidian-dev-utils/html-element';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
 import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
@@ -17,16 +15,19 @@ import type { EmulateMobileMode } from './emulate-mobile-mode.ts';
 import type { PluginSettings } from './plugin-settings.ts';
 
 interface PluginSettingsTabConstructorParams extends PluginSettingsTabBaseConstructorParams<PluginSettings> {
+  readonly debugController: DebugController;
   readonly debugMode: DebugMode;
   readonly emulateMobileMode: EmulateMobileMode;
 }
 
 export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
+  private readonly debugController: DebugController;
   private readonly debugMode: DebugMode;
   private readonly emulateMobileMode: EmulateMobileMode;
 
   public constructor(params: PluginSettingsTabConstructorParams) {
     super(params);
+    this.debugController = params.debugController;
     this.debugMode = params.debugMode;
     this.emulateMobileMode = params.emulateMobileMode;
   }
@@ -34,8 +35,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   public override display(): void {
     super.display();
     this.containerEl.empty();
-
-    const debugController = getDebugController();
 
     new Setting(this.containerEl)
       .setName('Obsidian debug mode')
@@ -94,10 +93,10 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       }))
       .addTextArea((textArea) => {
         textArea
-          .setValue(debugController.get().join('\n'))
+          .setValue(this.debugController.get().join('\n'))
           .onChange((value) => {
             const namespaces = value.split('\n');
-            debugController.set(namespaces);
+            this.debugController.set(namespaces);
           });
 
         textArea.inputEl.addClass('debug-namespaces-setting-control');
@@ -213,9 +212,9 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           .setValue(!timeoutDebugger.enabled)
           .onChange((value) => {
             if (value) {
-              debugController.disable(NAMESPACE);
+              this.debugController.disable(NAMESPACE);
             } else {
-              debugController.enable(NAMESPACE);
+              this.debugController.enable(NAMESPACE);
             }
             this.display();
           });

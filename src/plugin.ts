@@ -4,6 +4,7 @@ import type {
   PluginManifest
 } from 'obsidian';
 
+import { getDebugController } from 'obsidian-dev-utils/debug';
 import { AppActiveFileProvider } from 'obsidian-dev-utils/obsidian/active-file-provider';
 import { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
 import { OpenSettingsCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-settings-command-handler';
@@ -29,6 +30,7 @@ export class Plugin extends PluginBase {
 
     const pluginSettingsComponent = this.addChild(new PluginSettingsComponent(new PluginDataHandler(this)));
     const pluginSettingsTab = new PluginSettingsTab({
+      debugController: getDebugController(),
       debugMode: new DebugMode(app),
       emulateMobileMode: new EmulateMobileMode(app),
       plugin: this,
