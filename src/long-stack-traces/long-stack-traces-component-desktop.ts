@@ -19,7 +19,7 @@ import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 
 import { MultiWeakMap } from '../multi-weak-map.ts';
-import { AsyncLongStackTracesComponent } from './async-long-stack-traces-component.ts';
+import { AsyncLongStackTracesComponent } from './async-long-stack-traces-component-desktop.ts';
 
 export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction };
 
