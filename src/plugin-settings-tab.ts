@@ -192,14 +192,25 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       });
 
     new Setting(this.containerEl)
-      // eslint-disable-next-line obsidianmd/ui/sentence-case -- wrong rule.
-      .setName('Obsidian Dev Utils: Timeout long running tasks')
+      .setName(createFragment((f) => {
+        appendCodeBlock(f, 'Obsidian Dev Utils');
+        f.appendText(': Timeout long running tasks');
+      }))
       .setDesc(createFragment((f) => {
-        f.appendText('Whether to timeout long running tasks within Obsidian Dev Utils library.');
+        f.appendText('Whether to timeout long running tasks within ');
+        f.createEl('a', {
+          href: 'https://github.com/mnaoumov/obsidian-dev-utils',
+          text: createFragment((f2) => {
+            appendCodeBlock(f2, 'Obsidian Dev Utils');
+          })
+        });
+        f.appendText(' library.');
         f.createEl('br');
         f.appendText('Some plugins use functionality from that library that have some default timeouts.');
         f.createEl('br');
-        f.appendText('If enabled, long running tasks will be killed after predefined timeouts (default Obsidian Dev Utils library behavior).');
+        f.appendText('If enabled, long running tasks will be killed after predefined timeouts (default ');
+        appendCodeBlock(f, 'Obsidian Dev Utils');
+        f.appendText('library behavior).');
         f.createEl('br');
         f.appendText(
           'If disabled, long running tasks will not be killed. It is useful when some tasks fail due to timeout while you are staying on the breakpoint.'
