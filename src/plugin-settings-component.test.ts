@@ -1,0 +1,38 @@
+import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
+
+import {
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+import { PluginSettingsComponent } from './plugin-settings-component.ts';
+import { PluginSettings } from './plugin-settings.ts';
+
+describe('PluginSettingsComponent', () => {
+  it('should create default settings as PluginSettings instance', () => {
+    const dataHandler: DataHandler = {
+      loadData: vi.fn().mockResolvedValue(null),
+      saveData: vi.fn().mockResolvedValue(undefined)
+    };
+    const component = new PluginSettingsComponent(dataHandler);
+    const defaultSettings = component.defaultSettings;
+    expect(defaultSettings).toEqual(new PluginSettings());
+  });
+
+  it('should have correct default setting values', () => {
+    const dataHandler: DataHandler = {
+      loadData: vi.fn().mockResolvedValue(null),
+      saveData: vi.fn().mockResolvedValue(undefined)
+    };
+    const component = new PluginSettingsComponent(dataHandler);
+    const settings = component.defaultSettings;
+    expect(settings.shouldIncludeAsyncLongStackTraces).toBe(false);
+    expect(settings.shouldIncludeInternalStackFrames).toBe(false);
+    expect(settings.shouldIncludeLongStackTraces).toBe(true);
+    expect(settings.shouldIncludeTimedOutTasksDetails).toBe(true);
+    expect(settings.shouldTimeoutLongRunningTasks).toBe(true);
+    expect(settings.stackTraceLimit).toBe(100);
+  });
+});

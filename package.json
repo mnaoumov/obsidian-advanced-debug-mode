@@ -45,6 +45,7 @@
     "eslint": "^10.4.0",
     "husky": "^9.1.7",
     "jiti": "^2.7.0",
+    "jsdom": "^29.1.1",
     "nano-staged": "^1.0.2",
     "obsidian": "^1.12.3",
     "obsidian-dev-utils": "^64.0.0",
