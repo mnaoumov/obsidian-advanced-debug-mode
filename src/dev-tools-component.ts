@@ -1,8 +1,5 @@
 import eruda from 'eruda';
-import {
-  Component,
-  Platform
-} from 'obsidian';
+import { Component } from 'obsidian';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
 export class DevToolsComponent extends Component {
@@ -14,9 +11,6 @@ export class DevToolsComponent extends Component {
 
   public override onload(): void {
     super.onload();
-    if (!this.isEnabled()) {
-      return;
-    }
 
     // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need root document.
     const erudaDiv = document.body.createDiv();
@@ -35,10 +29,6 @@ export class DevToolsComponent extends Component {
 
   public toggleDevToolsButton(): void {
     this.erudaButton?.toggle(!this.erudaButton.isShown());
-  }
-
-  private isEnabled(): boolean {
-    return Platform.isMobile;
   }
 
   private onFocusIn(evt: FocusEvent): void {
