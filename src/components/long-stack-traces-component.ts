@@ -1,6 +1,9 @@
 import type { ConditionalKeys } from 'type-fest';
 
-import { Component } from 'obsidian';
+import {
+  App,
+  Component
+} from 'obsidian';
 import { filterInPlace } from 'obsidian-dev-utils/array';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
 import {
@@ -11,7 +14,7 @@ import {
 import { AllWindowsEventHandler } from 'obsidian-dev-utils/obsidian/components/all-windows-event-handler';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 
-import type { Plugin } from '../plugin.ts';
+import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 
 import { MultiWeakMap } from '../multi-weak-map.ts';
 
@@ -69,16 +72,21 @@ interface WrapWithStackTracesOptions {
 
 const eventHandlersMap = new MultiWeakMap<[EventTarget, string, GenericFunction], GenericFunction>();
 
+export interface LongStackTracesComponentBaseConstructorParams {
+  readonly app: App;
+  readonly pluginId: string;
+  readonly pluginSettingsComponent: PluginSettingsComponent;
+}
+
 export interface StackFrame {
   parentStackError: Error;
   title: string;
 }
 
-export type WindowEx = typeof globalThis & Window;
+export type WindowEx = typeof window & Window;
 
-export abstract class LongStackTracesComponent extends Component {
+export abstract class LongStackTracesComponentBase extends Component {
   public parentStackFrame: StackFrame | undefined;
-
   public get OriginalError(): ErrorConstructor {
     if (!this._OriginalError) {
       throw new Error('OriginalError is not set');
@@ -86,11 +94,20 @@ export abstract class LongStackTracesComponent extends Component {
     return this._OriginalError;
   }
 
-  private _OriginalError?: ErrorConstructor;
-  private internalStackFrameLocations: string[] = [];
+  protected readonly app: App;
 
-  public constructor(protected plugin: Plugin) {
+  protected readonly pluginSettingsComponent: PluginSettingsComponent;
+
+  private _OriginalError?: ErrorConstructor;
+
+  private internalStackFrameLocations: string[] = [];
+  private readonly pluginId: string;
+
+  public constructor(params: LongStackTracesComponentBaseConstructorParams) {
     super();
+    this.app = params.app;
+    this.pluginId = params.pluginId;
+    this.pluginSettingsComponent = params.pluginSettingsComponent;
   }
 
   public addStackFrame(previousLines: string[], newLines: string[], title: string): void {
@@ -119,8 +136,8 @@ export abstract class LongStackTracesComponent extends Component {
   }
 
   public applyStackTraceLimit(lines: string[]): void {
-    if (lines.length > this.plugin.settings.stackTraceLimit) {
-      lines.splice(this.plugin.settings.stackTraceLimit);
+    if (lines.length > this.pluginSettingsComponent.settings.stackTraceLimit) {
+      lines.splice(this.pluginSettingsComponent.settings.stackTraceLimit);
       lines.push(generateStackTraceLine('STACK TRACE LIMIT REACHED'));
     }
   }
@@ -132,7 +149,7 @@ export abstract class LongStackTracesComponent extends Component {
     }
 
     this.internalStackFrameLocations = [
-      `plugin:${this.plugin.manifest.id}`,
+      `plugin:${this.pluginId}`,
       'node:internal',
       'at Promise.',
       'at new Promise'
@@ -154,7 +171,7 @@ export abstract class LongStackTracesComponent extends Component {
       'setInterval'
     ];
 
-    new AllWindowsEventHandler(this.plugin.app, this).registerAllWindowsHandler((win) => {
+    new AllWindowsEventHandler(this.app, this).registerAllWindowsHandler((win) => {
       for (const methodName of methodNames) {
         this.patchWithLongStackTraces({
           handlerArgIndex: 0,
@@ -215,7 +232,7 @@ export abstract class LongStackTracesComponent extends Component {
   }
 
   protected isEnabled(): boolean {
-    return this.plugin.settings.shouldIncludeLongStackTraces;
+    return this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces;
   }
 
   protected patchWithLongStackTraces<Obj extends object>(options: PatchOptions<Obj>): void {
@@ -251,14 +268,14 @@ export abstract class LongStackTracesComponent extends Component {
   }
 
   private filterInternalStackFrames(lines: string[]): void {
-    if (!this.plugin.settings.shouldIncludeInternalStackFrames) {
+    if (!this.pluginSettingsComponent.settings.shouldIncludeInternalStackFrames) {
       filterInPlace(lines, (line) => !!line && this.internalStackFrameLocations.every((location) => !line.includes(location)));
     }
   }
 
   private getAdditionalStackFramesCount(): number {
     const MAX_ADDITIONAL_INTERNAL_STACK_FRAMES_COUNT = 10;
-    return this.plugin.settings.shouldIncludeInternalStackFrames ? 0 : MAX_ADDITIONAL_INTERNAL_STACK_FRAMES_COUNT;
+    return this.pluginSettingsComponent.settings.shouldIncludeInternalStackFrames ? 0 : MAX_ADDITIONAL_INTERNAL_STACK_FRAMES_COUNT;
   }
 
   private getChildErrorClassNames(): string[] {
@@ -279,7 +296,7 @@ export abstract class LongStackTracesComponent extends Component {
   }
 
   private getStackTraceLimit(): number {
-    return this.plugin.settings.stackTraceLimit;
+    return this.pluginSettingsComponent.settings.stackTraceLimit;
   }
 
   private patchBaseErrorClass(): void {
@@ -333,11 +350,11 @@ export abstract class LongStackTracesComponent extends Component {
     });
 
     window.Error = PatchedError as ErrorConstructor;
-    window.Error.stackTraceLimit = this.plugin.settings.stackTraceLimit || Infinity;
+    window.Error.stackTraceLimit = this.pluginSettingsComponent.settings.stackTraceLimit || Infinity;
 
     this.register(() => {
       window.Error = this.OriginalError;
-      window.Error.stackTraceLimit = this.plugin.settings.stackTraceLimit;
+      window.Error.stackTraceLimit = this.pluginSettingsComponent.settings.stackTraceLimit;
     });
   }
 
@@ -454,9 +471,9 @@ export abstract class LongStackTracesComponent extends Component {
 
   private setStackTraceLimit(value: number): void {
     this.OriginalError.stackTraceLimit = value + this.getAdditionalStackFramesCount();
-    if (this.plugin.settings.stackTraceLimit !== value) {
+    if (this.pluginSettingsComponent.settings.stackTraceLimit !== value) {
       invokeAsyncSafely(() =>
-        this.plugin.settingsManager.editAndSave((x) => {
+        this.pluginSettingsComponent.editAndSave((x) => {
           x.stackTraceLimit = value;
         })
       );
@@ -486,7 +503,7 @@ export abstract class LongStackTracesComponent extends Component {
       wrappedFn
     });
 
-    return Object.assign(wrappedFn, { originalFn: options.fn }) as GenericFunction;
+    return Object.assign(wrappedFn, { originalFn: options.fn });
   }
 
   private wrapWithStackTracesImpl(options: WrapWithStackTracesImplOptions): unknown {

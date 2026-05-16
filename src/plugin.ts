@@ -1,83 +1,72 @@
-import type { ExtractPluginSettingsWrapper } from 'obsidian-dev-utils/obsidian/plugin/plugin-types-base';
-import type { ReadonlyDeep } from 'type-fest';
+import type {
+  App,
+  FileSystemAdapter,
+  PluginManifest
+} from 'obsidian';
 
-import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-base';
+import { AppActiveFileProvider } from 'obsidian-dev-utils/obsidian/active-file-provider';
+import { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
+import { OpenSettingsCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-settings-command-handler';
+import { PluginCommandRegistrar } from 'obsidian-dev-utils/obsidian/command-registrar';
+import { PluginDataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
+import { AppMenuEventRegistrar } from 'obsidian-dev-utils/obsidian/menu-event-registrar';
+import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/plugin/components/plugin-settings-tab-component';
+import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin';
 
-import type { PluginTypes } from './plugin-types.ts';
-
+import { ToggleDevToolsButtonCommandHandler } from './command-handlers/toggle-dev-tools-button-command.ts';
 import { DevToolsComponent } from './components/dev-tools-component.ts';
-import { LongRunningTasksComponent } from './components/long-running-tasks-component.ts';
-import { LongStackTracesComponent } from './components/long-stack-traces-component.ts';
-import { getPlatformDependencies } from './platform-dependencies.ts';
-import { PluginSettingsManager } from './plugin-settings-manager.ts';
+import { DebugMode } from './debug-mode.ts';
+import { EmulateMobileMode } from './emulate-mobile-mode.ts';
+import { ErrorStackTraceLimitComponent } from './error-stack-trace-limit-component.ts';
+import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
+import { LongStackTracesComponent } from './long-stack-traces/long-stack-traces-component.ts';
+import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
-export class Plugin extends PluginBase<PluginTypes> {
-  private longRunningTasksComponent?: LongRunningTasksComponent;
+export class Plugin extends PluginBase {
+  public constructor(app: App, manifest: PluginManifest) {
+    super(app, manifest);
 
-  private longStackTracesComponent?: LongStackTracesComponent;
-  public isDebugMode(): boolean {
-    return this.app.loadLocalStorage('DebugMode') === '1';
-  }
+    const pluginSettingsComponent = this.addChild(new PluginSettingsComponent(new PluginDataHandler(this)));
+    const pluginSettingsTab = new PluginSettingsTab({
+      debugMode: new DebugMode(app),
+      emulateMobileMode: new EmulateMobileMode(app),
+      plugin: this,
+      pluginSettingsComponent
+    });
+    this.addChild(
+      new PluginSettingsTabComponent({
+        plugin: this,
+        pluginSettingsTab
+      })
+    );
 
-  public isEmulateMobileMode(): boolean {
-    return document.body.hasClass('emulate-mobile');
-  }
+    const devToolsComponent = this.addChild(new DevToolsComponent());
 
-  public toggleDebugMode(isEnabled: boolean): void {
-    this.app.debugMode(isEnabled);
-  }
+    this.addChild(
+      new CommandHandlerComponent({
+        activeFileProvider: new AppActiveFileProvider(app),
+        commandHandlers: [
+          new OpenSettingsCommandHandler(pluginSettingsTab),
+          new ToggleDevToolsButtonCommandHandler(devToolsComponent)
+        ],
+        commandRegistrar: new PluginCommandRegistrar(this),
+        menuEventRegistrar: new AppMenuEventRegistrar(app, this),
+        pluginName: manifest.name
+      })
+    );
 
-  public toggleEmulateMobileMode(isEnabled: boolean): void {
-    this.app.emulateMobile(isEnabled);
-  }
-
-  protected override createSettingsManager(): PluginSettingsManager {
-    return new PluginSettingsManager(this);
-  }
-
-  protected override createSettingsTab(): null | PluginSettingsTab {
-    return new PluginSettingsTab(this);
-  }
-
-  protected override async onloadImpl(): Promise<void> {
-    await super.onloadImpl();
-    const originalStackTraceLimit = Error.stackTraceLimit;
-    this.register(() => {
-      Error.stackTraceLimit = originalStackTraceLimit;
+    new LongRunningTasksComponent({
+      fileSystemAdapter: this.app.vault.adapter as FileSystemAdapter,
+      pluginSettingsComponent
     });
 
-    const platformDependencies = await getPlatformDependencies();
-    this.longStackTracesComponent = new platformDependencies.LongStackTracesComponentConstructor(this);
-    this.addChild(this.longStackTracesComponent);
-    this.longRunningTasksComponent = new LongRunningTasksComponent(this);
-    this.addChild(this.longRunningTasksComponent);
-    this.addChild(new DevToolsComponent(this));
-  }
+    this.addChild(new ErrorStackTraceLimitComponent());
 
-  protected override async onLoadSettings(
-    loadedSettings: ReadonlyDeep<ExtractPluginSettingsWrapper<PluginTypes>>,
-    isInitialLoad: boolean
-  ): Promise<void> {
-    await super.onLoadSettings(loadedSettings, isInitialLoad);
-    if (!isInitialLoad) {
-      this.reloadComponents();
-    }
-  }
-
-  protected override async onSaveSettings(
-    newSettings: ReadonlyDeep<ExtractPluginSettingsWrapper<PluginTypes>>,
-    oldSettings: ReadonlyDeep<ExtractPluginSettingsWrapper<PluginTypes>>,
-    context: unknown
-  ): Promise<void> {
-    await super.onSaveSettings(newSettings, oldSettings, context);
-    this.reloadComponents();
-  }
-
-  private reloadComponents(): void {
-    this.longRunningTasksComponent?.unload();
-    this.longRunningTasksComponent?.load();
-    this.longStackTracesComponent?.unload();
-    this.longStackTracesComponent?.load();
+    this.addChild(
+      new LongStackTracesComponent({
+        pluginSettingsComponent
+      })
+    );
   }
 }
