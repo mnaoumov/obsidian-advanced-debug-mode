@@ -14,8 +14,8 @@ import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/plugin/c
 import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin';
 
 import { ToggleDevToolsButtonCommandHandler } from './command-handlers/toggle-dev-tools-button-command.ts';
-import { DevToolsComponent } from './components/dev-tools-component.ts';
 import { DebugMode } from './debug-mode.ts';
+import { DevToolsComponent } from './dev-tools-component.ts';
 import { EmulateMobileMode } from './emulate-mobile-mode.ts';
 import { ErrorStackTraceLimitComponent } from './error-stack-trace-limit-component.ts';
 import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
