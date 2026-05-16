@@ -7,12 +7,12 @@ import { Component } from 'obsidian';
 
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import type {
-  LongStackTracesComponentBase,
+  LongStackTracesComponentDesktop,
   StackFrame
 } from './long-stack-traces-component-desktop.ts';
 
 interface AsyncLongStackTracesComponentConstructorParams {
-  readonly longStackTracesComponent: LongStackTracesComponentBase;
+  readonly longStackTracesComponent: LongStackTracesComponentDesktop;
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
@@ -25,7 +25,7 @@ export class AsyncLongStackTracesComponent extends Component {
   private readonly asyncIdParentMap = new Map<number, number>();
   private readonly asyncIdStackFrameMap = new Map<number, AsyncStackFrame>();
 
-  private readonly longStackTracesComponent: LongStackTracesComponentBase;
+  private readonly longStackTracesComponent: LongStackTracesComponentDesktop;
 
   private readonly pluginSettingsComponent: PluginSettingsComponent;
 
