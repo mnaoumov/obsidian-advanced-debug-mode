@@ -1,3 +1,4 @@
+import { noop } from 'obsidian-dev-utils/function';
 import {
   describe,
   expect,
@@ -59,9 +60,8 @@ describe('MultiWeakMap', () => {
 
   it('should handle function keys as weak map keys', () => {
     const map = new MultiWeakMap<[() => void], string>();
-    function fn(): void {/* Noop */}
-    map.set([fn], 'fn-value');
-    expect(map.get([fn])).toBe('fn-value');
+    map.set([noop], 'fn-value');
+    expect(map.get([noop])).toBe('fn-value');
   });
 
   it('should handle null key as primitive (Map path)', () => {
