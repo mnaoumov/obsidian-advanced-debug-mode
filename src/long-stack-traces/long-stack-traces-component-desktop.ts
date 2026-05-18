@@ -26,32 +26,32 @@ export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) &
 type AfterPatchFn = (this: void, options: AfterPatchOptions) => void;
 
 interface AfterPatchOptions {
-  fn: GenericFunction;
-  originalFnArgs: unknown[];
-  originalFnThisArg: unknown;
-  wrappedFn: GenericFunction;
+  readonly fn: GenericFunction;
+  readonly originalFnArgs: unknown[];
+  readonly originalFnThisArg: unknown;
+  readonly wrappedFn: GenericFunction;
 }
 
 type GenericConstructor = new (...args: unknown[]) => unknown;
 
 interface PatchOptions<Obj extends object> {
-  afterPatch?: AfterPatchFn;
-  handlerArgIndex: number | number[];
+  readonly afterPatch?: AfterPatchFn;
+  readonly handlerArgIndex: number | number[];
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- Need Function generics.
-  methodName: ConditionalKeys<Obj, Function>;
-  obj: Obj;
-  shouldConvertStringToFunction?: boolean;
-  stackFrameTitle: string;
+  readonly methodName: ConditionalKeys<Obj, Function>;
+  readonly obj: Obj;
+  readonly shouldConvertStringToFunction?: boolean;
+  readonly stackFrameTitle: string;
 }
 
 interface PatchWithLongStackTracesImplOptions {
-  afterPatch?: AfterPatchFn;
-  handlerArgIndex: number | number[];
-  next: GenericFunction;
-  originalFnArgs: unknown[];
-  originalFnThisArg: unknown;
-  shouldConvertStringToFunction?: boolean;
-  stackFrameTitle: string;
+  readonly afterPatch?: AfterPatchFn;
+  readonly handlerArgIndex: number | number[];
+  readonly next: GenericFunction;
+  readonly originalFnArgs: unknown[];
+  readonly originalFnThisArg: unknown;
+  readonly shouldConvertStringToFunction?: boolean;
+  readonly stackFrameTitle: string;
 }
 
 type RemoveEventListenerFn = EventTarget['removeEventListener'];
@@ -59,18 +59,18 @@ type RemoveEventListenerFn = EventTarget['removeEventListener'];
 type WindowWithErrorConstructors = Record<string, GenericConstructor> & typeof window;
 
 interface WrapWithStackTracesImplOptions {
-  fn: GenericFunction;
-  stackFrame: StackFrame;
-  wrappedFnArgs: unknown[];
-  wrappedFnThisArg: unknown;
+  readonly fn: GenericFunction;
+  readonly stackFrame: StackFrame;
+  readonly wrappedFnArgs: unknown[];
+  readonly wrappedFnThisArg: unknown;
 }
 
 interface WrapWithStackTracesOptions {
-  afterPatch?: AfterPatchFn;
-  fn: GenericFunction;
-  originalFnArgs: unknown[];
-  originalFnThisArg: unknown;
-  stackFrameTitle: string;
+  readonly afterPatch?: AfterPatchFn;
+  readonly fn: GenericFunction;
+  readonly originalFnArgs: unknown[];
+  readonly originalFnThisArg: unknown;
+  readonly stackFrameTitle: string;
 }
 
 const eventHandlersMap = new MultiWeakMap<[EventTarget, string, GenericFunction], GenericFunction>();
@@ -198,6 +198,7 @@ export class LongStackTracesComponentDesktop extends Component {
     });
 
     const that = this;
+    type X = PromiseLike<void>;
     registerPatch(this, EventTarget.prototype, {
       removeEventListener: (next: RemoveEventListenerFn): RemoveEventListenerFn => {
         return function patchedRemoveEventListener(
