@@ -47,7 +47,7 @@ describe('LongStackTracesComponent', () => {
     }).not.toThrow();
   });
 
-  // Note: LongStackTracesComponent extends AsyncComponentBase which uses
+  // Note: LongStackTracesComponent extends AsyncComponent which uses
   // `_loaded` / `_children` internal properties. The obsidian-test-mocks
   // Component mock uses `loaded__` / `children__` with strict proxy,
   // Making load() incompatible in unit tests. Load testing is deferred to

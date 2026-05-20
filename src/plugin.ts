@@ -57,7 +57,7 @@ export class Plugin extends PluginBase {
           new ToggleDevToolsButtonCommandHandler(devToolsComponent)
         ],
         commandRegistrar: new PluginCommandRegistrar(this),
-        menuEventRegistrar: new AppMenuEventRegistrar(app, this),
+        menuEventRegistrar,
         pluginName: manifest.name
       })
     );

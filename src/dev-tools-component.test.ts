@@ -31,7 +31,7 @@ describe('DevToolsComponent', () => {
     } as unknown as ShadowRoot;
 
     interface ErudaInitOptions {
-      container?: HTMLElement;
+      readonly container?: HTMLElement;
     }
 
     vi.mocked(eruda.init).mockImplementation((options?: ErudaInitOptions) => {

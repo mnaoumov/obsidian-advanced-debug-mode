@@ -7,12 +7,12 @@ import { Component } from 'obsidian';
 
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import type {
-  LongStackTracesComponentDesktop,
+  LongStackTracesDesktopComponent,
   StackFrame
-} from './long-stack-traces-component-desktop.ts';
+} from './long-stack-traces-desktop-component.ts';
 
 interface AsyncLongStackTracesComponentConstructorParams {
-  readonly longStackTracesComponent: LongStackTracesComponentDesktop;
+  readonly longStackTracesComponent: LongStackTracesDesktopComponent;
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
@@ -25,7 +25,7 @@ export class AsyncLongStackTracesComponent extends Component {
   private readonly asyncIdParentMap = new Map<number, number>();
   private readonly asyncIdStackFrameMap = new Map<number, AsyncStackFrame>();
 
-  private readonly longStackTracesComponent: LongStackTracesComponentDesktop;
+  private readonly longStackTracesComponent: LongStackTracesDesktopComponent;
 
   private readonly pluginSettingsComponent: PluginSettingsComponent;
 
@@ -66,7 +66,6 @@ export class AsyncLongStackTracesComponent extends Component {
   }
 
   public override onload(): void {
-    super.onload();
     if (!this.isEnabled()) {
       return;
     }

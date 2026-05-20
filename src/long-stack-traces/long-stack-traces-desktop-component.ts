@@ -10,31 +10,38 @@ import { filterInPlace } from 'obsidian-dev-utils/array';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
 import {
   assignWithNonEnumerableProperties,
-  castTo,
-  normalizeOptionalProperties
+  castTo
 } from 'obsidian-dev-utils/object-utils';
-import { AllWindowsEventHandler } from 'obsidian-dev-utils/obsidian/components/all-windows-event-handler';
-import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
+import { AllWindowsEventComponent } from 'obsidian-dev-utils/obsidian/components/all-windows-event-component';
 
+import type {
+  AfterPatchFn,
+  AfterPatchParams
+} from '../patches/add-long-stack-traces-patch-component.ts';
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
+import type { GenericFunction } from '../types.ts';
 
-import { MultiWeakMap } from '../multi-weak-map.ts';
-import { AsyncLongStackTracesComponent } from './async-long-stack-traces-component-desktop.ts';
+import { AddLongStackTracesPatchComponent } from '../patches/add-long-stack-traces-patch-component.ts';
+import { RemoveEventListenerPatchComponent } from '../patches/remove-event-listener-patch-component.ts';
+import { AsyncLongStackTracesComponent } from './async-long-stack-traces-desktop-component.ts';
+import { eventHandlersMap } from './event-handlers-map.ts';
 
-export type GenericFunction = ((this: unknown, ...args: unknown[]) => unknown) & { originalFn?: GenericFunction };
-
-type AfterPatchFn = (this: void, options: AfterPatchOptions) => void;
-
-interface AfterPatchOptions {
-  readonly fn: GenericFunction;
-  readonly originalFnArgs: unknown[];
-  readonly originalFnThisArg: unknown;
-  readonly wrappedFn: GenericFunction;
+export interface StackFrame {
+  parentStackError: Error;
+  title: string;
 }
+
+export type WindowEx = typeof window & Window;
 
 type GenericConstructor = new (...args: unknown[]) => unknown;
 
-interface PatchOptions<Obj extends object> {
+interface LongStackTracesDesktopComponentConstructorParams {
+  readonly app: App;
+  readonly pluginId: string;
+  readonly pluginSettingsComponent: PluginSettingsComponent;
+}
+
+interface PatchParams<Obj extends object> {
   readonly afterPatch?: AfterPatchFn;
   readonly handlerArgIndex: number | number[];
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- Need Function generics.
@@ -44,51 +51,9 @@ interface PatchOptions<Obj extends object> {
   readonly stackFrameTitle: string;
 }
 
-interface PatchWithLongStackTracesImplOptions {
-  readonly afterPatch?: AfterPatchFn;
-  readonly handlerArgIndex: number | number[];
-  readonly next: GenericFunction;
-  readonly originalFnArgs: unknown[];
-  readonly originalFnThisArg: unknown;
-  readonly shouldConvertStringToFunction?: boolean;
-  readonly stackFrameTitle: string;
-}
-
-type RemoveEventListenerFn = EventTarget['removeEventListener'];
-
 type WindowWithErrorConstructors = Record<string, GenericConstructor> & typeof window;
 
-interface WrapWithStackTracesImplOptions {
-  readonly fn: GenericFunction;
-  readonly stackFrame: StackFrame;
-  readonly wrappedFnArgs: unknown[];
-  readonly wrappedFnThisArg: unknown;
-}
-
-interface WrapWithStackTracesOptions {
-  readonly afterPatch?: AfterPatchFn;
-  readonly fn: GenericFunction;
-  readonly originalFnArgs: unknown[];
-  readonly originalFnThisArg: unknown;
-  readonly stackFrameTitle: string;
-}
-
-const eventHandlersMap = new MultiWeakMap<[EventTarget, string, GenericFunction], GenericFunction>();
-
-export interface StackFrame {
-  parentStackError: Error;
-  title: string;
-}
-
-export type WindowEx = typeof window & Window;
-
-interface LongStackTracesComponentConstructorParams {
-  readonly app: App;
-  readonly pluginId: string;
-  readonly pluginSettingsComponent: PluginSettingsComponent;
-}
-
-export class LongStackTracesComponentDesktop extends Component {
+export class LongStackTracesDesktopComponent extends Component {
   public parentStackFrame: StackFrame | undefined;
 
   public get OriginalError(): ErrorConstructor {
@@ -108,7 +73,7 @@ export class LongStackTracesComponentDesktop extends Component {
   private internalStackFrameLocations: string[] = [];
 
   private readonly pluginId: string;
-  public constructor(params: LongStackTracesComponentConstructorParams) {
+  public constructor(params: LongStackTracesDesktopComponentConstructorParams) {
     super();
     this.app = params.app;
     this.pluginId = params.pluginId;
@@ -149,7 +114,6 @@ export class LongStackTracesComponentDesktop extends Component {
   }
 
   public override onload(): void {
-    super.onload();
     if (!this.isEnabled()) {
       return;
     }
@@ -177,7 +141,7 @@ export class LongStackTracesComponentDesktop extends Component {
       'setInterval'
     ];
 
-    new AllWindowsEventHandler(this.app, this).registerAllWindowsHandler((win) => {
+    this.addChild(new AllWindowsEventComponent(this.app)).registerAllWindowsHandler((win) => {
       for (const methodName of methodNames) {
         this.patchWithLongStackTraces({
           handlerArgIndex: 0,
@@ -197,20 +161,7 @@ export class LongStackTracesComponentDesktop extends Component {
       stackFrameTitle: 'addEventListener'
     });
 
-    const that = this;
-    type X = PromiseLike<void>;
-    registerPatch(this, EventTarget.prototype, {
-      removeEventListener: (next: RemoveEventListenerFn): RemoveEventListenerFn => {
-        return function patchedRemoveEventListener(
-          this: EventTarget,
-          type: string,
-          callback: EventListenerOrEventListenerObject | null,
-          options?: boolean | EventListenerOptions
-        ): void {
-          that.removeEventListener(next, this, type, callback, options);
-        };
-      }
-    });
+    this.addChild(new RemoveEventListenerPatchComponent());
 
     this.patchWithLongStackTraces({
       handlerArgIndex: [0, 1],
@@ -233,7 +184,7 @@ export class LongStackTracesComponentDesktop extends Component {
       stackFrameTitle: 'Promise.finally'
     });
 
-    new AllWindowsEventHandler(this.app, this).registerAllWindowsHandler((win) => {
+    this.addChild(new AllWindowsEventComponent(this.app)).registerAllWindowsHandler((win) => {
       this.patchWithLongStackTraces({
         handlerArgIndex: 0,
         methodName: 'setImmediate',
@@ -264,36 +215,33 @@ export class LongStackTracesComponentDesktop extends Component {
     return this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces;
   }
 
-  protected patchWithLongStackTraces<Obj extends object>(options: PatchOptions<Obj>): void {
-    const genericObj = options.obj as Record<string, GenericFunction>;
+  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Reusable params.
+  protected patchWithLongStackTraces<Obj extends object>(params: PatchParams<Obj>): void {
+    const genericObj = params.obj as Record<string, GenericFunction>;
 
-    const that = this;
-    registerPatch(this, genericObj, {
-      [options.methodName]: (next: GenericFunction): GenericFunction => {
-        return function patchedFn(this: unknown, ...originalFnArgs: unknown[]): unknown {
-          return that.patchWithLongStackTracesImpl(normalizeOptionalProperties<PatchWithLongStackTracesImplOptions>({
-            afterPatch: options.afterPatch,
-            handlerArgIndex: options.handlerArgIndex,
-            next,
-            originalFnArgs,
-            originalFnThisArg: this,
-            stackFrameTitle: options.stackFrameTitle
-          }));
-        };
-      }
-    });
+    this.addChild(
+      new AddLongStackTracesPatchComponent({
+        afterPatch: params.afterPatch,
+        handlerArgIndex: params.handlerArgIndex,
+        longStackTracesDesktopComponent: this,
+        methodName: params.methodName,
+        obj: genericObj,
+        shouldConvertStringToFunction: params.shouldConvertStringToFunction,
+        stackFrameTitle: params.stackFrameTitle
+      })
+    );
   }
 
-  private afterPatchAddEventListener(options: AfterPatchOptions): void {
-    const eventTarget = options.originalFnThisArg as EventTarget;
-    const type = options.originalFnArgs[0] as string;
-    const keys: [EventTarget, string, GenericFunction] = [eventTarget, type, options.fn];
+  private afterPatchAddEventListener(params: AfterPatchParams): void {
+    const eventTarget = params.originalThis as EventTarget;
+    const type = params.originalArgs[0] as string;
+    const keys: [EventTarget, string, GenericFunction] = [eventTarget, type, params.fn];
     const previousWrappedHandler = eventHandlersMap.get(keys);
 
     if (previousWrappedHandler) {
       eventTarget.removeEventListener(type, previousWrappedHandler);
     }
-    eventHandlersMap.set(keys, options.wrappedFn);
+    eventHandlersMap.set(keys, params.wrappedFn);
   }
 
   private filterInternalStackFrames(lines: string[]): void {
@@ -441,63 +389,6 @@ export class LongStackTracesComponentDesktop extends Component {
     }
   }
 
-  private patchWithLongStackTracesImpl(options: PatchWithLongStackTracesImplOptions): unknown {
-    const handlerArgIndices = Array.isArray(options.handlerArgIndex) ? options.handlerArgIndex : [options.handlerArgIndex];
-    const argsWithWrappedHandler = options.originalFnArgs.slice();
-
-    for (const handlerArgIndex of handlerArgIndices) {
-      const handler = options.originalFnArgs[handlerArgIndex];
-
-      let fn: GenericFunction;
-
-      if (typeof handler === 'string' && options.shouldConvertStringToFunction) {
-        // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func -- Need function from string overload.
-        fn = new Function(handler) as GenericFunction;
-      } else if (typeof handler === 'function') {
-        fn = handler as GenericFunction;
-      } else if (isEventListenerObject(handler)) {
-        fn = handler.handleEvent.bind(handler) as GenericFunction;
-      } else {
-        continue;
-      }
-
-      const wrappedHandler = this.wrapWithStackTraces(normalizeOptionalProperties<WrapWithStackTracesOptions>({
-        afterPatch: options.afterPatch,
-        fn,
-        originalFnArgs: options.originalFnArgs,
-        originalFnThisArg: options.originalFnThisArg,
-        stackFrameTitle: options.stackFrameTitle
-      }));
-
-      argsWithWrappedHandler[handlerArgIndex] = wrappedHandler;
-    }
-
-    return options.next.call(options.originalFnThisArg, ...argsWithWrappedHandler);
-  }
-
-  private removeEventListener(
-    next: RemoveEventListenerFn,
-    eventTarget: EventTarget,
-    type: string,
-    callback: EventListenerOrEventListenerObject | null,
-    options?: boolean | EventListenerOptions
-  ): void {
-    const handler = isEventListenerObject(callback) ? callback.handleEvent.bind(callback) : callback;
-
-    if (!handler) {
-      next.call(eventTarget, type, callback, options);
-      return;
-    }
-
-    const wrappedHandler = eventHandlersMap.get([eventTarget, type, handler as GenericFunction]);
-
-    if (wrappedHandler) {
-      next.call(eventTarget, type, wrappedHandler, options);
-    } else {
-      next.call(eventTarget, type, callback, options);
-    }
-  }
-
   private setStackTraceLimit(value: number): void {
     this.OriginalError.stackTraceLimit = value + this.getAdditionalStackFramesCount();
     if (this.pluginSettingsComponent.settings.stackTraceLimit !== value) {
@@ -508,49 +399,8 @@ export class LongStackTracesComponentDesktop extends Component {
       );
     }
   }
-
-  private wrapWithStackTraces(options: WrapWithStackTracesOptions): GenericFunction {
-    const stackFrame = {
-      parentStackError: new Error(),
-      title: options.stackFrameTitle
-    };
-
-    const that = this;
-    function wrappedFn(this: unknown, ...wrappedFnArgs: unknown[]): unknown {
-      return that.wrapWithStackTracesImpl({
-        fn: options.fn,
-        stackFrame,
-        wrappedFnArgs,
-        wrappedFnThisArg: this
-      });
-    }
-
-    options.afterPatch?.({
-      fn: options.fn,
-      originalFnArgs: options.originalFnArgs,
-      originalFnThisArg: options.originalFnThisArg,
-      wrappedFn
-    });
-
-    return Object.assign(wrappedFn, { originalFn: options.fn });
-  }
-
-  private wrapWithStackTracesImpl(options: WrapWithStackTracesImplOptions): unknown {
-    const previousParentStackFrame = this.parentStackFrame;
-    this.parentStackFrame = options.stackFrame;
-
-    try {
-      return options.fn.call(options.wrappedFnThisArg, ...options.wrappedFnArgs);
-    } finally {
-      this.parentStackFrame = previousParentStackFrame;
-    }
-  }
 }
 
 function generateStackTraceLine(title: string): string {
   return `    at --- ${title} --- (0)`;
-}
-
-function isEventListenerObject(value: unknown): value is EventListenerObject {
-  return !!(value as Partial<EventListenerObject> | undefined)?.handleEvent;
 }

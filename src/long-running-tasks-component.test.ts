@@ -1,7 +1,11 @@
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 
 import { FileSystemAdapter } from 'obsidian';
-import { noop } from 'obsidian-dev-utils/function';
+import {
+  noop,
+  noopAsync
+} from 'obsidian-dev-utils/function';
+import { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
 import {
   afterEach,
   beforeEach,
@@ -12,7 +16,7 @@ import {
 } from 'vitest';
 
 import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
-import { PluginSettingsComponent } from './plugin-settings-component.ts';
+import { PluginSettings } from './plugin-settings.ts';
 
 function createDataHandler(): DataHandler {
   return {
@@ -26,7 +30,7 @@ function createMockFileSystemAdapter(): FileSystemAdapter {
   const FileSystemAdapterConstructor = FileSystemAdapter as unknown as new (basePath: string) => FileSystemAdapter;
   const adapter = new FileSystemAdapterConstructor('');
   // Set properties needed by LongRunningTasksComponent before strict proxy blocks access
-  adapter.promise = Promise.resolve();
+  adapter.promise = noopAsync();
   adapter.killLastAction = vi.fn();
   adapter.thingsHappening = vi.fn();
   adapter.queue = vi.fn();
@@ -34,11 +38,16 @@ function createMockFileSystemAdapter(): FileSystemAdapter {
 }
 
 describe('LongRunningTasksComponent', () => {
-  let pluginSettingsComponent: PluginSettingsComponent;
+  let pluginSettingsComponent: PluginSettingsComponentBase<PluginSettings>;
   let fileSystemAdapter: FileSystemAdapter;
 
   beforeEach(() => {
-    pluginSettingsComponent = new PluginSettingsComponent(createDataHandler());
+    pluginSettingsComponent = new PluginSettingsComponentBase<PluginSettings>(
+      {
+        dataHandler: createDataHandler(),
+        pluginSettingsClass: PluginSettings
+      }
+    );
     fileSystemAdapter = createMockFileSystemAdapter();
   });
 
