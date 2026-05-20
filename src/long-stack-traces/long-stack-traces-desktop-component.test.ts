@@ -1,6 +1,7 @@
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 
 import { App } from 'obsidian';
+import { noopAsync } from 'obsidian-dev-utils/function';
 import {
   afterEach,
   beforeEach,
@@ -10,20 +11,19 @@ import {
   vi
 } from 'vitest';
 
-import type { PluginSettings } from '../plugin-settings.ts';
-
 import { PluginSettingsComponent } from '../plugin-settings-component.ts';
-import { LongStackTracesComponentDesktop } from './long-stack-traces-component-desktop.ts';
+import { PluginSettings } from '../plugin-settings.ts';
+import { LongStackTracesDesktopComponent } from './long-stack-traces-desktop-component.ts';
 
 interface CreateComponentResult {
-  component: LongStackTracesComponentDesktop;
+  component: LongStackTracesDesktopComponent;
   pluginSettingsComponent: PluginSettingsComponent;
 }
 
 function createComponent(settingsOverrides?: Partial<PluginSettings>): CreateComponentResult {
   const pluginSettingsComponent = createSettingsComponent(settingsOverrides);
   const app = new App();
-  const component = new LongStackTracesComponentDesktop({
+  const component = new LongStackTracesDesktopComponent({
     app,
     pluginId: 'test-plugin',
     pluginSettingsComponent
@@ -418,7 +418,7 @@ describe('LongStackTracesComponentDesktop', () => {
     component.load();
 
     let finallyCalled = false;
-    await Promise.resolve().finally(() => {
+    await noopAsync().finally(() => {
       finallyCalled = true;
     });
     expect(finallyCalled).toBe(true);

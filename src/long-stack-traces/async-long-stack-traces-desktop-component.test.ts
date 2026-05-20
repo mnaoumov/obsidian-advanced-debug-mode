@@ -9,12 +9,12 @@ import {
 } from 'vitest';
 
 import { PluginSettingsComponent } from '../plugin-settings-component.ts';
-import { AsyncLongStackTracesComponent } from './async-long-stack-traces-component-desktop.ts';
-import { LongStackTracesComponentDesktop } from './long-stack-traces-component-desktop.ts';
+import { AsyncLongStackTracesComponent } from './async-long-stack-traces-desktop-component.ts';
+import { LongStackTracesDesktopComponent } from './long-stack-traces-desktop-component.ts';
 
 interface CreateComponentsResult {
   asyncComponent: AsyncLongStackTracesComponent;
-  longStackTracesComponent: LongStackTracesComponentDesktop;
+  longStackTracesComponent: LongStackTracesDesktopComponent;
   pluginSettingsComponent: PluginSettingsComponent;
 }
 
@@ -24,7 +24,7 @@ function createComponents(settingsOverrides?: Record<string, unknown>): CreateCo
     Object.assign(pluginSettingsComponent.defaultSettings, settingsOverrides);
   }
   const app = new App();
-  const longStackTracesComponent = new LongStackTracesComponentDesktop({
+  const longStackTracesComponent = new LongStackTracesDesktopComponent({
     app,
     pluginId: 'test-plugin',
     pluginSettingsComponent
