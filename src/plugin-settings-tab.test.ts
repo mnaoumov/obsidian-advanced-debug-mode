@@ -1,5 +1,3 @@
-// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair -- Entire file needs this.
-/* eslint-disable no-restricted-syntax -- Test mocking requires double type assertions and inline types. */
 import type { DebugController } from 'obsidian-dev-utils/debug-controller';
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
@@ -10,7 +8,9 @@ import {
   Setting,
   ToggleComponent
 } from 'obsidian';
+import { castTo } from 'obsidian-dev-utils/object-utils';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+import { ensureGenericObject } from 'obsidian-dev-utils/type-guards';
 import {
   afterEach,
   beforeAll,
@@ -30,7 +30,7 @@ import { PluginSettingsTab } from './plugin-settings-tab.ts';
 // Patch ToggleComponent to have setPlaceholderValue so that
 // PluginSettingsTabBase.bind() can duck-type it.
 beforeAll(() => {
-  const proto = ToggleComponent.prototype as unknown as Record<string, unknown>;
+  const proto = ensureGenericObject(ToggleComponent.prototype);
   if (!('setPlaceholderValue' in proto)) {
     proto['setPlaceholderValue'] = undefined;
   }
@@ -63,24 +63,25 @@ function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): 
 
   const app = new App();
   // Initialize obsidianDevUtilsState on the app (needed by getDebugger())
-  (app as unknown as Record<string, unknown>)['obsidianDevUtilsState'] = {};
-  (window as unknown as Record<string, unknown>)['app'] = app;
+  ensureGenericObject(app).obsidianDevUtilsState = {};
+  // eslint-disable-next-line @typescript-eslint/dot-notation, @typescript-eslint/no-deprecated -- Test setup: window.app is deprecated but required for plugin initialization.
+  ensureGenericObject(window)['app'] = app;
   const manifest = { author: 'test', id: 'test-plugin', minAppVersion: '0.0.0', name: 'Test Plugin', version: '1.0.0' };
   // Plugin may be abstract in typings — use it as a constructor directly since the mock is concrete.
-  const PluginConstructor = Plugin as unknown as new (app: App, manifest: Record<string, string>) => Plugin;
+  const PluginConstructor = castTo<new (app: App, manifest: Record<string, string>) => Plugin>(Plugin);
   const plugin = new PluginConstructor(app, manifest);
 
-  const debugMode: DebugMode = {
+  const debugMode = strictProxy<DebugMode>({
     isDebugMode: vi.fn().mockReturnValue(false),
     toggleDebugMode: vi.fn(),
     ...overrides?.debugModeOverrides
-  } as unknown as DebugMode;
+  });
 
-  const emulateMobileMode: EmulateMobileMode = {
+  const emulateMobileMode = strictProxy<EmulateMobileMode>({
     isEmulateMobileMode: vi.fn().mockReturnValue(false),
     toggleEmulateMobileMode: vi.fn(),
     ...overrides?.emulateMobileModeOverrides
-  } as unknown as EmulateMobileMode;
+  });
 
   const debugController: DebugController = {
     disable: vi.fn(),
@@ -105,11 +106,13 @@ describe('PluginSettingsTab', () => {
   let savedGlobalApp: unknown;
 
   beforeEach(() => {
-    savedGlobalApp = (window as unknown as Record<string, unknown>)['app'];
+    // eslint-disable-next-line @typescript-eslint/dot-notation, @typescript-eslint/no-deprecated -- Test setup: window.app is deprecated but required for plugin initialization.
+    savedGlobalApp = ensureGenericObject(window)['app'];
   });
 
   afterEach(() => {
-    (window as unknown as Record<string, unknown>)['app'] = savedGlobalApp;
+    // eslint-disable-next-line @typescript-eslint/dot-notation, @typescript-eslint/no-deprecated -- Test teardown: restoring window.app.
+    ensureGenericObject(window)['app'] = savedGlobalApp;
   });
 
   it('should construct without errors', () => {
@@ -145,15 +148,17 @@ describe('PluginSettingsTab', () => {
   it('should re-display when shouldIncludeLongStackTraces toggle changes', async () => {
     const capturedToggles: ToggleComponent[] = [];
     const originalAddToggle = Setting.prototype.addToggle;
-    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(function (this: Setting, cb: (toggle: ToggleComponent) => void) {
-      const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
-        capturedToggles.push(toggle);
-        cb(toggle);
-      });
-      return result;
-    });
+    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
+      function mockAddToggle(this: Setting, cb: (toggle: ToggleComponent) => void) {
+        const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
+          capturedToggles.push(toggle);
+          cb(toggle);
+        });
+        return result;
+      }
+    );
 
-    const { tab, pluginSettingsComponent } = createPluginSettingsTab();
+    const { pluginSettingsComponent, tab } = createPluginSettingsTab();
     tab.display();
 
     addToggleSpy.mockRestore();
@@ -183,15 +188,17 @@ describe('PluginSettingsTab', () => {
   it('should re-display when shouldTimeoutLongRunningTasks toggle changes', async () => {
     const capturedToggles: ToggleComponent[] = [];
     const originalAddToggle = Setting.prototype.addToggle;
-    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(function (this: Setting, cb: (toggle: ToggleComponent) => void) {
-      const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
-        capturedToggles.push(toggle);
-        cb(toggle);
-      });
-      return result;
-    });
+    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
+      function mockAddToggle(this: Setting, cb: (toggle: ToggleComponent) => void) {
+        const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
+          capturedToggles.push(toggle);
+          cb(toggle);
+        });
+        return result;
+      }
+    );
 
-    const { tab, pluginSettingsComponent } = createPluginSettingsTab();
+    const { pluginSettingsComponent, tab } = createPluginSettingsTab();
     tab.display();
 
     addToggleSpy.mockRestore();
@@ -223,13 +230,15 @@ describe('PluginSettingsTab', () => {
 
     const capturedToggles: ToggleComponent[] = [];
     const originalAddToggle = Setting.prototype.addToggle;
-    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(function (this: Setting, cb: (toggle: ToggleComponent) => void) {
-      const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
-        capturedToggles.push(toggle);
-        cb(toggle);
-      });
-      return result;
-    });
+    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
+      function mockAddToggle(this: Setting, cb: (toggle: ToggleComponent) => void) {
+        const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
+          capturedToggles.push(toggle);
+          cb(toggle);
+        });
+        return result;
+      }
+    );
 
     const { tab } = createPluginSettingsTab({
       debugModeOverrides: debugModeMock
@@ -253,13 +262,15 @@ describe('PluginSettingsTab', () => {
 
     const capturedToggles: ToggleComponent[] = [];
     const originalAddToggle = Setting.prototype.addToggle;
-    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(function (this: Setting, cb: (toggle: ToggleComponent) => void) {
-      const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
-        capturedToggles.push(toggle);
-        cb(toggle);
-      });
-      return result;
-    });
+    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
+      function mockAddToggle(this: Setting, cb: (toggle: ToggleComponent) => void) {
+        const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
+          capturedToggles.push(toggle);
+          cb(toggle);
+        });
+        return result;
+      }
+    );
 
     const { tab } = createPluginSettingsTab({
       emulateMobileModeOverrides: emulateMobileMock
@@ -283,10 +294,15 @@ describe('PluginSettingsTab', () => {
       set: vi.fn()
     };
 
-    const capturedTextAreas: { setValue(value: string): unknown; onChanged(): void }[] = [];
+    interface MockTextArea {
+      onChanged(): void;
+      setValue(value: string): unknown;
+    }
+
+    const capturedTextAreas: MockTextArea[] = [];
     const originalAddTextArea = Setting.prototype.addTextArea;
-    const addTextAreaSpy = vi.spyOn(Setting.prototype, 'addTextArea').mockImplementation(function (this: Setting, cb) {
-      const result = originalAddTextArea.call(this, (textArea: { setValue(value: string): unknown; onChanged(): void }) => {
+    const addTextAreaSpy = vi.spyOn(Setting.prototype, 'addTextArea').mockImplementation(function mockAddTextArea(this: Setting, cb) {
+      const result = originalAddTextArea.call(this, (textArea: MockTextArea) => {
         capturedTextAreas.push(textArea);
         cb(textArea as never);
       });
@@ -318,13 +334,15 @@ describe('PluginSettingsTab', () => {
 
     const capturedToggles: ToggleComponent[] = [];
     const originalAddToggle = Setting.prototype.addToggle;
-    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(function (this: Setting, cb: (toggle: ToggleComponent) => void) {
-      const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
-        capturedToggles.push(toggle);
-        cb(toggle);
-      });
-      return result;
-    });
+    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
+      function mockAddToggle(this: Setting, cb: (toggle: ToggleComponent) => void) {
+        const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
+          capturedToggles.push(toggle);
+          cb(toggle);
+        });
+        return result;
+      }
+    );
 
     const { tab } = createPluginSettingsTab({
       debugControllerOverrides: debugControllerMock

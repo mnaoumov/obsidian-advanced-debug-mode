@@ -1,4 +1,5 @@
 import eruda from 'eruda';
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   afterEach,
   beforeEach,
@@ -25,10 +26,9 @@ describe('DevToolsComponent', () => {
     mockButton = createDiv();
     mockButton.classList.add('eruda-entry-btn');
 
-    // eslint-disable-next-line no-restricted-syntax -- Test mock requires double assertion.
-    mockShadowRoot = {
+    mockShadowRoot = strictProxy<ShadowRoot>({
       find: vi.fn().mockReturnValue(mockButton)
-    } as unknown as ShadowRoot;
+    });
 
     interface ErudaInitOptions {
       readonly container?: HTMLElement;

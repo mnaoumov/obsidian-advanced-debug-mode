@@ -3,7 +3,9 @@ import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugi
 
 import { App } from 'obsidian';
 import { noopAsync } from 'obsidian-dev-utils/function';
+import { castTo } from 'obsidian-dev-utils/object-utils';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+import { ensureGenericObject } from 'obsidian-dev-utils/type-guards';
 import {
   afterEach,
   beforeEach,
@@ -493,8 +495,8 @@ describe('LongStackTracesComponentDesktop', () => {
 
     target.addEventListener('test', handler);
 
-    // removeEventListener with EventListenerObject exercises the
-    // isEventListenerObject branch in RemoveEventListenerPatchComponent
+    // RemoveEventListener with EventListenerObject exercises the
+    // IsEventListenerObject branch in RemoveEventListenerPatchComponent
     expect(() => {
       target.removeEventListener('test', handler);
     }).not.toThrow();
@@ -538,15 +540,15 @@ describe('LongStackTracesComponentDesktop', () => {
     class CustomBase extends Error {}
     class CustomChild extends CustomBase {}
 
-    const windowWithErrors = window as unknown as Record<string, unknown>;
+    const windowWithErrors = ensureGenericObject(window);
     windowWithErrors['CustomChild'] = CustomChild;
 
     component.load();
 
     // CustomChild's base (CustomBase) is not in the originalPrototypeToPatchedClassMap
-    // because CustomBase itself is not a direct child of Error — it IS a child of Error
-    // but the iteration processes children of Error. CustomBase will be patched first,
-    // then CustomChild's base prototype resolves to PatchedCustomBase.
+    // Because CustomBase itself is not a direct child of Error — it IS a child of Error
+    // But the iteration processes children of Error. CustomBase will be patched first,
+    // Then CustomChild's base prototype resolves to PatchedCustomBase.
     // This exercises the patchErrorClasses iteration.
     expect(window.Error).not.toBe(savedError);
 
@@ -560,8 +562,7 @@ describe('LongStackTracesComponentDesktop', () => {
     component.load();
 
     return new Promise<void>((resolve) => {
-      // eslint-disable-next-line no-restricted-syntax -- Testing string handler path.
-      window.setTimeout('void 0' as unknown as () => void, 0);
+      window.setTimeout(castTo<() => void>('void 0'), 0);
       window.setTimeout(() => {
         resolve();
       }, 0);
@@ -578,7 +579,7 @@ describe('LongStackTracesComponentDesktop', () => {
     const target = new EventTarget();
 
     // Register the same listener twice — the second registration should
-    // remove the previous wrapped handler via afterPatchAddEventListener
+    // Remove the previous wrapped handler via afterPatchAddEventListener
     target.addEventListener('test', listener);
     target.addEventListener('test', listener);
 

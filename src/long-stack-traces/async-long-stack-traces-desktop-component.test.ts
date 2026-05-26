@@ -2,6 +2,7 @@ import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
 import { App } from 'obsidian';
+import { castTo } from 'obsidian-dev-utils/object-utils';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   describe,
@@ -14,10 +15,46 @@ import { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import { AsyncLongStackTracesComponent } from './async-long-stack-traces-desktop-component.ts';
 import { LongStackTracesDesktopComponent } from './long-stack-traces-desktop-component.ts';
 
+interface AsyncComponentPrivateHooks {
+  asyncHookDestroy(asyncId: number): void;
+  asyncHookInit(asyncId: number, type: string, triggerAsyncId: number): void;
+  asyncIdParentMap: Map<number, number>;
+  asyncIdStackFrameMap: Map<number, unknown>;
+}
+
+interface AsyncComponentPrivateMembers {
+  asyncIdParentMap: Map<number, number>;
+  asyncIdStackFrameMap: Map<number, AsyncIdStackFrameEntry>;
+}
+
+interface AsyncComponentPrivateMembersWithoutParent {
+  asyncIdParentMap: Map<number, number>;
+  asyncIdStackFrameMap: Map<number, AsyncIdStackFrameEntryWithoutParent>;
+}
+
+interface AsyncComponentPrivateStackFrameMap {
+  asyncIdStackFrameMap: Map<number, AsyncIdStackFrameEntryWithoutParent>;
+}
+
+interface AsyncIdStackFrameEntry {
+  currentError: Error;
+  parentStackFrame: ParentStackFrame | undefined;
+}
+
+interface AsyncIdStackFrameEntryWithoutParent {
+  currentError: Error;
+  parentStackFrame: undefined;
+}
+
 interface CreateComponentsResult {
   ComponentEx: AsyncLongStackTracesComponent;
   longStackTracesComponent: LongStackTracesDesktopComponent;
   pluginSettingsComponent: PluginSettingsComponent;
+}
+
+interface ParentStackFrame {
+  parentStackError: Error;
+  title: string;
 }
 
 function createComponents(settingsOverrides?: Record<string, unknown>): CreateComponentsResult {
@@ -200,11 +237,7 @@ describe('AsyncLongStackTracesComponent', () => {
     const ASYNC_ID = 12345;
 
     // Access private maps via the proxy
-    // eslint-disable-next-line no-restricted-syntax -- Access private members for testing.
-    const componentAny = ComponentEx as unknown as {
-      asyncIdParentMap: Map<number, number>;
-      asyncIdStackFrameMap: Map<number, { currentError: Error; parentStackFrame: { parentStackError: Error; title: string } | undefined }>;
-    };
+    const componentAny = castTo<AsyncComponentPrivateMembers>(ComponentEx);
 
     const currentError = new longStackTracesComponent.OriginalError('current');
     currentError.stack = 'Error: current\n    at asyncFn (async-file.js:10:0)\n    at asyncFn2 (async-file.js:20:0)';
@@ -255,11 +288,7 @@ describe('AsyncLongStackTracesComponent', () => {
     const ASYNC_ID = 12346;
     const PARENT_ASYNC_ID = 12340;
 
-    // eslint-disable-next-line no-restricted-syntax -- Access private members for testing.
-    const componentAny = ComponentEx as unknown as {
-      asyncIdParentMap: Map<number, number>;
-      asyncIdStackFrameMap: Map<number, { currentError: Error; parentStackFrame: undefined }>;
-    };
+    const componentAny = castTo<AsyncComponentPrivateMembersWithoutParent>(ComponentEx);
 
     const currentError = new longStackTracesComponent.OriginalError('current');
     currentError.stack = 'Error: current\n    at asyncFn (async-file2.js:10:0)';
@@ -301,10 +330,7 @@ describe('AsyncLongStackTracesComponent', () => {
 
     const ASYNC_ID = 99999;
 
-    // eslint-disable-next-line no-restricted-syntax -- Access private members for testing.
-    const componentAny = ComponentEx as unknown as {
-      asyncIdStackFrameMap: Map<number, { currentError: Error; parentStackFrame: undefined }>;
-    };
+    const componentAny = castTo<AsyncComponentPrivateStackFrameMap>(ComponentEx);
 
     const currentError = new longStackTracesComponent.OriginalError('orphan');
     currentError.stack = 'Error: orphan\n    at orphanFn (orphan.js:1:0)';
@@ -336,13 +362,7 @@ describe('AsyncLongStackTracesComponent', () => {
     longStackTracesComponent.load();
     ComponentEx.load();
 
-    // eslint-disable-next-line no-restricted-syntax -- Access private members for testing.
-    const componentAny = ComponentEx as unknown as {
-      asyncHookDestroy(asyncId: number): void;
-      asyncHookInit(asyncId: number, type: string, triggerAsyncId: number): void;
-      asyncIdParentMap: Map<number, number>;
-      asyncIdStackFrameMap: Map<number, unknown>;
-    };
+    const componentAny = castTo<AsyncComponentPrivateHooks>(ComponentEx);
 
     const TEST_ASYNC_ID = 999;
     const TRIGGER_ASYNC_ID = 888;

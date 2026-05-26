@@ -6,6 +6,7 @@ import {
   noop,
   noopAsync
 } from 'obsidian-dev-utils/function';
+import { castTo } from 'obsidian-dev-utils/object-utils';
 import { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
@@ -28,8 +29,7 @@ function createDataHandler(): DataHandler {
 }
 
 function createMockFileSystemAdapter(): FileSystemAdapter {
-  // eslint-disable-next-line no-restricted-syntax -- Test mock requires double assertion.
-  const FileSystemAdapterConstructor = FileSystemAdapter as unknown as new (basePath: string) => FileSystemAdapter;
+  const FileSystemAdapterConstructor = castTo<new (basePath: string) => FileSystemAdapter>(FileSystemAdapter);
   const adapter = new FileSystemAdapterConstructor('');
   // Set properties needed by LongRunningTasksComponent before strict proxy blocks access
   adapter.promise = noopAsync();

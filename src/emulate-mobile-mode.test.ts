@@ -1,5 +1,6 @@
 import type { App } from 'obsidian';
 
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   describe,
   expect,
@@ -10,8 +11,7 @@ import {
 import { EmulateMobileMode } from './emulate-mobile-mode.ts';
 
 function createMockApp(overrides: Partial<App> = {}): App {
-  // eslint-disable-next-line no-restricted-syntax -- Test mock requires double assertion.
-  return overrides as unknown as App;
+  return strictProxy<App>(overrides);
 }
 
 describe('EmulateMobileMode', () => {

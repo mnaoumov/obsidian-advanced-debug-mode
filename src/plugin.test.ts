@@ -3,6 +3,8 @@ import {
   FileSystemAdapter
 } from 'obsidian';
 import { noopAsync } from 'obsidian-dev-utils/function';
+import { castTo } from 'obsidian-dev-utils/object-utils';
+import { ensureGenericObject } from 'obsidian-dev-utils/type-guards';
 import {
   describe,
   expect,
@@ -27,17 +29,17 @@ describe('Plugin', () => {
   it('should construct with app and manifest', () => {
     const app = new App();
 
-    // eslint-disable-next-line no-restricted-syntax -- Test mock requires double assertion for FileSystemAdapter.
-    const FileSystemAdapterConstructor = FileSystemAdapter as unknown as new (basePath: string) => FileSystemAdapter;
+    const FileSystemAdapterConstructor = castTo<new (basePath: string) => FileSystemAdapter>(FileSystemAdapter);
     const adapter = new FileSystemAdapterConstructor('');
     adapter.promise = noopAsync();
     adapter.killLastAction = vi.fn();
     adapter.thingsHappening = vi.fn();
     adapter.queue = vi.fn();
 
-    (app as unknown as Record<string, unknown>)['vault'] = { adapter };
-    (app as unknown as Record<string, unknown>)['obsidianDevUtilsState'] = {};
-    (window as unknown as Record<string, unknown>)['app'] = app;
+    ensureGenericObject(app).vault = { adapter };
+    ensureGenericObject(app).obsidianDevUtilsState = {};
+    // eslint-disable-next-line @typescript-eslint/dot-notation, @typescript-eslint/no-deprecated -- Test setup: window.app is deprecated but required for plugin initialization.
+    ensureGenericObject(window)['app'] = app;
 
     const manifest = {
       author: 'test',
@@ -52,6 +54,7 @@ describe('Plugin', () => {
       new Plugin(app, manifest);
     }).not.toThrow();
 
-    (window as unknown as Record<string, unknown>)['app'] = undefined;
+    // eslint-disable-next-line @typescript-eslint/dot-notation, @typescript-eslint/no-deprecated -- Test teardown: cleaning up window.app.
+    ensureGenericObject(window)['app'] = undefined;
   });
 });
