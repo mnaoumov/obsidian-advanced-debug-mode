@@ -14,9 +14,9 @@ vi.mock('eruda', () => ({
 }));
 
 describe('Plugin', () => {
-  // Note: Plugin extends PluginBase which extends AsyncComponent.
+  // Note: Plugin extends PluginBase which extends ComponentEx.
   // The obsidian-test-mocks Component mock uses `loaded__` / `children__`
-  // While obsidian-dev-utils AsyncComponent accesses `_loaded` / `_children`.
+  // While obsidian-dev-utils ComponentEx accesses `_loaded` / `_children`.
   // This naming mismatch prevents load()/unload() from working in unit tests.
   // Full lifecycle testing is covered by integration tests.
 

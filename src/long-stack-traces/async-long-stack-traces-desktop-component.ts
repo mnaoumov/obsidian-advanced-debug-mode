@@ -3,7 +3,7 @@ import {
   createHook,
   executionAsyncId
 } from 'node:async_hooks';
-import { Component } from 'obsidian';
+import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
 
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import type {
@@ -21,7 +21,7 @@ interface AsyncStackFrame {
   parentStackFrame: StackFrame | undefined;
 }
 
-export class AsyncLongStackTracesComponent extends Component {
+export class AsyncLongStackTracesComponent extends ComponentEx {
   private readonly asyncIdParentMap = new Map<number, number>();
   private readonly asyncIdStackFrameMap = new Map<number, AsyncStackFrame>();
 

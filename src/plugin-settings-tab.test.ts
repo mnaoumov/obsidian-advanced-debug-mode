@@ -2,12 +2,14 @@
 /* eslint-disable no-restricted-syntax -- Test mocking requires double type assertions and inline types. */
 import type { DebugController } from 'obsidian-dev-utils/debug-controller';
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
+import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
 import {
   App,
   Plugin,
   ToggleComponent
 } from 'obsidian';
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   afterEach,
   beforeAll,
@@ -44,12 +46,19 @@ interface CreatePluginSettingsTabResult {
   tab: PluginSettingsTab;
 }
 
+function createPluginEventSource(): PluginEventSource {
+  return strictProxy<PluginEventSource>({});
+}
+
 function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): CreatePluginSettingsTabResult {
   const dataHandler: DataHandler = {
     loadData: vi.fn().mockResolvedValue(null),
     saveData: vi.fn().mockResolvedValue(undefined)
   };
-  const pluginSettingsComponent = new PluginSettingsComponent(dataHandler);
+  const pluginSettingsComponent = new PluginSettingsComponent({
+    dataHandler,
+    pluginEventSource: createPluginEventSource()
+  });
 
   const app = new App();
   // Initialize obsidianDevUtilsState on the app (needed by getDebugger())

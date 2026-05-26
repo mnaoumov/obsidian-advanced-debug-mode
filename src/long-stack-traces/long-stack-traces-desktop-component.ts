@@ -2,10 +2,7 @@ import type { ConditionalKeys } from 'type-fest';
 
 // eslint-disable-next-line import/no-nodejs-modules, import-x/no-nodejs-modules -- Deliberate, executes only on desktop.
 import process from 'node:process';
-import {
-  App,
-  Component
-} from 'obsidian';
+import { App } from 'obsidian';
 import { filterInPlace } from 'obsidian-dev-utils/array';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
 import {
@@ -13,6 +10,7 @@ import {
   castTo
 } from 'obsidian-dev-utils/object-utils';
 import { AllWindowsEventComponent } from 'obsidian-dev-utils/obsidian/components/all-windows-event-component';
+import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
 
 import type {
   AfterPatchFn,
@@ -53,7 +51,7 @@ interface PatchParams<Obj extends object> {
 
 type WindowWithErrorConstructors = Record<string, GenericConstructor> & typeof window;
 
-export class LongStackTracesDesktopComponent extends Component {
+export class LongStackTracesDesktopComponent extends ComponentEx {
   public parentStackFrame: StackFrame | undefined;
 
   public get OriginalError(): ErrorConstructor {

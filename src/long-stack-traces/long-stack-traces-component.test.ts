@@ -1,9 +1,11 @@
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
+import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
 import {
   App,
   Platform
 } from 'obsidian';
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   afterEach,
   beforeEach,
@@ -23,6 +25,10 @@ function createDataHandler(): DataHandler {
   };
 }
 
+function createPluginEventSource(): PluginEventSource {
+  return strictProxy<PluginEventSource>({});
+}
+
 describe('LongStackTracesComponent', () => {
   let savedIsDesktop: boolean;
 
@@ -35,7 +41,10 @@ describe('LongStackTracesComponent', () => {
   });
 
   it('should construct without errors', () => {
-    const pluginSettingsComponent = new PluginSettingsComponent(createDataHandler());
+    const pluginSettingsComponent = new PluginSettingsComponent({
+      dataHandler: createDataHandler(),
+      pluginEventSource: createPluginEventSource()
+    });
     const app = new App();
 
     expect(() => {
@@ -47,7 +56,7 @@ describe('LongStackTracesComponent', () => {
     }).not.toThrow();
   });
 
-  // Note: LongStackTracesComponent extends AsyncComponent which uses
+  // Note: LongStackTracesComponent extends ComponentEx which uses
   // `_loaded` / `_children` internal properties. The obsidian-test-mocks
   // Component mock uses `loaded__` / `children__` with strict proxy,
   // Making load() incompatible in unit tests. Load testing is deferred to
