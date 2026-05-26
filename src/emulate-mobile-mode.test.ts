@@ -1,4 +1,5 @@
 import type { App } from 'obsidian';
+import type { PartialDeep } from 'type-fest';
 
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
@@ -10,7 +11,7 @@ import {
 
 import { EmulateMobileMode } from './emulate-mobile-mode.ts';
 
-function createMockApp(overrides: Partial<App> = {}): App {
+function createMockApp(overrides: PartialDeep<App> = {}): App {
   return strictProxy<App>(overrides);
 }
 

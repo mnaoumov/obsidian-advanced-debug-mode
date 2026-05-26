@@ -36,8 +36,9 @@ describe('Plugin', () => {
     adapter.thingsHappening = vi.fn();
     adapter.queue = vi.fn();
 
-    ensureGenericObject(app).vault = { adapter };
-    ensureGenericObject(app).obsidianDevUtilsState = {};
+    app.vault.adapter = adapter;
+    ensureGenericObject(app)['obsidianDevUtilsState'] = {};
+
     // eslint-disable-next-line @typescript-eslint/dot-notation, @typescript-eslint/no-deprecated -- Test setup: window.app is deprecated but required for plugin initialization.
     ensureGenericObject(window)['app'] = app;
 
@@ -54,7 +55,10 @@ describe('Plugin', () => {
       new Plugin(app, manifest);
     }).not.toThrow();
 
-    // eslint-disable-next-line @typescript-eslint/dot-notation, @typescript-eslint/no-deprecated -- Test teardown: cleaning up window.app.
-    ensureGenericObject(window)['app'] = undefined;
+    interface WindowWithApp {
+      app: App;
+    }
+
+    delete (window as Partial<WindowWithApp>).app;
   });
 });

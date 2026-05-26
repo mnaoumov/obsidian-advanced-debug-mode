@@ -63,7 +63,7 @@ function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): 
 
   const app = new App();
   // Initialize obsidianDevUtilsState on the app (needed by getDebugger())
-  ensureGenericObject(app).obsidianDevUtilsState = {};
+  ensureGenericObject(app)['obsidianDevUtilsState'] = {};
   // eslint-disable-next-line @typescript-eslint/dot-notation, @typescript-eslint/no-deprecated -- Test setup: window.app is deprecated but required for plugin initialization.
   ensureGenericObject(window)['app'] = app;
   const manifest = { author: 'test', id: 'test-plugin', minAppVersion: '0.0.0', name: 'Test Plugin', version: '1.0.0' };
@@ -103,7 +103,7 @@ function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): 
 }
 
 describe('PluginSettingsTab', () => {
-  let savedGlobalApp: unknown;
+  let savedGlobalApp: App;
 
   beforeEach(() => {
     // eslint-disable-next-line @typescript-eslint/dot-notation, @typescript-eslint/no-deprecated -- Test setup: window.app is deprecated but required for plugin initialization.
