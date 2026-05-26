@@ -1,5 +1,7 @@
 import type { App } from 'obsidian';
+import type { PartialDeep } from 'type-fest';
 
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   describe,
   expect,
@@ -9,9 +11,8 @@ import {
 
 import { DebugMode } from './debug-mode.ts';
 
-function createMockApp(overrides: Partial<App> = {}): App {
-  // eslint-disable-next-line no-restricted-syntax -- Test mock requires double assertion.
-  return overrides as unknown as App;
+function createMockApp(overrides: PartialDeep<App> = {}): App {
+  return strictProxy<App>(overrides);
 }
 
 describe('DebugMode', () => {

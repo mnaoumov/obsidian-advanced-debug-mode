@@ -25,20 +25,29 @@ vi.mock('./long-stack-traces-desktop-component.ts', () => ({
   LongStackTracesDesktopComponent: MockLongStackTracesDesktopComponent
 }));
 
-function createDataHandler(): DataHandler {
-  return {
-    loadData: vi.fn().mockResolvedValue(null),
-    saveData: vi.fn().mockResolvedValue(undefined)
-  };
-}
-
-function createPluginEventSource(): PluginEventSource {
-  return strictProxy<PluginEventSource>({});
-}
-
 interface CreateComponentResult {
   component: LongStackTracesComponent;
   pluginSettingsComponent: PluginSettingsComponent;
+}
+
+type EventCallback = (...args: unknown[]) => unknown;
+
+function captureEventCallbacks(pluginSettingsComponent: PluginSettingsComponent): Map<string, EventCallback[]> {
+  const captured = new Map<string, EventCallback[]>();
+
+  const originalOn = (pluginSettingsComponent.on as (...args: unknown[]) => unknown).bind(pluginSettingsComponent);
+
+  (vi.spyOn(pluginSettingsComponent, 'on') as ReturnType<typeof vi.fn>).mockImplementation((name: string, callback: EventCallback, ctx?: unknown) => {
+    let callbacks = captured.get(name);
+    if (!callbacks) {
+      callbacks = [];
+      captured.set(name, callbacks);
+    }
+    callbacks.push(callback);
+    return originalOn(name, callback, ctx);
+  });
+
+  return captured;
 }
 
 function createComponent(): CreateComponentResult {
@@ -55,25 +64,15 @@ function createComponent(): CreateComponentResult {
   return { component, pluginSettingsComponent };
 }
 
-type EventCallback = (...args: unknown[]) => unknown;
+function createDataHandler(): DataHandler {
+  return {
+    loadData: vi.fn().mockResolvedValue(null),
+    saveData: vi.fn().mockResolvedValue(undefined)
+  };
+}
 
-function captureEventCallbacks(pluginSettingsComponent: PluginSettingsComponent): Map<string, EventCallback[]> {
-  const captured = new Map<string, EventCallback[]>();
-  // eslint-disable-next-line no-restricted-syntax -- Need untyped spy to capture all event callbacks.
-  const originalOn = (pluginSettingsComponent.on as (...args: unknown[]) => unknown).bind(pluginSettingsComponent);
-
-  // eslint-disable-next-line no-restricted-syntax -- Need untyped mock to intercept typed overloads.
-  (vi.spyOn(pluginSettingsComponent, 'on') as ReturnType<typeof vi.fn>).mockImplementation((name: string, callback: EventCallback, ctx?: unknown) => {
-    let callbacks = captured.get(name);
-    if (!callbacks) {
-      callbacks = [];
-      captured.set(name, callbacks);
-    }
-    callbacks.push(callback);
-    return originalOn(name, callback, ctx);
-  });
-
-  return captured;
+function createPluginEventSource(): PluginEventSource {
+  return strictProxy<PluginEventSource>({});
 }
 
 describe('LongStackTracesComponent', () => {
@@ -82,7 +81,7 @@ describe('LongStackTracesComponent', () => {
   beforeEach(() => {
     savedIsDesktop = Platform.isDesktop;
     MockLongStackTracesDesktopComponent.mockClear();
-    MockLongStackTracesDesktopComponent.mockImplementation(function MockDesktopComponent() {
+    MockLongStackTracesDesktopComponent.mockImplementation(() => {
       return new Component();
     });
   });
