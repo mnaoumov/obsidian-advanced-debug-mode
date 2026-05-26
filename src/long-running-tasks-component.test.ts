@@ -227,6 +227,58 @@ describe('LongRunningTasksComponent', () => {
     component.unload();
   });
 
+  it('should not patch queue when shouldIncludeTimedOutTasksDetails is false', () => {
+    vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+      ...pluginSettingsComponent.defaultSettings,
+      shouldIncludeTimedOutTasksDetails: false
+    });
+
+    const component = new LongRunningTasksComponent({
+      fileSystemAdapter,
+      pluginSettingsComponent
+    });
+
+    const originalQueue = fileSystemAdapter.queue;
+    component.load();
+
+    expect(fileSystemAdapter.queue).toBe(originalQueue);
+
+    component.unload();
+  });
+
+  it('should fire debounced warning for disabled timeout', () => {
+    vi.useFakeTimers();
+
+    vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+      ...pluginSettingsComponent.defaultSettings,
+      shouldTimeoutLongRunningTasks: false
+    });
+
+    const component = new LongRunningTasksComponent({
+      fileSystemAdapter,
+      pluginSettingsComponent
+    });
+
+    component.load();
+
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(noop);
+
+    // Call the debounced thingsHappening
+    fileSystemAdapter.thingsHappening();
+
+    // Fast-forward past the debounce timeout (60 seconds)
+    const DEBOUNCE_TIMEOUT_MS = 60_000;
+    vi.advanceTimersByTime(DEBOUNCE_TIMEOUT_MS);
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('timeout long running tasks after 60 seconds is currently disabled')
+    );
+
+    consoleWarnSpy.mockRestore();
+    component.unload();
+    vi.useRealTimers();
+  });
+
   it('should handle previous promise rejection in queue', async () => {
     const component = new LongRunningTasksComponent({
       fileSystemAdapter,
@@ -245,6 +297,82 @@ describe('LongRunningTasksComponent', () => {
     expect(result).toBe(RESULT);
 
     consoleErrorSpy.mockRestore();
+    component.unload();
+  });
+
+  it('should reload when loadSettings fires with non-initial load', () => {
+    const onSpy = vi.spyOn(pluginSettingsComponent, 'on');
+
+    const component = new LongRunningTasksComponent({
+      fileSystemAdapter,
+      pluginSettingsComponent
+    });
+
+    component.load();
+
+    const loadSettingsCall = onSpy.mock.calls.find(([name]) => name === 'loadSettings');
+    expect(loadSettingsCall).toBeDefined();
+
+    const callback = loadSettingsCall?.[1] as (loadedState: unknown, isInitialLoad: boolean) => void;
+
+    const unloadSpy = vi.spyOn(component, 'unload');
+    const loadSpy = vi.spyOn(component, 'load');
+
+    callback({}, false);
+
+    expect(unloadSpy).toHaveBeenCalled();
+    expect(loadSpy).toHaveBeenCalled();
+
+    component.unload();
+  });
+
+  it('should not reload when loadSettings fires with initial load', () => {
+    const onSpy = vi.spyOn(pluginSettingsComponent, 'on');
+
+    const component = new LongRunningTasksComponent({
+      fileSystemAdapter,
+      pluginSettingsComponent
+    });
+
+    component.load();
+
+    const loadSettingsCall = onSpy.mock.calls.find(([name]) => name === 'loadSettings');
+    expect(loadSettingsCall).toBeDefined();
+
+    const callback = loadSettingsCall?.[1] as (loadedState: unknown, isInitialLoad: boolean) => void;
+
+    const unloadSpy = vi.spyOn(component, 'unload');
+
+    callback({}, true);
+
+    expect(unloadSpy).not.toHaveBeenCalled();
+
+    component.unload();
+  });
+
+  it('should reload when saveSettings fires', () => {
+    const onSpy = vi.spyOn(pluginSettingsComponent, 'on');
+
+    const component = new LongRunningTasksComponent({
+      fileSystemAdapter,
+      pluginSettingsComponent
+    });
+
+    component.load();
+
+    const saveSettingsCall = onSpy.mock.calls.find(([name]) => name === 'saveSettings');
+    expect(saveSettingsCall).toBeDefined();
+
+    const callback = saveSettingsCall?.[1] as () => void;
+
+    const unloadSpy = vi.spyOn(component, 'unload');
+    const loadSpy = vi.spyOn(component, 'load');
+
+    callback();
+
+    expect(unloadSpy).toHaveBeenCalled();
+    expect(loadSpy).toHaveBeenCalled();
+
     component.unload();
   });
 });

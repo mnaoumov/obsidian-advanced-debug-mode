@@ -69,7 +69,12 @@ describe('AsyncLongStackTracesComponent', () => {
   });
 
   it('should return asyncId from executionAsyncId when enabled', () => {
-    const { ComponentEx } = createComponents({
+    const { ComponentEx, pluginSettingsComponent } = createComponents({
+      shouldIncludeAsyncLongStackTraces: true
+    });
+
+    vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+      ...pluginSettingsComponent.defaultSettings,
       shouldIncludeAsyncLongStackTraces: true
     });
 
@@ -91,8 +96,15 @@ describe('AsyncLongStackTracesComponent', () => {
   });
 
   it('should create and disable async hook on load/unload when enabled', () => {
-    const { ComponentEx, longStackTracesComponent } = createComponents({
-      shouldIncludeAsyncLongStackTraces: true
+    const { ComponentEx, longStackTracesComponent, pluginSettingsComponent } = createComponents({
+      shouldIncludeAsyncLongStackTraces: true,
+      shouldIncludeLongStackTraces: true
+    });
+
+    vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+      ...pluginSettingsComponent.defaultSettings,
+      shouldIncludeAsyncLongStackTraces: true,
+      shouldIncludeLongStackTraces: true
     });
 
     // Need to load the parent component first to set up OriginalError
@@ -162,6 +174,192 @@ describe('AsyncLongStackTracesComponent', () => {
       }, 0);
     });
     expect(result).toBe('done');
+
+    ComponentEx.unload();
+    longStackTracesComponent.unload();
+  });
+
+  it('should adjust stack lines with async stack frame that has parentStackFrame', () => {
+    const { ComponentEx, longStackTracesComponent, pluginSettingsComponent } = createComponents({
+      shouldIncludeAsyncLongStackTraces: true,
+      shouldIncludeInternalStackFrames: true,
+      shouldIncludeLongStackTraces: true
+    });
+
+    longStackTracesComponent.load();
+    ComponentEx.load();
+
+    // Verify isEnabled returns true
+    vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+      ...pluginSettingsComponent.defaultSettings,
+      shouldIncludeAsyncLongStackTraces: true,
+      shouldIncludeInternalStackFrames: true,
+      shouldIncludeLongStackTraces: true
+    });
+
+    const ASYNC_ID = 12345;
+
+    // Access private maps via the proxy
+    // eslint-disable-next-line no-restricted-syntax -- Access private members for testing.
+    const componentAny = ComponentEx as unknown as {
+      asyncIdParentMap: Map<number, number>;
+      asyncIdStackFrameMap: Map<number, { currentError: Error; parentStackFrame: { parentStackError: Error; title: string } | undefined }>;
+    };
+
+    const currentError = new longStackTracesComponent.OriginalError('current');
+    currentError.stack = 'Error: current\n    at asyncFn (async-file.js:10:0)\n    at asyncFn2 (async-file.js:20:0)';
+
+    const parentError = new longStackTracesComponent.OriginalError('parent');
+    parentError.stack = 'Error: parent\n    at parentFn (parent-file.js:5:0)';
+
+    componentAny.asyncIdStackFrameMap.set(ASYNC_ID, {
+      currentError,
+      parentStackFrame: {
+        parentStackError: parentError,
+        title: 'setTimeout'
+      }
+    });
+
+    const addStackFrameSpy = vi.spyOn(longStackTracesComponent, 'addStackFrame');
+    const adjustStackLinesSpy = vi.spyOn(longStackTracesComponent, 'adjustStackLines');
+
+    const lines = ['    at test (test.js:1:0)'];
+    ComponentEx.adjustStackLines(lines, ASYNC_ID);
+
+    // Should have called addStackFrame for the async frame
+    expect(addStackFrameSpy).toHaveBeenCalledWith(lines, expect.any(Array), 'async');
+    // And adjustStackLines should have been called with the parentStackFrame
+    expect(adjustStackLinesSpy).toHaveBeenCalled();
+
+    ComponentEx.unload();
+    longStackTracesComponent.unload();
+  });
+
+  it('should adjust stack lines with async stack frame without parentStackFrame', () => {
+    const { ComponentEx, longStackTracesComponent, pluginSettingsComponent } = createComponents({
+      shouldIncludeAsyncLongStackTraces: true,
+      shouldIncludeInternalStackFrames: true,
+      shouldIncludeLongStackTraces: true
+    });
+
+    longStackTracesComponent.load();
+    ComponentEx.load();
+
+    vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+      ...pluginSettingsComponent.defaultSettings,
+      shouldIncludeAsyncLongStackTraces: true,
+      shouldIncludeInternalStackFrames: true,
+      shouldIncludeLongStackTraces: true
+    });
+
+    const ASYNC_ID = 12346;
+    const PARENT_ASYNC_ID = 12340;
+
+    // eslint-disable-next-line no-restricted-syntax -- Access private members for testing.
+    const componentAny = ComponentEx as unknown as {
+      asyncIdParentMap: Map<number, number>;
+      asyncIdStackFrameMap: Map<number, { currentError: Error; parentStackFrame: undefined }>;
+    };
+
+    const currentError = new longStackTracesComponent.OriginalError('current');
+    currentError.stack = 'Error: current\n    at asyncFn (async-file2.js:10:0)';
+
+    componentAny.asyncIdStackFrameMap.set(ASYNC_ID, {
+      currentError,
+      parentStackFrame: undefined
+    });
+    componentAny.asyncIdParentMap.set(ASYNC_ID, PARENT_ASYNC_ID);
+
+    const adjustStackLinesSpy = vi.spyOn(longStackTracesComponent, 'adjustStackLines');
+
+    const lines = ['    at test (test.js:1:0)'];
+    ComponentEx.adjustStackLines(lines, ASYNC_ID);
+
+    // Should delegate to longStackTracesComponent.adjustStackLines
+    expect(adjustStackLinesSpy).toHaveBeenCalledWith(lines, undefined, PARENT_ASYNC_ID);
+
+    ComponentEx.unload();
+    longStackTracesComponent.unload();
+  });
+
+  it('should fall back to asyncId 0 when no parent async id exists', () => {
+    const { ComponentEx, longStackTracesComponent, pluginSettingsComponent } = createComponents({
+      shouldIncludeAsyncLongStackTraces: true,
+      shouldIncludeInternalStackFrames: true,
+      shouldIncludeLongStackTraces: true
+    });
+
+    longStackTracesComponent.load();
+    ComponentEx.load();
+
+    vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+      ...pluginSettingsComponent.defaultSettings,
+      shouldIncludeAsyncLongStackTraces: true,
+      shouldIncludeInternalStackFrames: true,
+      shouldIncludeLongStackTraces: true
+    });
+
+    const ASYNC_ID = 99999;
+
+    // eslint-disable-next-line no-restricted-syntax -- Access private members for testing.
+    const componentAny = ComponentEx as unknown as {
+      asyncIdStackFrameMap: Map<number, { currentError: Error; parentStackFrame: undefined }>;
+    };
+
+    const currentError = new longStackTracesComponent.OriginalError('orphan');
+    currentError.stack = 'Error: orphan\n    at orphanFn (orphan.js:1:0)';
+
+    // Set stack frame but do NOT set asyncIdParentMap entry — triggers ?? 0 fallback
+    componentAny.asyncIdStackFrameMap.set(ASYNC_ID, {
+      currentError,
+      parentStackFrame: undefined
+    });
+
+    const adjustStackLinesSpy = vi.spyOn(longStackTracesComponent, 'adjustStackLines');
+
+    const lines = ['    at test (test.js:1:0)'];
+    ComponentEx.adjustStackLines(lines, ASYNC_ID);
+
+    // Should call adjustStackLines with parentAsyncId = 0 (the ?? fallback)
+    expect(adjustStackLinesSpy).toHaveBeenCalledWith(lines, undefined, 0);
+
+    ComponentEx.unload();
+    longStackTracesComponent.unload();
+  });
+
+  it('should track async hook init for PROMISE type and cleanup on destroy', () => {
+    const { ComponentEx, longStackTracesComponent } = createComponents({
+      shouldIncludeAsyncLongStackTraces: true,
+      shouldIncludeLongStackTraces: true
+    });
+
+    longStackTracesComponent.load();
+    ComponentEx.load();
+
+    // eslint-disable-next-line no-restricted-syntax -- Access private members for testing.
+    const componentAny = ComponentEx as unknown as {
+      asyncHookDestroy(asyncId: number): void;
+      asyncHookInit(asyncId: number, type: string, triggerAsyncId: number): void;
+      asyncIdParentMap: Map<number, number>;
+      asyncIdStackFrameMap: Map<number, unknown>;
+    };
+
+    const TEST_ASYNC_ID = 999;
+    const TRIGGER_ASYNC_ID = 888;
+
+    // Non-PROMISE type should be ignored
+    componentAny.asyncHookInit.call(ComponentEx, TEST_ASYNC_ID, 'TIMEOUT', TRIGGER_ASYNC_ID);
+    expect(componentAny.asyncIdParentMap.has(TEST_ASYNC_ID)).toBe(false);
+
+    // PROMISE type should be tracked
+    componentAny.asyncHookInit.call(ComponentEx, TEST_ASYNC_ID, 'PROMISE', TRIGGER_ASYNC_ID);
+    expect(componentAny.asyncIdParentMap.get(TEST_ASYNC_ID)).toBe(TRIGGER_ASYNC_ID);
+    expect(componentAny.asyncIdStackFrameMap.has(TEST_ASYNC_ID)).toBe(true);
+
+    // Destroy should clean up
+    componentAny.asyncHookDestroy.call(ComponentEx, TEST_ASYNC_ID);
+    expect(componentAny.asyncIdParentMap.has(TEST_ASYNC_ID)).toBe(false);
+    expect(componentAny.asyncIdStackFrameMap.has(TEST_ASYNC_ID)).toBe(false);
 
     ComponentEx.unload();
     longStackTracesComponent.unload();

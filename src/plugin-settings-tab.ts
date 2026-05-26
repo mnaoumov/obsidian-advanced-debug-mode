@@ -69,7 +69,9 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           .onChange((value) => {
             this.emulateMobileMode.toggleEmulateMobileMode(value);
           })
+          /* v8 ignore start -- Platform.isMobile is always false in unit tests (jsdom). */
           .setDisabled(Platform.isMobile && !this.emulateMobileMode.isEmulateMobileMode());
+          /* v8 ignore stop */
       });
 
     new Setting(this.containerEl)

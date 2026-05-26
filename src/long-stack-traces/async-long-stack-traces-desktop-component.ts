@@ -4,6 +4,7 @@ import {
   executionAsyncId
 } from 'node:async_hooks';
 import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
+import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import type {
@@ -49,7 +50,7 @@ export class AsyncLongStackTracesComponent extends ComponentEx {
       return;
     }
 
-    const currentErrorLines = asyncStackFrame.currentError.stack?.split('\n').slice(1) ?? [];
+    const currentErrorLines = ensureNonNullable(asyncStackFrame.currentError.stack).split('\n').slice(1);
     this.longStackTracesComponent.addStackFrame(lines, currentErrorLines, 'async');
 
     if (asyncStackFrame.parentStackFrame) {
