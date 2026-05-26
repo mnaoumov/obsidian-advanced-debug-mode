@@ -11,6 +11,10 @@ import {
 } from 'obsidian-dev-utils/object-utils';
 import { AllWindowsEventComponent } from 'obsidian-dev-utils/obsidian/components/all-windows-event-component';
 import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
+import {
+  assertNonNullable,
+  ensureNonNullable
+} from 'obsidian-dev-utils/type-guards';
 
 import type {
   AfterPatchFn,
@@ -23,7 +27,6 @@ import { AddLongStackTracesPatchComponent } from '../patches/add-long-stack-trac
 import { RemoveEventListenerPatchComponent } from '../patches/remove-event-listener-patch-component.ts';
 import { AsyncLongStackTracesComponent } from './async-long-stack-traces-desktop-component.ts';
 import { eventHandlersMap } from './event-handlers-map.ts';
-import { assertNonNullable, ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
 export interface StackFrame {
   parentStackError: Error;
@@ -295,6 +298,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
             return cachedStack;
           }
 
+          // eslint-disable-next-line @typescript-eslint/unbound-method -- Property descriptor getter is not a class method; extracting it is safe.
           const originalStack = ensureNonNullable(originalStackPropertyDescriptor.get).call(error) as string;
           const lines = originalStack.split('\n');
           that.adjustStackLines(lines, parentStackFrame, asyncId);
@@ -302,7 +306,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
           return cachedStack;
         },
         set(value: string) {
-          originalStackPropertyDescriptor?.set?.call(error, value);
+          originalStackPropertyDescriptor.set?.call(error, value);
           cachedStack = value;
         }
       });

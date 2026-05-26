@@ -3,6 +3,7 @@
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/mnaoumov)
 [![GitHub release](https://img.shields.io/github/v/release/mnaoumov/obsidian-advanced-debug-mode)](https://github.com/mnaoumov/obsidian-advanced-debug-mode/releases)
 [![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-advanced-debug-mode/total)](https://github.com/mnaoumov/obsidian-advanced-debug-mode/releases)
+[![Coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/mnaoumov/obsidian-advanced-debug-mode)
 
 This is a plugin for [Obsidian](https://obsidian.md/) that enhances Obsidian debug mode.
 
