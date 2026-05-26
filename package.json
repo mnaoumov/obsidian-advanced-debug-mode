@@ -28,6 +28,7 @@
     "version": "jiti scripts/version.ts"
   },
   "overrides": {
+    "@vitest/coverage-v8": "$@vitest/coverage-v8",
     "eslint": "^10.4.0",
     "type-fest": "^5.6.0",
     "typescript": "^6.0.3"
@@ -36,11 +37,11 @@
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",
     "@commitlint/types": "^21.0.1",
-    "@obsidian-typings/obsidian-public-latest": "^6.6.0",
+    "@obsidian-typings/obsidian-public-latest": "^6.10.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@tsconfig/strictest": "^2.0.8",
     "@types/node": "^25.9.1",
-    "@vitest/coverage-v8": "^4.1.6",
+    "@vitest/coverage-v8": "^4.1.7",
     "better-typescript-lib": "^2.12.0",
     "czg": "^1.13.1",
     "eruda": "^3.4.3",
@@ -50,10 +51,10 @@
     "jsdom": "^29.1.1",
     "nano-staged": "^1.0.2",
     "obsidian": "^1.12.3",
-    "obsidian-dev-utils": "^67.0.0",
-    "obsidian-integration-testing": "^4.1.4",
-    "obsidian-test-mocks": "^2.0.3",
+    "obsidian-dev-utils": "^69.1.1",
+    "obsidian-integration-testing": "^4.1.5",
+    "obsidian-test-mocks": "^2.0.4",
     "type-fest": "^5.6.0",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.7"
   }
 }

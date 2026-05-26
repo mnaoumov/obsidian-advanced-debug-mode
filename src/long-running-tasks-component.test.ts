@@ -1,4 +1,5 @@
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
+import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
 import { FileSystemAdapter } from 'obsidian';
 import {
@@ -6,6 +7,7 @@ import {
   noopAsync
 } from 'obsidian-dev-utils/function';
 import { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   afterEach,
   beforeEach,
@@ -37,6 +39,10 @@ function createMockFileSystemAdapter(): FileSystemAdapter {
   return adapter;
 }
 
+function createMockPluginEventSource(): PluginEventSource {
+  return strictProxy<PluginEventSource>({});
+}
+
 describe('LongRunningTasksComponent', () => {
   let pluginSettingsComponent: PluginSettingsComponentBase<PluginSettings>;
   let fileSystemAdapter: FileSystemAdapter;
@@ -45,6 +51,7 @@ describe('LongRunningTasksComponent', () => {
     pluginSettingsComponent = new PluginSettingsComponentBase<PluginSettings>(
       {
         dataHandler: createDataHandler(),
+        pluginEventSource: createMockPluginEventSource(),
         pluginSettingsClass: PluginSettings
       }
     );

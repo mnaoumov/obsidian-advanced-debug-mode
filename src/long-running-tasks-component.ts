@@ -1,8 +1,6 @@
-import {
-  Component,
-  FileSystemAdapter
-} from 'obsidian';
+import { FileSystemAdapter } from 'obsidian';
 import { registerAsyncEvent } from 'obsidian-dev-utils/obsidian/components/async-events-component';
+import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
 
 import type { PluginSettingsComponent } from './plugin-settings-component.ts';
 
@@ -21,7 +19,7 @@ interface LongRunningTasksComponentConstructorParams {
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
-export class LongRunningTasksComponent extends Component {
+export class LongRunningTasksComponent extends ComponentEx {
   private readonly fileSystemAdapter: FileSystemAdapter;
   private readonly pluginSettingsComponent: PluginSettingsComponent;
 

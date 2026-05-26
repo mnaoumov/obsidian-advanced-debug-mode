@@ -2,8 +2,8 @@ import {
   App,
   Platform
 } from 'obsidian';
-import { AsyncComponent } from 'obsidian-dev-utils/obsidian/components/async-component';
 import { registerAsyncEvent } from 'obsidian-dev-utils/obsidian/components/async-events-component';
+import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
 
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 
@@ -13,7 +13,7 @@ interface LongStackTracesComponentConstructorParams {
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
-export class LongStackTracesComponent extends AsyncComponent {
+export class LongStackTracesComponent extends ComponentEx {
   private readonly app: App;
   private readonly pluginId: string;
   private readonly pluginSettingsComponent: PluginSettingsComponent;
@@ -25,7 +25,7 @@ export class LongStackTracesComponent extends AsyncComponent {
     this.pluginSettingsComponent = params.pluginSettingsComponent;
   }
 
-  public override async onload(): Promise<void> {
+  public override async onloadAsync(): Promise<void> {
     if (Platform.isDesktop) {
       // eslint-disable-next-line no-restricted-syntax -- Lazy loading.
       const longStackTracesComponentDesktop = new (await import('./long-stack-traces-desktop-component.ts')).LongStackTracesDesktopComponent({
@@ -41,7 +41,7 @@ export class LongStackTracesComponent extends AsyncComponent {
       this.pluginSettingsComponent.on('loadSettings', async (_loadedState, isInitialLoad) => {
         if (!isInitialLoad) {
           this.unload();
-          await this.load();
+          await this.loadWithPromises();
         }
       })
     );
@@ -50,7 +50,7 @@ export class LongStackTracesComponent extends AsyncComponent {
       this,
       this.pluginSettingsComponent.on('saveSettings', async () => {
         this.unload();
-        await this.load();
+        await this.loadWithPromises();
       })
     );
   }

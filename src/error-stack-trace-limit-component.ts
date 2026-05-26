@@ -1,6 +1,6 @@
-import { Component } from 'obsidian';
+import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
 
-export class ErrorStackTraceLimitComponent extends Component {
+export class ErrorStackTraceLimitComponent extends ComponentEx {
   public override onload(): void {
     const originalStackTraceLimit = Error.stackTraceLimit;
     this.register(() => {

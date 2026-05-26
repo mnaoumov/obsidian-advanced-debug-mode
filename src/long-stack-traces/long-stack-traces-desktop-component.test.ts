@@ -1,7 +1,9 @@
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
+import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
 import { App } from 'obsidian';
 import { noopAsync } from 'obsidian-dev-utils/function';
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   afterEach,
   beforeEach,
@@ -38,8 +40,15 @@ function createDataHandler(): DataHandler {
   };
 }
 
+function createPluginEventSource(): PluginEventSource {
+  return strictProxy<PluginEventSource>({});
+}
+
 function createSettingsComponent(overrides: Partial<PluginSettings> = {}): PluginSettingsComponent {
-  const component = new PluginSettingsComponent(createDataHandler());
+  const component = new PluginSettingsComponent({
+    dataHandler: createDataHandler(),
+    pluginEventSource: createPluginEventSource()
+  });
   // Access the settings via the readonly getter, then apply overrides
   // We need to do this by creating a patched version
   // Since defaultSettings are frozen/readonly, we'll spy on the settings getter

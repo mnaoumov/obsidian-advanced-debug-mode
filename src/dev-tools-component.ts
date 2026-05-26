@@ -1,8 +1,8 @@
 import eruda from 'eruda';
-import { Component } from 'obsidian';
+import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
-export class DevToolsComponent extends Component {
+export class DevToolsComponent extends ComponentEx {
   private erudaButton?: HTMLDivElement;
 
   public constructor() {
