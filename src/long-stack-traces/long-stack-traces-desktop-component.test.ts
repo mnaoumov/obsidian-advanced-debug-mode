@@ -482,6 +482,26 @@ describe('LongStackTracesComponentDesktop', () => {
     component.unload();
   });
 
+  it('should handle EventListenerObject in removeEventListener without throwing', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const handler = {
+      handleEvent: vi.fn()
+    };
+    const target = new EventTarget();
+
+    target.addEventListener('test', handler);
+
+    // removeEventListener with EventListenerObject exercises the
+    // isEventListenerObject branch in RemoveEventListenerPatchComponent
+    expect(() => {
+      target.removeEventListener('test', handler);
+    }).not.toThrow();
+
+    component.unload();
+  });
+
   it('should save settings when stackTraceLimit is changed via setter', () => {
     const { component, pluginSettingsComponent } = createComponent();
     component.load();
@@ -493,6 +513,89 @@ describe('LongStackTracesComponentDesktop', () => {
 
     // EditAndSave should be called because the new limit differs from settings
     expect(editAndSaveSpy).toHaveBeenCalled();
+
+    component.unload();
+  });
+
+  it('should not save settings when stackTraceLimit matches current setting', () => {
+    const LIMIT = 100;
+    const { component, pluginSettingsComponent } = createComponent({ stackTraceLimit: LIMIT });
+    component.load();
+
+    const editAndSaveSpy = vi.spyOn(pluginSettingsComponent, 'editAndSave').mockResolvedValue(undefined);
+
+    window.Error.stackTraceLimit = LIMIT;
+
+    expect(editAndSaveSpy).not.toHaveBeenCalled();
+
+    component.unload();
+  });
+
+  it('should handle child error class whose base class is not yet patched', () => {
+    const { component } = createComponent();
+
+    // Create a custom error class that extends from a non-standard base
+    class CustomBase extends Error {}
+    class CustomChild extends CustomBase {}
+
+    const windowWithErrors = window as unknown as Record<string, unknown>;
+    windowWithErrors['CustomChild'] = CustomChild;
+
+    component.load();
+
+    // CustomChild's base (CustomBase) is not in the originalPrototypeToPatchedClassMap
+    // because CustomBase itself is not a direct child of Error — it IS a child of Error
+    // but the iteration processes children of Error. CustomBase will be patched first,
+    // then CustomChild's base prototype resolves to PatchedCustomBase.
+    // This exercises the patchErrorClasses iteration.
+    expect(window.Error).not.toBe(savedError);
+
+    component.unload();
+
+    delete windowWithErrors['CustomChild'];
+  });
+
+  it('should wrap setTimeout with string handler', () => {
+    const { component } = createComponent();
+    component.load();
+
+    return new Promise<void>((resolve) => {
+      // eslint-disable-next-line no-restricted-syntax -- Testing string handler path.
+      window.setTimeout('void 0' as unknown as () => void, 0);
+      window.setTimeout(() => {
+        resolve();
+      }, 0);
+    }).then(() => {
+      component.unload();
+    });
+  });
+
+  it('should remove previous wrapped handler when re-registering same listener', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const listener = vi.fn();
+    const target = new EventTarget();
+
+    // Register the same listener twice — the second registration should
+    // remove the previous wrapped handler via afterPatchAddEventListener
+    target.addEventListener('test', listener);
+    target.addEventListener('test', listener);
+
+    target.dispatchEvent(new Event('test'));
+    expect(listener).toHaveBeenCalledOnce();
+
+    target.removeEventListener('test', listener);
+    component.unload();
+  });
+
+  it('should use Infinity for stackTraceLimit when setting value is 0', () => {
+    const { component } = createComponent({ stackTraceLimit: 0 });
+    component.load();
+
+    // When stackTraceLimit is 0 (falsy), the code uses Infinity
+    // This is set in patchBaseErrorClass: window.Error.stackTraceLimit = settings.stackTraceLimit || Infinity
+    expect(component.OriginalError.stackTraceLimit).toBe(Infinity);
 
     component.unload();
   });

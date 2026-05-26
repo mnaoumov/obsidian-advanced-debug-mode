@@ -23,6 +23,7 @@ import { AddLongStackTracesPatchComponent } from '../patches/add-long-stack-trac
 import { RemoveEventListenerPatchComponent } from '../patches/remove-event-listener-patch-component.ts';
 import { AsyncLongStackTracesComponent } from './async-long-stack-traces-desktop-component.ts';
 import { eventHandlersMap } from './event-handlers-map.ts';
+import { assertNonNullable, ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
 export interface StackFrame {
   parentStackError: Error;
@@ -97,7 +98,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     this.filterInternalStackFrames(lines);
 
     if (parentStackFrame) {
-      this.addStackFrame(lines, parentStackFrame.parentStackError.stack?.split('\n').slice(1) ?? [], parentStackFrame.title);
+      this.addStackFrame(lines, ensureNonNullable(parentStackFrame.parentStackError.stack).split('\n').slice(1), parentStackFrame.title);
     }
 
     this.applyStackTraceLimit(lines);
@@ -257,13 +258,9 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     const errorClassNames: string[] = [];
     const windowWithErrorConstructors = window as WindowWithErrorConstructors;
     for (const key of Object.getOwnPropertyNames(windowWithErrorConstructors)) {
-      try {
-        const value = windowWithErrorConstructors[key];
-        if (typeof value === 'function' && Object.prototype.isPrototypeOf.call(this.OriginalError.prototype, value.prototype)) {
-          errorClassNames.push(key);
-        }
-      } catch {
-        continue;
+      const value = windowWithErrorConstructors[key];
+      if (typeof value === 'function' && Object.prototype.isPrototypeOf.call(this.OriginalError.prototype, value.prototype)) {
+        errorClassNames.push(key);
       }
     }
 
@@ -281,7 +278,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
         return new window.Error(message, errorOptions);
       }
 
-      const error = Reflect.construct(that.OriginalError, [message, errorOptions], castTo<GenericConstructor>(new.target as unknown ?? window.Error));
+      const error = Reflect.construct(that.OriginalError, [message, errorOptions], castTo<GenericConstructor>(ensureNonNullable(new.target as unknown)));
       error.name = 'Error';
 
       const parentStackFrame = that.parentStackFrame;
@@ -289,7 +286,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
 
       let cachedStack: string | undefined = undefined;
 
-      const originalStackPropertyDescriptor = Object.getOwnPropertyDescriptor(error, 'stack');
+      const originalStackPropertyDescriptor = ensureNonNullable(Object.getOwnPropertyDescriptor(error, 'stack'));
       Object.defineProperty(error, 'stack', {
         configurable: true,
         enumerable: false,
@@ -298,7 +295,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
             return cachedStack;
           }
 
-          const originalStack = (originalStackPropertyDescriptor?.get?.call(error) ?? '') as string;
+          const originalStack = ensureNonNullable(originalStackPropertyDescriptor.get).call(error) as string;
           const lines = originalStack.split('\n');
           that.adjustStackLines(lines, parentStackFrame, asyncId);
           cachedStack = lines.join('\n');
@@ -343,10 +340,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     const childErrorClassNames = this.getChildErrorClassNames();
 
     for (const childErrorClassName of childErrorClassNames.slice()) {
-      const OriginalChildError = windowWithErrorConstructors[childErrorClassName];
-      if (!OriginalChildError) {
-        continue;
-      }
+      const OriginalChildError = ensureNonNullable(windowWithErrorConstructors[childErrorClassName]);
 
       const baseClassPrototype = Object.getPrototypeOf(OriginalChildError.prototype as object);
       const PatchedBaseError = originalPrototypeToPatchedClassMap.get(baseClassPrototype) as GenericConstructor | undefined;
@@ -355,20 +349,15 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
       }
 
       function PatchedChildError(this: unknown, ...args: unknown[]): unknown {
-        const PatchedChildErrorWrapper = windowWithErrorConstructors[childErrorClassName];
-        if (!PatchedChildErrorWrapper) {
-          return;
-        }
+        const PatchedChildErrorWrapper = ensureNonNullable(windowWithErrorConstructors[childErrorClassName]);
 
         if (!(this instanceof PatchedChildErrorWrapper)) {
           return new (castTo<GenericConstructor>(PatchedChildErrorWrapper))(...args);
         }
 
-        if (!PatchedBaseError) {
-          return;
-        }
+        assertNonNullable(PatchedBaseError);
 
-        const error = Reflect.construct(PatchedBaseError, args, castTo<GenericConstructor>(new.target as unknown ?? PatchedChildErrorWrapper)) as Error;
+        const error = Reflect.construct(PatchedBaseError, args, castTo<GenericConstructor>(ensureNonNullable(new.target as unknown))) as Error;
         error.name = childErrorClassName;
         return error;
       }
