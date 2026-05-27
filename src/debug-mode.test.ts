@@ -1,5 +1,5 @@
 import type { App } from 'obsidian';
-import type { PartialDeep } from 'type-fest';
+import type { StrictProxyPartial } from 'obsidian-dev-utils/strict-proxy';
 
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
@@ -11,7 +11,7 @@ import {
 
 import { DebugMode } from './debug-mode.ts';
 
-function createMockApp(overrides: PartialDeep<App> = {}): App {
+function createMockApp(overrides: StrictProxyPartial<App> = {}): App {
   return strictProxy<App>(overrides);
 }
 
