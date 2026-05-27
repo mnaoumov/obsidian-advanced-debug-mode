@@ -81,9 +81,11 @@ describe('LongStackTracesComponent', () => {
   beforeEach(() => {
     savedIsDesktop = Platform.isDesktop;
     MockLongStackTracesDesktopComponent.mockClear();
-    MockLongStackTracesDesktopComponent.mockImplementation(() => {
+    MockLongStackTracesDesktopComponent.mockImplementation(mockComponent);
+
+    function mockComponent(): Component {
       return new Component();
-    });
+    }
   });
 
   afterEach(() => {
