@@ -82,7 +82,7 @@ describe('Desktop Integration', () => {
     const result = await evalInObsidian({
       fn({ app }) {
         return {
-          debugModeValue: app.loadLocalStorage('DebugMode')
+          debugModeValue: app.loadLocalStorage('DebugMode') ?? ''
         };
       }
     });
