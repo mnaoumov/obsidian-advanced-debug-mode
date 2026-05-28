@@ -38,7 +38,7 @@
     "@vitest/coverage-v8": "$@vitest/coverage-v8",
     "eslint": "$eslint",
     "type-fest": "$type-fest",
-    "typescript": "^6.0.3"
+    "typescript": "$typescript"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
@@ -62,6 +62,7 @@
     "obsidian-integration-testing": "^4.1.6",
     "obsidian-test-mocks": "^3.0.0",
     "type-fest": "^5.6.0",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.7"
   }
 }
