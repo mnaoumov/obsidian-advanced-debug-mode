@@ -29,11 +29,10 @@
     "verbatimModuleSyntax": true
   },
   "include": [
-    "./.markdownlint-cli2.mts",
     "./commitlint.config.ts",
     "./eslint.config.mts",
-    "./src/**/*.ts",
     "./scripts/**/*.ts",
+    "./src/**/*.ts",
     "./vitest.config.ts"
   ]
 }
