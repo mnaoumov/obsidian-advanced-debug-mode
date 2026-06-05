@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.9.8
+
+- chore: lint
+- chore: update libs
+- chore: add typescript as explicit devDependency
+- chore: remove stale tsconfig include for nonexistent file
+- chore: use shorthand version refs in overrides
+
 ## 1.9.7
 
 - refactor: new template
