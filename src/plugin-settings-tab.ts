@@ -33,6 +33,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   }
 
   public override display(): void {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
     super.display();
     this.containerEl.empty();
 
@@ -110,6 +111,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldIncludeLongStackTraces', {
           onChanged: () => {
+            // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
             this.display();
           }
         });
@@ -173,6 +175,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         this
           .bind(toggle, 'shouldTimeoutLongRunningTasks', {
             onChanged: () => {
+              // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
               this.display();
             }
           })
@@ -229,6 +232,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
             } else {
               this.debugController.enable(NAMESPACE);
             }
+            // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
             this.display();
           });
       });
