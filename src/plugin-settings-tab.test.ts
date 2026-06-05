@@ -6,6 +6,7 @@ import {
   App,
   Plugin,
   Setting,
+  TextAreaComponent,
   ToggleComponent
 } from 'obsidian';
 import { castTo } from 'obsidian-dev-utils/object-utils';
@@ -124,12 +125,14 @@ describe('PluginSettingsTab', () => {
   it('should render settings without errors', () => {
     const { tab } = createPluginSettingsTab();
     expect(() => {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
       tab.display();
     }).not.toThrow();
   });
 
   it('should create setting elements in containerEl', () => {
     const { tab } = createPluginSettingsTab();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
     tab.display();
 
     // Settings mock creates divs inside containerEl
@@ -140,7 +143,9 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab();
 
     expect(() => {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
       tab.display();
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
       tab.display();
     }).not.toThrow();
   });
@@ -159,6 +164,7 @@ describe('PluginSettingsTab', () => {
     );
 
     const { pluginSettingsComponent, tab } = createPluginSettingsTab();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
     tab.display();
 
     addToggleSpy.mockRestore();
@@ -199,6 +205,7 @@ describe('PluginSettingsTab', () => {
     );
 
     const { pluginSettingsComponent, tab } = createPluginSettingsTab();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
     tab.display();
 
     addToggleSpy.mockRestore();
@@ -243,6 +250,7 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab({
       debugModeOverrides: debugModeMock
     });
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
     tab.display();
     addToggleSpy.mockRestore();
 
@@ -275,6 +283,7 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab({
       emulateMobileModeOverrides: emulateMobileMock
     });
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
     tab.display();
     addToggleSpy.mockRestore();
 
@@ -302,9 +311,9 @@ describe('PluginSettingsTab', () => {
     const capturedTextAreas: MockTextArea[] = [];
     const originalAddTextArea = Setting.prototype.addTextArea;
     const addTextAreaSpy = vi.spyOn(Setting.prototype, 'addTextArea').mockImplementation(function mockAddTextArea(this: Setting, cb) {
-      const result = originalAddTextArea.call(this, (textArea: MockTextArea) => {
+      const result = originalAddTextArea.call(this, (textArea: MockTextArea & TextAreaComponent) => {
         capturedTextAreas.push(textArea);
-        cb(textArea as never);
+        cb(textArea);
       });
       return result;
     });
@@ -312,6 +321,7 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab({
       debugControllerOverrides: debugControllerMock
     });
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
     tab.display();
     addTextAreaSpy.mockRestore();
 
@@ -347,6 +357,7 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab({
       debugControllerOverrides: debugControllerMock
     });
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
     tab.display();
 
     addToggleSpy.mockRestore();
