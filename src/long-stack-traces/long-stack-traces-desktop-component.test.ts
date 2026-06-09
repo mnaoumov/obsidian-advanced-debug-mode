@@ -43,7 +43,12 @@ function createDataHandler(): DataHandler {
 }
 
 function createPluginEventSource(): PluginEventSource {
-  return strictProxy<PluginEventSource>({});
+  return strictProxy<PluginEventSource>({
+    off: vi.fn(),
+    offref: vi.fn(),
+    on: vi.fn(() => castTo<ReturnType<PluginEventSource['on']>>({})),
+    once: vi.fn(() => castTo<ReturnType<PluginEventSource['on']>>({}))
+  });
 }
 
 function createSettingsComponent(overrides: Partial<PluginSettings> = {}): PluginSettingsComponent {
@@ -504,11 +509,15 @@ describe('LongStackTracesComponentDesktop', () => {
     component.unload();
   });
 
-  it('should save settings when stackTraceLimit is changed via setter', () => {
+  it('should save settings when stackTraceLimit is changed via setter', async () => {
     const { component, pluginSettingsComponent } = createComponent();
+    // Load the settings component so the real editAndSave runs.
+    // 70.0.0's editAndSave calls ensureLoaded() first and throws on an unloaded component.
+    // The spy calls through to the real implementation, which invokes the editor callback.
+    await pluginSettingsComponent.loadWithPromises();
     component.load();
 
-    const editAndSaveSpy = vi.spyOn(pluginSettingsComponent, 'editAndSave').mockResolvedValue(undefined);
+    const editAndSaveSpy = vi.spyOn(pluginSettingsComponent, 'editAndSave');
 
     const NEW_LIMIT = 42;
     window.Error.stackTraceLimit = NEW_LIMIT;
