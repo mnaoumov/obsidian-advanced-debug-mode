@@ -1,8 +1,10 @@
+/* eslint-disable n/no-unsupported-features/node-builtins -- createHook/executionAsyncId are stable in Obsidian's desktop Electron runtime where this component runs; the rule flags them as experimental only for the configured Node version range. */
 // eslint-disable-next-line import/no-nodejs-modules, import-x/no-nodejs-modules -- Deliberate, executes only on desktop.
 import {
   createHook,
   executionAsyncId
 } from 'node:async_hooks';
+/* eslint-enable n/no-unsupported-features/node-builtins -- Re-enable after the deliberate desktop-only async_hooks import. */
 import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
