@@ -1,8 +1,4 @@
-import type {
-  App,
-  FileSystemAdapter,
-  PluginManifest
-} from 'obsidian';
+import type { FileSystemAdapter } from 'obsidian';
 
 import { getDebugController } from 'obsidian-dev-utils/debug';
 import { AppActiveFileProvider } from 'obsidian-dev-utils/obsidian/active-file-provider';
@@ -26,8 +22,8 @@ import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
 export class Plugin extends PluginBase {
-  public constructor(app: App, manifest: PluginManifest) {
-    super(app, manifest);
+  public override async onload(): Promise<void> {
+    await super.onload();
 
     const pluginSettingsComponent = this.addChild(
       new PluginSettingsComponent({
@@ -37,8 +33,8 @@ export class Plugin extends PluginBase {
     );
     const pluginSettingsTab = new PluginSettingsTab({
       debugController: getDebugController(),
-      debugMode: new DebugMode(app),
-      emulateMobileMode: new EmulateMobileMode(app),
+      debugMode: new DebugMode(this.app),
+      emulateMobileMode: new EmulateMobileMode(this.app),
       plugin: this,
       pluginSettingsComponent
     });
@@ -51,20 +47,20 @@ export class Plugin extends PluginBase {
 
     const devToolsComponent = this.addChild(new DevToolsComponent());
 
-    const menuEventRegistrar = this.addChild(new MenuEventRegistrarComponent(app));
+    const menuEventRegistrar = this.addChild(new MenuEventRegistrarComponent(this.app));
     this.addChild(
       new CommandHandlerComponent({
-        activeFileProvider: new AppActiveFileProvider(app),
+        activeFileProvider: new AppActiveFileProvider(this.app),
         commandHandlers: [
           new OpenSettingsCommandHandler({
-            app,
+            app: this.app,
             settingTab: pluginSettingsTab
           }),
           new ToggleDevToolsButtonCommandHandler(devToolsComponent)
         ],
         commandRegistrar: new PluginCommandRegistrar(this),
         menuEventRegistrar,
-        pluginName: manifest.name
+        pluginName: this.manifest.name
       })
     );
 
@@ -78,7 +74,7 @@ export class Plugin extends PluginBase {
     this.addChild(
       new LongStackTracesComponent({
         app,
-        pluginId: manifest.id,
+        pluginId: this.manifest.id,
         pluginSettingsComponent
       })
     );

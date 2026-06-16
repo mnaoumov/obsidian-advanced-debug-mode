@@ -32,10 +32,8 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
     this.emulateMobileMode = params.emulateMobileMode;
   }
 
-  public override display(): void {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
-    super.display();
-    this.containerEl.empty();
+  protected override displayLegacy(): void {
+    super.displayLegacy();
 
     new Setting(this.containerEl)
       .setName('Obsidian debug mode')
@@ -111,7 +109,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldIncludeLongStackTraces', {
           onChanged: () => {
-            // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
             this.display();
           }
         });
@@ -175,7 +172,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         this
           .bind(toggle, 'shouldTimeoutLongRunningTasks', {
             onChanged: () => {
-              // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
               this.display();
             }
           })
@@ -232,7 +228,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
             } else {
               this.debugController.enable(NAMESPACE);
             }
-            // eslint-disable-next-line @typescript-eslint/no-deprecated -- Not ready to migrate `display()`.
             this.display();
           });
       });

@@ -1,4 +1,6 @@
+import { createFunction } from 'obsidian-dev-utils/function';
 import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
+import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
 
 import type {
   LongStackTracesDesktopComponent,
@@ -93,8 +95,9 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
       let fn: GenericFunction;
 
       if (typeof handler === 'string' && this.shouldConvertStringToFunction) {
-        // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func -- Need function from string overload.
-        fn = new Function(handler) as GenericFunction;
+        fn = createFunction<GenericFunction>({
+          functionBody: handler
+        });
       } else if (typeof handler === 'function') {
         fn = handler as GenericFunction;
       } else if (isEventListenerObject(handler)) {
@@ -120,7 +123,7 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
       title: this.stackFrameTitle
     };
 
-    const that = this;
+    const thisWrapper = ValueWrapper.of(this);
 
     this.afterPatch?.({
       fn: params.fn,
@@ -132,7 +135,7 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
     return Object.assign(wrappedFn2, { originalFn: params.fn });
 
     function wrappedFn2(this: unknown, ...wrappedFnArgs: unknown[]): unknown {
-      return that.wrapWithStackTracesImpl({
+      return thisWrapper.value.wrapWithStackTracesImpl({
         stackFrame,
         wrappedFn: () => params.fn.call(this, ...wrappedFnArgs)
       });
