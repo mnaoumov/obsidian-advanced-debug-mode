@@ -15,6 +15,7 @@ import {
   assertNonNullable,
   ensureNonNullable
 } from 'obsidian-dev-utils/type-guards';
+import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
 
 import type {
   AfterPatchFn,
@@ -275,17 +276,17 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   }
 
   private patchBaseErrorClass(): void {
-    const that = this;
+    const thisWrapper = ValueWrapper.of(this);
     function PatchedError(this: unknown, message?: string, errorOptions?: ErrorOptions): Error {
       if (!(this instanceof window.Error)) {
         return new window.Error(message, errorOptions);
       }
 
-      const error = Reflect.construct(that.OriginalError, [message, errorOptions], castTo<GenericConstructor>(ensureNonNullable(new.target as unknown)));
+      const error = Reflect.construct(thisWrapper.value.OriginalError, [message, errorOptions], castTo<GenericConstructor>(ensureNonNullable(new.target as unknown)));
       error.name = 'Error';
 
-      const parentStackFrame = that.parentStackFrame;
-      const asyncId = that.getAsyncId();
+      const parentStackFrame = thisWrapper.value.parentStackFrame;
+      const asyncId = thisWrapper.value.getAsyncId();
 
       let cachedStack: string | undefined = undefined;
 
@@ -301,7 +302,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
           // eslint-disable-next-line @typescript-eslint/unbound-method -- Property descriptor getter is not a class method; extracting it is safe.
           const originalStack = ensureNonNullable(originalStackPropertyDescriptor.get).call(error) as string;
           const lines = originalStack.split('\n');
-          that.adjustStackLines(lines, parentStackFrame, asyncId);
+          thisWrapper.value.adjustStackLines(lines, parentStackFrame, asyncId);
           cachedStack = lines.join('\n');
           return cachedStack;
         },
@@ -321,8 +322,8 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     Object.defineProperty(PatchedError, 'stackTraceLimit', {
       configurable: true,
       enumerable: true,
-      get: that.getStackTraceLimit.bind(that),
-      set: that.setStackTraceLimit.bind(that)
+      get: thisWrapper.value.getStackTraceLimit.bind(thisWrapper.value),
+      set: thisWrapper.value.setStackTraceLimit.bind(thisWrapper.value)
     });
 
     window.Error = PatchedError as ErrorConstructor;
