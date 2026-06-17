@@ -73,7 +73,7 @@ export class Plugin extends PluginBase {
 
     this.addChild(
       new LongStackTracesComponent({
-        app,
+        app: this.app,
         pluginId: this.manifest.id,
         pluginSettingsComponent
       })
