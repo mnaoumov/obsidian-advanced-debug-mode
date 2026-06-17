@@ -32,7 +32,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
     this.emulateMobileMode = params.emulateMobileMode;
   }
 
-  protected override displayLegacy(): void {
+  public override displayLegacy(): void {
     super.displayLegacy();
 
     new Setting(this.containerEl)
@@ -109,7 +109,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldIncludeLongStackTraces', {
           onChanged: () => {
-            this.display();
+            this.displayLegacy();
           }
         });
       });
@@ -172,7 +172,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         this
           .bind(toggle, 'shouldTimeoutLongRunningTasks', {
             onChanged: () => {
-              this.display();
+              this.displayLegacy();
             }
           })
           .setDisabled(Platform.isMobile);
@@ -228,7 +228,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
             } else {
               this.debugController.enable(NAMESPACE);
             }
-            this.display();
+            this.displayLegacy();
           });
       });
   }

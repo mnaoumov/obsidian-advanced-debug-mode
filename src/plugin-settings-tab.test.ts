@@ -125,13 +125,13 @@ describe('PluginSettingsTab', () => {
   it('should render settings without errors', () => {
     const { tab } = createPluginSettingsTab();
     expect(() => {
-      tab.display();
+      tab.displayLegacy();
     }).not.toThrow();
   });
 
   it('should create setting elements in containerEl', () => {
     const { tab } = createPluginSettingsTab();
-    tab.display();
+    tab.displayLegacy();
 
     // Settings mock creates divs inside containerEl
     expect(tab.containerEl.children.length).toBeGreaterThan(0);
@@ -141,8 +141,8 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab();
 
     expect(() => {
-      tab.display();
-      tab.display();
+      tab.displayLegacy();
+      tab.displayLegacy();
     }).not.toThrow();
   });
 
@@ -160,7 +160,7 @@ describe('PluginSettingsTab', () => {
     );
 
     const { pluginSettingsComponent, tab } = createPluginSettingsTab();
-    tab.display();
+    tab.displayLegacy();
 
     addToggleSpy.mockRestore();
 
@@ -168,7 +168,7 @@ describe('PluginSettingsTab', () => {
     vi.spyOn(pluginSettingsComponent, 'setProperty').mockResolvedValue('');
 
     // Spy on display to detect re-display, replace with noop to prevent cascade
-    const displaySpy = vi.spyOn(tab, 'display').mockImplementation(() => {
+    const displaySpy = vi.spyOn(tab, 'displayLegacy').mockImplementation(() => {
       // No-op to prevent cascading re-display
     });
 
@@ -200,13 +200,13 @@ describe('PluginSettingsTab', () => {
     );
 
     const { pluginSettingsComponent, tab } = createPluginSettingsTab();
-    tab.display();
+    tab.displayLegacy();
 
     addToggleSpy.mockRestore();
 
     vi.spyOn(pluginSettingsComponent, 'setProperty').mockResolvedValue('');
 
-    const displaySpy = vi.spyOn(tab, 'display').mockImplementation(() => {
+    const displaySpy = vi.spyOn(tab, 'displayLegacy').mockImplementation(() => {
       // No-op to prevent cascading re-display
     });
 
@@ -244,7 +244,7 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab({
       debugModeOverrides: debugModeMock
     });
-    tab.display();
+    tab.displayLegacy();
     addToggleSpy.mockRestore();
 
     // Toggle index 0 is "Obsidian debug mode"
@@ -276,7 +276,7 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab({
       emulateMobileModeOverrides: emulateMobileMock
     });
-    tab.display();
+    tab.displayLegacy();
     addToggleSpy.mockRestore();
 
     // Toggle index 1 is "Desktop: Emulate mobile mode"
@@ -313,7 +313,7 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab({
       debugControllerOverrides: debugControllerMock
     });
-    tab.display();
+    tab.displayLegacy();
     addTextAreaSpy.mockRestore();
 
     const textArea = capturedTextAreas[0];
@@ -348,12 +348,12 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab({
       debugControllerOverrides: debugControllerMock
     });
-    tab.display();
+    tab.displayLegacy();
 
     addToggleSpy.mockRestore();
 
     // Mock display to prevent infinite recursion
-    vi.spyOn(tab, 'display').mockImplementation(() => {
+    vi.spyOn(tab, 'displayLegacy').mockImplementation(() => {
       // No-op
     });
 
