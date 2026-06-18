@@ -22,9 +22,7 @@ import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
 export class Plugin extends PluginBase {
-  public override async onload(): Promise<void> {
-    await super.onload();
-
+  public override onloadImpl(): void {
     const pluginSettingsComponent = this.addChild(
       new PluginSettingsComponent({
         dataHandler: new PluginDataHandler(this),

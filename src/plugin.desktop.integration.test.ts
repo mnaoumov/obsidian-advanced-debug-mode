@@ -44,8 +44,8 @@ describe('Desktop Integration', () => {
 
   it('should include long stack trace separators in async errors', async () => {
     interface AsyncErrorResult {
-      hasLongStackTrace: boolean;
-      stack: string;
+      readonly hasLongStackTrace: boolean;
+      readonly stack: string;
     }
 
     const result = await evalInObsidian({

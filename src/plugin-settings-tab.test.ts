@@ -38,14 +38,14 @@ beforeAll(() => {
 });
 
 interface CreatePluginSettingsTabOverrides {
-  debugControllerOverrides?: Partial<DebugController>;
-  debugModeOverrides?: Partial<DebugMode>;
-  emulateMobileModeOverrides?: Partial<EmulateMobileMode>;
+  readonly debugControllerOverrides?: Partial<DebugController>;
+  readonly debugModeOverrides?: Partial<DebugMode>;
+  readonly emulateMobileModeOverrides?: Partial<EmulateMobileMode>;
 }
 
 interface CreatePluginSettingsTabResult {
-  pluginSettingsComponent: PluginSettingsComponent;
-  tab: PluginSettingsTab;
+  readonly pluginSettingsComponent: PluginSettingsComponent;
+  readonly tab: PluginSettingsTab;
 }
 
 function createPluginEventSource(): PluginEventSource {

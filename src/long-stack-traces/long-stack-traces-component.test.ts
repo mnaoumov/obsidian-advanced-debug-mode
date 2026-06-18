@@ -26,8 +26,8 @@ vi.mock('./long-stack-traces-desktop-component.ts', () => ({
 }));
 
 interface CreateComponentResult {
-  component: LongStackTracesComponent;
-  pluginSettingsComponent: PluginSettingsComponent;
+  readonly component: LongStackTracesComponent;
+  readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
 type EventCallback = (...args: unknown[]) => unknown;

@@ -20,8 +20,8 @@ import { PluginSettings } from '../plugin-settings.ts';
 import { LongStackTracesDesktopComponent } from './long-stack-traces-desktop-component.ts';
 
 interface CreateComponentResult {
-  component: LongStackTracesDesktopComponent;
-  pluginSettingsComponent: PluginSettingsComponent;
+  readonly component: LongStackTracesDesktopComponent;
+  readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
 function createComponent(settingsOverrides?: Partial<PluginSettings>): CreateComponentResult {
