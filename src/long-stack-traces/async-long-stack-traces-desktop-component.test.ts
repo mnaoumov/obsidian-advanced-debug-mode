@@ -47,9 +47,9 @@ interface AsyncIdStackFrameEntryWithoutParent {
 }
 
 interface CreateComponentsResult {
-  ComponentEx: AsyncLongStackTracesComponent;
-  longStackTracesComponent: LongStackTracesDesktopComponent;
-  pluginSettingsComponent: PluginSettingsComponent;
+  readonly ComponentEx: AsyncLongStackTracesComponent;
+  readonly longStackTracesComponent: LongStackTracesDesktopComponent;
+  readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
 interface ParentStackFrame {
