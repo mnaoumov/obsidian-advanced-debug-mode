@@ -3,16 +3,18 @@ import type { Promisable } from 'type-fest';
 
 import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
 
-import type {
-  IncludeTimedOutTasksDetailsPatchComponentConstructorParams,
-  RejectFn
-} from '../long-running-tasks-component.ts';
+import type { RejectFn } from '../long-running-tasks-component.ts';
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 
-export class IncludeTimedOutTasksDetailsPatchComponent extends MonkeyAroundComponent {
+interface FileSystemAdapterQueuePatchComponentConstructorParams {
+  readonly fileSystemAdapter: FileSystemAdapter;
+  readonly pluginSettingsComponent: PluginSettingsComponent;
+}
+
+export class FileSystemAdapterQueuePatchComponent extends MonkeyAroundComponent {
   private readonly fileSystemAdapter: FileSystemAdapter;
   private readonly pluginSettingsComponent: PluginSettingsComponent;
-  public constructor(params: IncludeTimedOutTasksDetailsPatchComponentConstructorParams) {
+  public constructor(params: FileSystemAdapterQueuePatchComponentConstructorParams) {
     super();
     this.fileSystemAdapter = params.fileSystemAdapter;
     this.pluginSettingsComponent = params.pluginSettingsComponent;

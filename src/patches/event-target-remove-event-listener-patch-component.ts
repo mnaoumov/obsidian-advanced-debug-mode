@@ -5,7 +5,7 @@ import type { GenericFunction } from '../types.ts';
 import { eventHandlersMap } from '../long-stack-traces/event-handlers-map.ts';
 import { isEventListenerObject } from '../long-stack-traces/event-listener.ts';
 
-export class RemoveEventListenerPatchComponent extends MonkeyAroundComponent {
+export class EventTargetRemoveEventListenerPatchComponent extends MonkeyAroundComponent {
   public override onload(): void {
     this.registerMethodPatch({
       methodName: 'removeEventListener',

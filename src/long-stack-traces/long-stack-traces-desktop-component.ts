@@ -25,7 +25,7 @@ import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import type { GenericFunction } from '../types.ts';
 
 import { AddLongStackTracesPatchComponent } from '../patches/add-long-stack-traces-patch-component.ts';
-import { RemoveEventListenerPatchComponent } from '../patches/remove-event-listener-patch-component.ts';
+import { EventTargetRemoveEventListenerPatchComponent } from '../patches/event-target-remove-event-listener-patch-component.ts';
 import { AsyncLongStackTracesComponent } from './async-long-stack-traces-desktop-component.ts';
 import { eventHandlersMap } from './event-handlers-map.ts';
 
@@ -164,7 +164,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
       stackFrameTitle: 'addEventListener'
     });
 
-    this.addChild(new RemoveEventListenerPatchComponent());
+    this.addChild(new EventTargetRemoveEventListenerPatchComponent());
 
     this.patchWithLongStackTraces({
       handlerArgIndex: [0, 1],
