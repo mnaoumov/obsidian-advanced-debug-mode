@@ -4,13 +4,8 @@ import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex
 
 import type { PluginSettingsComponent } from './plugin-settings-component.ts';
 
-import { IncludeTimedOutTasksDetailsPatchComponent } from './patches/include-timed-out-tasks-details-patch-component.ts';
-import { TimeoutLongRunningTasksPatchComponent } from './patches/timeout-long-running-tasks-patch-component.ts';
-
-export interface IncludeTimedOutTasksDetailsPatchComponentConstructorParams {
-  readonly fileSystemAdapter: FileSystemAdapter;
-  readonly pluginSettingsComponent: PluginSettingsComponent;
-}
+import { FileSystemAdapterQueuePatchComponent } from './patches/file-system-adapter-queue-patch-component.ts';
+import { FileSystemAdapterThingsHappeningPatchComponent } from './patches/file-system-adapter-things-happening-patch-component.ts';
 
 export type RejectFn = (e: Error) => void;
 
@@ -31,13 +26,13 @@ export class LongRunningTasksComponent extends ComponentEx {
 
   public override onload(): void {
     this.addChild(
-      new TimeoutLongRunningTasksPatchComponent({
+      new FileSystemAdapterThingsHappeningPatchComponent({
         fileSystemAdapter: this.fileSystemAdapter,
         pluginSettingsComponent: this.pluginSettingsComponent
       })
     );
     this.addChild(
-      new IncludeTimedOutTasksDetailsPatchComponent({
+      new FileSystemAdapterQueuePatchComponent({
         fileSystemAdapter: this.fileSystemAdapter,
         pluginSettingsComponent: this.pluginSettingsComponent
       })

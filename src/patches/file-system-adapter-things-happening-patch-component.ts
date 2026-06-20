@@ -8,16 +8,16 @@ import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 
 const THINGS_HAPPENING_DEBOUNCE_TIMEOUT_IN_MS = 60_000;
 
-interface TimeoutLongRunningTasksPatchComponentConstructorParams {
+interface FileSystemAdapterThingsHappeningPatchComponentConstructorParams {
   readonly fileSystemAdapter: FileSystemAdapter;
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
-export class TimeoutLongRunningTasksPatchComponent extends MonkeyAroundComponent {
+export class FileSystemAdapterThingsHappeningPatchComponent extends MonkeyAroundComponent {
   private readonly fileSystemAdapter: FileSystemAdapter;
   private readonly pluginSettingsComponent: PluginSettingsComponent;
 
-  public constructor(params: TimeoutLongRunningTasksPatchComponentConstructorParams) {
+  public constructor(params: FileSystemAdapterThingsHappeningPatchComponentConstructorParams) {
     super();
     this.fileSystemAdapter = params.fileSystemAdapter;
     this.pluginSettingsComponent = params.pluginSettingsComponent;
