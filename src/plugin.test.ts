@@ -4,7 +4,10 @@ import {
   App,
   FileSystemAdapter
 } from 'obsidian';
-import { noopAsync } from 'obsidian-dev-utils/function';
+import {
+  noop,
+  noopAsync
+} from 'obsidian-dev-utils/function';
 import { castTo } from 'obsidian-dev-utils/object-utils';
 import { ensureGenericObject } from 'obsidian-dev-utils/type-guards';
 import {
@@ -39,7 +42,12 @@ vi.mock('obsidian-dev-utils/obsidian/plugin/plugin', () => ({
     }
 
     public onload(): Promise<void> {
+      this.onloadImpl();
       return noopAsync();
+    }
+
+    protected onloadImpl(): void {
+      noop();
     }
   }
 }));
