@@ -8,7 +8,7 @@ import type {
 } from '../long-stack-traces/long-stack-traces-desktop-component.ts';
 import type {
   GenericFunction,
-  GenericObject
+  GenericMethodObject
 } from '../types.ts';
 
 import { isEventListenerObject } from '../long-stack-traces/event-listener.ts';
@@ -18,7 +18,7 @@ export interface AddLongStackTracesPatchComponentConstructorParams {
   readonly handlerArgIndex: number | number[];
   readonly longStackTracesDesktopComponent: LongStackTracesDesktopComponent;
   readonly methodName: string;
-  readonly obj: GenericObject;
+  readonly obj: GenericMethodObject;
   readonly shouldConvertStringToFunction: boolean | undefined;
   readonly stackFrameTitle: string;
 }
@@ -52,7 +52,7 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
   private readonly handlerArgIndex: number | number[];
   private readonly longStackTracesDesktopComponent: LongStackTracesDesktopComponent;
   private readonly methodName: string;
-  private readonly obj: GenericObject;
+  private readonly obj: GenericMethodObject;
   private readonly shouldConvertStringToFunction: boolean | undefined;
   private readonly stackFrameTitle: string;
 

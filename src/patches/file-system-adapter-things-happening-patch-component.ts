@@ -29,8 +29,8 @@ export class FileSystemAdapterThingsHappeningPatchComponent extends MonkeyAround
     }
 
     this.registerFunctionPatch({
-      obj: this.fileSystemAdapter,
       functionName: 'thingsHappening',
+      obj: this.fileSystemAdapter,
       patchHandler: () => {
         return debounce(this.notifyNoTimeout.bind(this), THINGS_HAPPENING_DEBOUNCE_TIMEOUT_IN_MS);
       }
