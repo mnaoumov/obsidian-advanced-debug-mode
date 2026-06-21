@@ -28,8 +28,10 @@ export class FileSystemAdapterThingsHappeningPatchComponent extends MonkeyAround
       return;
     }
 
-    this.registerPatch(this.fileSystemAdapter, {
-      thingsHappening: () => {
+    this.registerFunctionPatch({
+      obj: this.fileSystemAdapter,
+      functionName: 'thingsHappening',
+      patchHandler: () => {
         return debounce(this.notifyNoTimeout.bind(this), THINGS_HAPPENING_DEBOUNCE_TIMEOUT_IN_MS);
       }
     });
