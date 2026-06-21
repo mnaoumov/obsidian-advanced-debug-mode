@@ -9,6 +9,7 @@ import {
   TextAreaComponent,
   ToggleComponent
 } from 'obsidian';
+import { waitForAllAsyncOperations } from 'obsidian-dev-utils/async';
 import { castTo } from 'obsidian-dev-utils/object-utils';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import { ensureGenericObject } from 'obsidian-dev-utils/type-guards';
@@ -178,10 +179,8 @@ describe('PluginSettingsTab', () => {
     expect(toggle).toBeDefined();
     toggle?.onClick();
 
-    // The onChange handler is async (convertAsyncToSync), wait for microtask
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 0);
-    });
+    // The onChange handler is fire-and-forget via convertAsyncToSync; drain the tracked operation.
+    await waitForAllAsyncOperations();
 
     expect(displaySpy).toHaveBeenCalled();
   });
@@ -216,9 +215,8 @@ describe('PluginSettingsTab', () => {
     expect(toggle).toBeDefined();
     toggle?.onClick();
 
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 0);
-    });
+    // The onChange handler is fire-and-forget via convertAsyncToSync; drain the tracked operation.
+    await waitForAllAsyncOperations();
 
     expect(displaySpy).toHaveBeenCalled();
   });
