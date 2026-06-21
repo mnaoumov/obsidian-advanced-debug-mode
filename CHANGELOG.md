@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.9.14
+
+- refactor: monkey around
+- test: refactor
+- chore: update libs
+- chore: unify tsconfig
+- test(plugin): fix onload mock to invoke onloadImpl
+- refactor: patches
+- fix: api
+
 ## 1.9.13
 
 - chore: update template
