@@ -2,6 +2,7 @@ import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
 import { FileSystemAdapter } from 'obsidian';
+import { sleep } from 'obsidian-dev-utils/async';
 import {
   noop,
   noopAsync
@@ -168,9 +169,7 @@ describe('LongRunningTasksComponent', () => {
     const promise = fileSystemAdapter.queue(() => new Promise(noop));
 
     // Wait a tick for the queue to set up killLastAction
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 0);
-    });
+    await sleep(0);
 
     // Simulate a timeout by calling killLastAction (which was replaced by the patched queue)
     fileSystemAdapter.killLastAction?.(new Error('timeout'));
