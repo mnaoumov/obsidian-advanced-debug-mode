@@ -23,6 +23,15 @@ export interface AddLongStackTracesPatchComponentConstructorParams {
   readonly stackFrameTitle: string;
 }
 
+export interface AddLongStackTracesPatchComponentWrapWithStackTracesImplParams {
+  readonly stackFrame: StackFrame;
+  wrappedFn(): unknown;
+}
+
+export interface AddLongStackTracesPatchComponentWrapWithStackTracesParams extends AddLongStackTracesPatchComponentPatchWithLongStackTracesParams {
+  readonly fn: GenericFunction;
+}
+
 export type AfterPatchFn = (this: void, params: AfterPatchParams) => void;
 
 export interface AfterPatchParams {
@@ -32,16 +41,7 @@ export interface AfterPatchParams {
   readonly wrappedFn: GenericFunction;
 }
 
-export interface WrapWithStackTracesImplParams {
-  readonly stackFrame: StackFrame;
-  wrappedFn(): unknown;
-}
-
-export interface WrapWithStackTracesParams extends PatchWithLongStackTracesParams {
-  readonly fn: GenericFunction;
-}
-
-interface PatchWithLongStackTracesParams {
+interface AddLongStackTracesPatchComponentPatchWithLongStackTracesParams {
   readonly originalArgs: unknown[];
   readonly originalMethodBound: GenericFunction;
   readonly originalThis: unknown;
@@ -85,7 +85,7 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
     });
   }
 
-  private patchWithLongStackTraces(params: PatchWithLongStackTracesParams): unknown {
+  private patchWithLongStackTraces(params: AddLongStackTracesPatchComponentPatchWithLongStackTracesParams): unknown {
     const handlerArgIndices = Array.isArray(this.handlerArgIndex) ? this.handlerArgIndex : [this.handlerArgIndex];
     const argsWithWrappedHandler = params.originalArgs.slice();
 
@@ -117,7 +117,7 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
     return params.originalMethodBound(...argsWithWrappedHandler);
   }
 
-  private wrapWithStackTraces(params: WrapWithStackTracesParams): GenericFunction {
+  private wrapWithStackTraces(params: AddLongStackTracesPatchComponentWrapWithStackTracesParams): GenericFunction {
     const stackFrame = {
       parentStackError: new Error(),
       title: this.stackFrameTitle
@@ -142,7 +142,7 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
     }
   }
 
-  private wrapWithStackTracesImpl(params: WrapWithStackTracesImplParams): unknown {
+  private wrapWithStackTracesImpl(params: AddLongStackTracesPatchComponentWrapWithStackTracesImplParams): unknown {
     const previousParentStackFrame = this.longStackTracesDesktopComponent.parentStackFrame;
     this.longStackTracesDesktopComponent.parentStackFrame = params.stackFrame;
 

@@ -235,6 +235,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     );
   }
 
+  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Implements the shared AfterPatchFn callback signature, so it must reuse AfterPatchParams.
   private afterPatchAddEventListener(params: AfterPatchParams): void {
     const eventTarget = params.originalThis as EventTarget;
     const type = params.originalArgs[0] as string;
