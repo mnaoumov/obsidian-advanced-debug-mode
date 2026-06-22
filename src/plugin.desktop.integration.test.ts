@@ -49,17 +49,13 @@ describe('Desktop Integration', () => {
     }
 
     const result = await evalInObsidian({
-      fn() {
-        return new Promise<AsyncErrorResult>((resolve) => {
-          // eslint-disable-next-line obsidianmd/prefer-window-timers -- Runs inside Obsidian process.
-          setTimeout(() => {
-            const error = new Error('async error');
-            resolve({
-              hasLongStackTrace: !!error.stack?.includes('at ---'),
-              stack: error.stack ?? ''
-            });
-          }, 10);
-        });
+      async fn(): Promise<AsyncErrorResult> {
+        await sleep(10);
+        const error = new Error('async error');
+        return {
+          hasLongStackTrace: !!error.stack?.includes('at ---'),
+          stack: error.stack ?? ''
+        };
       }
     });
 
