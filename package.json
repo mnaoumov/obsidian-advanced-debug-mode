@@ -18,6 +18,7 @@
     "commit": "jiti scripts/commit.ts",
     "dev": "jiti scripts/dev.ts",
     "find-overexposed": "jiti scripts/find-overexposed.ts",
+    "find-overexposed:fix": "jiti scripts/find-overexposed-fix.ts",
     "format": "jiti scripts/format.ts",
     "format:check": "jiti scripts/format-check.ts",
     "lint": "jiti scripts/lint.ts",
