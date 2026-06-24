@@ -22,7 +22,7 @@ import type {
   AfterPatchParams
 } from '../patches/add-long-stack-traces-patch-component.ts';
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
-import type { GenericFunction } from '../types.ts';
+import type { GenericFunctionWithOriginalFn } from '../types.ts';
 
 import { AddLongStackTracesPatchComponent } from '../patches/add-long-stack-traces-patch-component.ts';
 import { EventTargetRemoveEventListenerPatchComponent } from '../patches/event-target-remove-event-listener-patch-component.ts';
@@ -34,8 +34,6 @@ export interface StackFrame {
   title: string;
 }
 
-export type WindowEx = typeof window & Window;
-
 type GenericConstructor = new (...args: unknown[]) => unknown;
 
 interface LongStackTracesDesktopComponentConstructorParams {
@@ -43,6 +41,8 @@ interface LongStackTracesDesktopComponentConstructorParams {
   readonly pluginId: string;
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
+
+type LongStackTracesDesktopComponentPatchWithLongStackTracesParams<Obj extends object> = PatchParams<Obj>;
 
 interface PatchParams<Obj extends object> {
   readonly afterPatch?: AfterPatchFn;
@@ -53,6 +53,8 @@ interface PatchParams<Obj extends object> {
   readonly shouldConvertStringToFunction?: boolean;
   readonly stackFrameTitle: string;
 }
+
+type WindowEx = typeof window & Window;
 
 type WindowWithErrorConstructors = Record<string, GenericConstructor> & typeof window;
 
@@ -66,16 +68,16 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     return this._OriginalError;
   }
 
-  protected readonly app: App;
-  protected readonly pluginSettingsComponent: PluginSettingsComponent;
-
   private _OriginalError?: ErrorConstructor;
+  private readonly app: App;
 
   private asyncLongStackTracesComponent?: AsyncLongStackTracesComponent;
 
   private internalStackFrameLocations: string[] = [];
 
   private readonly pluginId: string;
+
+  private readonly pluginSettingsComponent: PluginSettingsComponent;
   public constructor(params: LongStackTracesDesktopComponentConstructorParams) {
     super();
     this.app = params.app;
@@ -107,13 +109,6 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
 
     this.applyStackTraceLimit(lines);
     this.asyncLongStackTracesComponent?.adjustStackLines(lines, asyncId);
-  }
-
-  public applyStackTraceLimit(lines: string[]): void {
-    if (lines.length > this.pluginSettingsComponent.settings.stackTraceLimit) {
-      lines.splice(this.pluginSettingsComponent.settings.stackTraceLimit);
-      lines.push(generateStackTraceLine('STACK TRACE LIMIT REACHED'));
-    }
   }
 
   public override onload(): void {
@@ -210,42 +205,24 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     this.addChild(this.asyncLongStackTracesComponent);
   }
 
-  protected getAsyncId(): number {
-    return this.asyncLongStackTracesComponent?.getAsyncId() ?? 0;
-  }
-
-  protected isEnabled(): boolean {
-    return this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces;
-  }
-
-  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Reusable params.
-  protected patchWithLongStackTraces<Obj extends object>(params: PatchParams<Obj>): void {
-    const genericObj = params.obj as Record<string, GenericFunction>;
-
-    this.addChild(
-      new AddLongStackTracesPatchComponent({
-        afterPatch: params.afterPatch,
-        handlerArgIndex: params.handlerArgIndex,
-        longStackTracesDesktopComponent: this,
-        methodName: params.methodName,
-        obj: genericObj,
-        shouldConvertStringToFunction: params.shouldConvertStringToFunction,
-        stackFrameTitle: params.stackFrameTitle
-      })
-    );
-  }
-
   // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Implements the shared AfterPatchFn callback signature, so it must reuse AfterPatchParams.
   private afterPatchAddEventListener(params: AfterPatchParams): void {
     const eventTarget = params.originalThis as EventTarget;
     const type = params.originalArgs[0] as string;
-    const keys: [EventTarget, string, GenericFunction] = [eventTarget, type, params.fn];
+    const keys: [EventTarget, string, GenericFunctionWithOriginalFn] = [eventTarget, type, params.fn];
     const previousWrappedHandler = eventHandlersMap.get(keys);
 
     if (previousWrappedHandler) {
       eventTarget.removeEventListener(type, previousWrappedHandler);
     }
     eventHandlersMap.set(keys, params.wrappedFn);
+  }
+
+  private applyStackTraceLimit(lines: string[]): void {
+    if (lines.length > this.pluginSettingsComponent.settings.stackTraceLimit) {
+      lines.splice(this.pluginSettingsComponent.settings.stackTraceLimit);
+      lines.push(generateStackTraceLine('STACK TRACE LIMIT REACHED'));
+    }
   }
 
   private filterInternalStackFrames(lines: string[]): void {
@@ -257,6 +234,10 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   private getAdditionalStackFramesCount(): number {
     const MAX_ADDITIONAL_INTERNAL_STACK_FRAMES_COUNT = 10;
     return this.pluginSettingsComponent.settings.shouldIncludeInternalStackFrames ? 0 : MAX_ADDITIONAL_INTERNAL_STACK_FRAMES_COUNT;
+  }
+
+  private getAsyncId(): number {
+    return this.asyncLongStackTracesComponent?.getAsyncId() ?? 0;
   }
 
   private getChildErrorClassNames(): string[] {
@@ -274,6 +255,10 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
 
   private getStackTraceLimit(): number {
     return this.pluginSettingsComponent.settings.stackTraceLimit;
+  }
+
+  private isEnabled(): boolean {
+    return this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces;
   }
 
   private patchBaseErrorClass(): void {
@@ -380,6 +365,22 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
         windowWithErrorConstructors[childErrorClassName] = OriginalChildError;
       });
     }
+  }
+
+  private patchWithLongStackTraces<Obj extends object>(params: LongStackTracesDesktopComponentPatchWithLongStackTracesParams<Obj>): void {
+    const genericObj = params.obj as Record<string, GenericFunctionWithOriginalFn>;
+
+    this.addChild(
+      new AddLongStackTracesPatchComponent({
+        afterPatch: params.afterPatch,
+        handlerArgIndex: params.handlerArgIndex,
+        longStackTracesDesktopComponent: this,
+        methodName: params.methodName,
+        obj: genericObj,
+        shouldConvertStringToFunction: params.shouldConvertStringToFunction,
+        stackFrameTitle: params.stackFrameTitle
+      })
+    );
   }
 
   private setStackTraceLimit(value: number): void {
