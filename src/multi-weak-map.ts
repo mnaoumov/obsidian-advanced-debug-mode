@@ -1,8 +1,8 @@
 class Node<Value> {
-  public map = new Map<unknown, Node<Value>>();
   public value: undefined | Value;
+  private readonly map = new Map<unknown, Node<Value>>();
 
-  public weakMap = new WeakMap<object, Node<Value>>();
+  private readonly weakMap = new WeakMap<object, Node<Value>>();
 
   public getChildNode(key: unknown): Node<Value> | undefined {
     return isWeakMapKey(key) ? this.weakMap.get(key) : this.map.get(key);

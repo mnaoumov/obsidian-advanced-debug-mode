@@ -7,44 +7,44 @@ import type {
   StackFrame
 } from '../long-stack-traces/long-stack-traces-desktop-component.ts';
 import type {
-  GenericFunction,
-  GenericMethodObject
+  GenericFunctionWithOriginalFn,
+  GenericFunctionWithOriginalFnObject
 } from '../types.ts';
 
 import { isEventListenerObject } from '../long-stack-traces/event-listener.ts';
 
-export interface AddLongStackTracesPatchComponentConstructorParams {
+export type AfterPatchFn = (this: void, params: AfterPatchParams) => void;
+
+export interface AfterPatchParams {
+  readonly fn: GenericFunctionWithOriginalFn;
+  readonly originalArgs: unknown[];
+  readonly originalThis: unknown;
+  readonly wrappedFn: GenericFunctionWithOriginalFn;
+}
+
+interface AddLongStackTracesPatchComponentConstructorParams {
   readonly afterPatch: AfterPatchFn | undefined;
   readonly handlerArgIndex: number | number[];
   readonly longStackTracesDesktopComponent: LongStackTracesDesktopComponent;
   readonly methodName: string;
-  readonly obj: GenericMethodObject;
+  readonly obj: GenericFunctionWithOriginalFnObject;
   readonly shouldConvertStringToFunction: boolean | undefined;
   readonly stackFrameTitle: string;
 }
 
-export interface AddLongStackTracesPatchComponentWrapWithStackTracesImplParams {
+interface AddLongStackTracesPatchComponentPatchWithLongStackTracesParams {
+  readonly originalArgs: unknown[];
+  readonly originalMethodBound: GenericFunctionWithOriginalFn;
+  readonly originalThis: unknown;
+}
+
+interface AddLongStackTracesPatchComponentWrapWithStackTracesImplParams {
   readonly stackFrame: StackFrame;
   wrappedFn(): unknown;
 }
 
-export interface AddLongStackTracesPatchComponentWrapWithStackTracesParams extends AddLongStackTracesPatchComponentPatchWithLongStackTracesParams {
-  readonly fn: GenericFunction;
-}
-
-export type AfterPatchFn = (this: void, params: AfterPatchParams) => void;
-
-export interface AfterPatchParams {
-  readonly fn: GenericFunction;
-  readonly originalArgs: unknown[];
-  readonly originalThis: unknown;
-  readonly wrappedFn: GenericFunction;
-}
-
-interface AddLongStackTracesPatchComponentPatchWithLongStackTracesParams {
-  readonly originalArgs: unknown[];
-  readonly originalMethodBound: GenericFunction;
-  readonly originalThis: unknown;
+interface AddLongStackTracesPatchComponentWrapWithStackTracesParams extends AddLongStackTracesPatchComponentPatchWithLongStackTracesParams {
+  readonly fn: GenericFunctionWithOriginalFn;
 }
 
 export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
@@ -52,7 +52,7 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
   private readonly handlerArgIndex: number | number[];
   private readonly longStackTracesDesktopComponent: LongStackTracesDesktopComponent;
   private readonly methodName: string;
-  private readonly obj: GenericMethodObject;
+  private readonly obj: GenericFunctionWithOriginalFnObject;
   private readonly shouldConvertStringToFunction: boolean | undefined;
   private readonly stackFrameTitle: string;
 
@@ -92,16 +92,16 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
     for (const handlerArgIndex of handlerArgIndices) {
       const handler = params.originalArgs[handlerArgIndex];
 
-      let fn: GenericFunction;
+      let fn: GenericFunctionWithOriginalFn;
 
       if (typeof handler === 'string' && this.shouldConvertStringToFunction) {
-        fn = createFunction<GenericFunction>({
+        fn = createFunction<GenericFunctionWithOriginalFn>({
           functionBody: handler
         });
       } else if (typeof handler === 'function') {
-        fn = handler as GenericFunction;
+        fn = handler as GenericFunctionWithOriginalFn;
       } else if (isEventListenerObject(handler)) {
-        fn = handler.handleEvent.bind(handler) as GenericFunction;
+        fn = handler.handleEvent.bind(handler) as GenericFunctionWithOriginalFn;
       } else {
         continue;
       }
@@ -117,7 +117,7 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
     return params.originalMethodBound(...argsWithWrappedHandler);
   }
 
-  private wrapWithStackTraces(params: AddLongStackTracesPatchComponentWrapWithStackTracesParams): GenericFunction {
+  private wrapWithStackTraces(params: AddLongStackTracesPatchComponentWrapWithStackTracesParams): GenericFunctionWithOriginalFn {
     const stackFrame = {
       parentStackError: new Error(),
       title: this.stackFrameTitle

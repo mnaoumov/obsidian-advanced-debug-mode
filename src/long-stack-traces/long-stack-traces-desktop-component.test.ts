@@ -170,7 +170,7 @@ describe('LongStackTracesComponentDesktop', () => {
 
     const LINE_COUNT = 20;
     const lines = Array.from({ length: LINE_COUNT }, (_, i) => `    at fn${String(i)} (file.js:${String(i)}:0)`);
-    component.applyStackTraceLimit(lines);
+    component.adjustStackLines(lines, undefined, 0);
 
     expect(lines.length).toBe(SMALL_LIMIT + 1);
     expect(lines[SMALL_LIMIT]).toContain('STACK TRACE LIMIT REACHED');
@@ -185,7 +185,7 @@ describe('LongStackTracesComponentDesktop', () => {
 
     const LINE_COUNT = 5;
     const lines = Array.from({ length: LINE_COUNT }, (_, i) => `    at fn${String(i)} (file.js:${String(i)}:0)`);
-    component.applyStackTraceLimit(lines);
+    component.adjustStackLines(lines, undefined, 0);
 
     expect(lines.length).toBe(LINE_COUNT);
 
