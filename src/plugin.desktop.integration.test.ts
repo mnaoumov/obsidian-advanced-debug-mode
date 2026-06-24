@@ -49,13 +49,33 @@ describe('Desktop Integration', () => {
     }
 
     const result = await evalInObsidian({
-      async fn(): Promise<AsyncErrorResult> {
-        await sleep(10);
-        const error = new Error('async error');
-        return {
-          hasLongStackTrace: !!error.stack?.includes('at ---'),
-          stack: error.stack ?? ''
-        };
+      async fn({ app }): Promise<AsyncErrorResult> {
+        const pluginId = 'advanced-debug-mode';
+
+        // Enable async long stack traces the way a real user would — persist the setting and reload the plugin so it re-reads it and activates the async-hooks tracking that links stack frames across `await` boundaries.
+        await reloadWithAsyncLongStackTraces(true);
+
+        try {
+          // Production-style async code: an error created after awaiting a delay.
+          await sleep(10);
+          const error = new Error('async error');
+          return {
+            hasLongStackTrace: !!error.stack?.includes('at ---'),
+            stack: error.stack ?? ''
+          };
+        } finally {
+          // Restore the default so the remaining tests run unaffected.
+          await reloadWithAsyncLongStackTraces(false);
+        }
+
+        async function reloadWithAsyncLongStackTraces(shouldIncludeAsyncLongStackTraces: boolean): Promise<void> {
+          const plugin = app.plugins.getPlugin(pluginId);
+          if (plugin) {
+            await plugin.saveData({ shouldIncludeAsyncLongStackTraces });
+          }
+          await app.plugins.disablePlugin(pluginId);
+          await app.plugins.enablePlugin(pluginId);
+        }
       }
     });
 
