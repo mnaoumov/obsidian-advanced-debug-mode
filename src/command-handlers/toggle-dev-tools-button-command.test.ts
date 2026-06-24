@@ -23,10 +23,11 @@ describe('ToggleDevToolsButtonCommandHandler', () => {
   it('should have correct command metadata', () => {
     const devToolsComponent = createMockDevToolsComponent();
     const handler = new ToggleDevToolsButtonCommandHandler(devToolsComponent);
+    const command = handler.buildCommand();
 
-    expect(handler.id).toBe('toggle-dev-tools-button');
-    expect(handler.name).toBe('Toggle dev tools button');
-    expect(handler.icon).toBe('keyboard-toggle');
+    expect(command.id).toBe('toggle-dev-tools-button');
+    expect(command.name).toBe('Toggle dev tools button');
+    expect(command.icon).toBe('keyboard-toggle');
   });
 
   it('should call toggleDevToolsButton when command executes', () => {
