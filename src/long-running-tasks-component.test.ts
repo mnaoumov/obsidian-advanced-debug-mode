@@ -169,7 +169,7 @@ describe('LongRunningTasksComponent', () => {
     const promise = fileSystemAdapter.queue(() => new Promise(noop));
 
     // Wait a tick for the queue to set up killLastAction
-    await sleep(0);
+    await sleep({ milliseconds: 0 });
 
     // Simulate a timeout by calling killLastAction (which was replaced by the patched queue)
     fileSystemAdapter.killLastAction?.(new Error('timeout'));

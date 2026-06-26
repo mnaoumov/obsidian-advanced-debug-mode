@@ -206,7 +206,7 @@ describe('AsyncLongStackTracesComponent', () => {
 
     // Create an async operation to generate an async frame
     // Wait to trigger the async hook
-    await sleep(0);
+    await sleep({ milliseconds: 0 });
     const result = 'done';
     expect(result).toBe('done');
 

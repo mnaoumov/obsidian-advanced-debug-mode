@@ -107,10 +107,12 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       .setName('Include long stack traces')
       .setDesc('Whether to include long stack traces to the JavaScript Error objects.')
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldIncludeLongStackTraces', {
+        this.bind({
           onChanged: () => {
             this.displayLegacy();
-          }
+          },
+          propertyName: 'shouldIncludeLongStackTraces',
+          valueComponent: toggle
         });
       });
 
@@ -126,7 +128,10 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       }))
       .addToggle((toggle) => {
         this
-          .bind(toggle, 'shouldIncludeAsyncLongStackTraces')
+          .bind({
+            propertyName: 'shouldIncludeAsyncLongStackTraces',
+            valueComponent: toggle
+          })
           .setDisabled(!this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces || Platform.isMobile);
       });
 
@@ -135,7 +140,10 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       .setDesc('Whether to include internal stack frames to the JavaScript Error objects.')
       .addToggle((toggle) => {
         this
-          .bind(toggle, 'shouldIncludeInternalStackFrames')
+          .bind({
+            propertyName: 'shouldIncludeInternalStackFrames',
+            valueComponent: toggle
+          })
           .setDisabled(!this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces);
       });
 
@@ -151,7 +159,10 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         f.appendText('.');
       }))
       .addNumber((numberComponent) => {
-        this.bind(numberComponent, 'stackTraceLimit');
+        this.bind({
+          propertyName: 'stackTraceLimit',
+          valueComponent: numberComponent
+        });
       });
 
     new Setting(this.containerEl)
@@ -170,10 +181,12 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       }))
       .addToggle((toggle) => {
         this
-          .bind(toggle, 'shouldTimeoutLongRunningTasks', {
+          .bind({
             onChanged: () => {
               this.displayLegacy();
-            }
+            },
+            propertyName: 'shouldTimeoutLongRunningTasks',
+            valueComponent: toggle
           })
           .setDisabled(Platform.isMobile);
       });
@@ -188,7 +201,10 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       }))
       .addToggle((toggle) => {
         this
-          .bind(toggle, 'shouldIncludeTimedOutTasksDetails')
+          .bind({
+            propertyName: 'shouldIncludeTimedOutTasksDetails',
+            valueComponent: toggle
+          })
           .setDisabled(!this.pluginSettingsComponent.settings.shouldTimeoutLongRunningTasks || Platform.isMobile);
       });
 
