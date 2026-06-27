@@ -2,7 +2,6 @@ import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
 import { App } from 'obsidian';
-import { sleep } from 'obsidian-dev-utils/async';
 import { castTo } from 'obsidian-dev-utils/object-utils';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
@@ -206,7 +205,7 @@ describe('AsyncLongStackTracesComponent', () => {
 
     // Create an async operation to generate an async frame
     // Wait to trigger the async hook
-    await sleep({ milliseconds: 0 });
+    await sleep(0);
     const result = 'done';
     expect(result).toBe('done');
 
