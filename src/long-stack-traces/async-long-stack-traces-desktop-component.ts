@@ -14,7 +14,7 @@ import type {
   StackFrame
 } from './long-stack-traces-desktop-component.ts';
 
-export interface AsyncLongStackTracesComponentAsyncHookInitParams {
+interface AsyncLongStackTracesComponentAsyncHookInitParams {
   readonly asyncId: number;
   readonly triggerAsyncId: number;
   readonly type: string;
