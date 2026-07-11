@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.9.17
+
+- chore: overexposed
+- chore: update libs
+- chore: update obsidian-dev-utils to 85.0.0
+- refactor: pass params objects to long-stack-traces component methods
+- build: lock typescript to 6.0.3
+- test: wire integration-testing vitest-setup into integration projects
+- chore: update libs
+- chore: clean up tsconfig
+
 ## 1.9.16
 
 - refactor: new template
