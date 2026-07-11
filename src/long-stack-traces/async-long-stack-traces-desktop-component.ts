@@ -14,6 +14,12 @@ import type {
   StackFrame
 } from './long-stack-traces-desktop-component.ts';
 
+export interface AsyncLongStackTracesComponentAsyncHookInitParams {
+  readonly asyncId: number;
+  readonly triggerAsyncId: number;
+  readonly type: string;
+}
+
 interface AsyncLongStackTracesComponentConstructorParams {
   readonly longStackTracesComponent: LongStackTracesDesktopComponent;
   readonly pluginSettingsComponent: PluginSettingsComponent;
@@ -53,15 +59,15 @@ export class AsyncLongStackTracesComponent extends ComponentEx {
     }
 
     const currentErrorLines = ensureNonNullable(asyncStackFrame.currentError.stack).split('\n').slice(1);
-    this.longStackTracesComponent.addStackFrame(lines, currentErrorLines, 'async');
+    this.longStackTracesComponent.addStackFrame({ newLines: currentErrorLines, previousLines: lines, title: 'async' });
 
     if (asyncStackFrame.parentStackFrame) {
-      this.longStackTracesComponent.adjustStackLines(lines, asyncStackFrame.parentStackFrame, 0);
+      this.longStackTracesComponent.adjustStackLines({ asyncId: 0, lines, parentStackFrame: asyncStackFrame.parentStackFrame });
       return;
     }
 
     const parentAsyncId = this.asyncIdParentMap.get(asyncId) ?? 0;
-    this.longStackTracesComponent.adjustStackLines(lines, undefined, parentAsyncId);
+    this.longStackTracesComponent.adjustStackLines({ asyncId: parentAsyncId, lines, parentStackFrame: undefined });
   }
 
   public getAsyncId(): number {
@@ -75,7 +81,9 @@ export class AsyncLongStackTracesComponent extends ComponentEx {
 
     const asyncHook = createHook({
       destroy: this.asyncHookDestroy.bind(this),
-      init: this.asyncHookInit.bind(this)
+      init: (asyncId, type, triggerAsyncId) => {
+        this.asyncHookInit({ asyncId, triggerAsyncId, type });
+      }
     });
 
     asyncHook.enable();
@@ -88,7 +96,8 @@ export class AsyncLongStackTracesComponent extends ComponentEx {
     this.asyncIdParentMap.delete(asyncId);
   }
 
-  private asyncHookInit(asyncId: number, type: string, triggerAsyncId: number): void {
+  private asyncHookInit(params: AsyncLongStackTracesComponentAsyncHookInitParams): void {
+    const { asyncId, triggerAsyncId, type } = params;
     if (type !== 'PROMISE') {
       return;
     }

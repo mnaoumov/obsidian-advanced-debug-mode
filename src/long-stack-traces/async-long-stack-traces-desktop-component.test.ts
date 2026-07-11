@@ -2,6 +2,7 @@ import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
 import { App } from 'obsidian';
+import { noopAsync } from 'obsidian-dev-utils/function';
 import { castTo } from 'obsidian-dev-utils/object-utils';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
@@ -11,13 +12,15 @@ import {
   vi
 } from 'vitest';
 
+import type { AsyncLongStackTracesComponentAsyncHookInitParams } from './async-long-stack-traces-desktop-component.ts';
+
 import { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import { AsyncLongStackTracesComponent } from './async-long-stack-traces-desktop-component.ts';
 import { LongStackTracesDesktopComponent } from './long-stack-traces-desktop-component.ts';
 
 interface AsyncComponentPrivateHooks {
   asyncHookDestroy(asyncId: number): void;
-  asyncHookInit(asyncId: number, type: string, triggerAsyncId: number): void;
+  asyncHookInit(params: AsyncLongStackTracesComponentAsyncHookInitParams): void;
   asyncIdParentMap: Map<number, number>;
   asyncIdStackFrameMap: Map<number, unknown>;
 }
@@ -213,6 +216,32 @@ describe('AsyncLongStackTracesComponent', () => {
     longStackTracesComponent.unload();
   });
 
+  it('should record async stack frames via the async hook init adapter when enabled', async () => {
+    const { ComponentEx, longStackTracesComponent, pluginSettingsComponent } = createComponents({
+      shouldIncludeAsyncLongStackTraces: true,
+      shouldIncludeLongStackTraces: true
+    });
+
+    vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+      ...pluginSettingsComponent.defaultSettings,
+      shouldIncludeAsyncLongStackTraces: true,
+      shouldIncludeLongStackTraces: true
+    });
+
+    longStackTracesComponent.load();
+    ComponentEx.load();
+
+    const componentAny = castTo<AsyncComponentPrivateHooks>(ComponentEx);
+
+    // A promise created while the hook is enabled fires the init callback (type PROMISE) through the adapter, recording a stack frame.
+    await noopAsync();
+
+    expect(componentAny.asyncIdStackFrameMap.size).toBeGreaterThan(0);
+
+    ComponentEx.unload();
+    longStackTracesComponent.unload();
+  });
+
   it('should adjust stack lines with async stack frame that has parentStackFrame', () => {
     const { ComponentEx, longStackTracesComponent, pluginSettingsComponent } = createComponents({
       shouldIncludeAsyncLongStackTraces: true,
@@ -257,7 +286,8 @@ describe('AsyncLongStackTracesComponent', () => {
     ComponentEx.adjustStackLines(lines, ASYNC_ID);
 
     // Should have called addStackFrame for the async frame
-    expect(addStackFrameSpy).toHaveBeenCalledWith(lines, expect.any(Array), 'async');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any(Array) is an asymmetric matcher typed as `any`.
+    expect(addStackFrameSpy).toHaveBeenCalledWith({ newLines: expect.any(Array), previousLines: lines, title: 'async' });
     // And adjustStackLines should have been called with the parentStackFrame
     expect(adjustStackLinesSpy).toHaveBeenCalled();
 
@@ -302,7 +332,7 @@ describe('AsyncLongStackTracesComponent', () => {
     ComponentEx.adjustStackLines(lines, ASYNC_ID);
 
     // Should delegate to longStackTracesComponent.adjustStackLines
-    expect(adjustStackLinesSpy).toHaveBeenCalledWith(lines, undefined, PARENT_ASYNC_ID);
+    expect(adjustStackLinesSpy).toHaveBeenCalledWith({ asyncId: PARENT_ASYNC_ID, lines, parentStackFrame: undefined });
 
     ComponentEx.unload();
     longStackTracesComponent.unload();
@@ -344,7 +374,7 @@ describe('AsyncLongStackTracesComponent', () => {
     ComponentEx.adjustStackLines(lines, ASYNC_ID);
 
     // Should call adjustStackLines with parentAsyncId = 0 (the ?? fallback)
-    expect(adjustStackLinesSpy).toHaveBeenCalledWith(lines, undefined, 0);
+    expect(adjustStackLinesSpy).toHaveBeenCalledWith({ asyncId: 0, lines, parentStackFrame: undefined });
 
     ComponentEx.unload();
     longStackTracesComponent.unload();
@@ -365,11 +395,11 @@ describe('AsyncLongStackTracesComponent', () => {
     const TRIGGER_ASYNC_ID = 888;
 
     // Non-PROMISE type should be ignored
-    componentAny.asyncHookInit.call(ComponentEx, TEST_ASYNC_ID, 'TIMEOUT', TRIGGER_ASYNC_ID);
+    componentAny.asyncHookInit.call(ComponentEx, { asyncId: TEST_ASYNC_ID, triggerAsyncId: TRIGGER_ASYNC_ID, type: 'TIMEOUT' });
     expect(componentAny.asyncIdParentMap.has(TEST_ASYNC_ID)).toBe(false);
 
     // PROMISE type should be tracked
-    componentAny.asyncHookInit.call(ComponentEx, TEST_ASYNC_ID, 'PROMISE', TRIGGER_ASYNC_ID);
+    componentAny.asyncHookInit.call(ComponentEx, { asyncId: TEST_ASYNC_ID, triggerAsyncId: TRIGGER_ASYNC_ID, type: 'PROMISE' });
     expect(componentAny.asyncIdParentMap.get(TEST_ASYNC_ID)).toBe(TRIGGER_ASYNC_ID);
     expect(componentAny.asyncIdStackFrameMap.has(TEST_ASYNC_ID)).toBe(true);
 

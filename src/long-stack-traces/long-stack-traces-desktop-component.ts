@@ -36,6 +36,18 @@ export interface StackFrame {
 
 type GenericConstructor = new (...args: unknown[]) => unknown;
 
+interface LongStackTracesDesktopComponentAddStackFrameParams {
+  readonly newLines: string[];
+  readonly previousLines: string[];
+  readonly title: string;
+}
+
+interface LongStackTracesDesktopComponentAdjustStackLinesParams {
+  readonly asyncId: number;
+  readonly lines: string[];
+  readonly parentStackFrame: StackFrame | undefined;
+}
+
 interface LongStackTracesDesktopComponentConstructorParams {
   readonly app: App;
   readonly pluginId: string;
@@ -85,9 +97,10 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     this.pluginSettingsComponent = params.pluginSettingsComponent;
   }
 
-  public addStackFrame(previousLines: string[], newLines: string[], title: string): void {
+  public addStackFrame(params: LongStackTracesDesktopComponentAddStackFrameParams): void {
+    const { previousLines, title } = params;
     const previousLinesSet = new Set(previousLines);
-    newLines = newLines.slice();
+    const newLines = params.newLines.slice();
     this.filterInternalStackFrames(newLines);
 
     const STACK_FRAME_TITLE_PREFIX = 'at ---';
@@ -100,11 +113,16 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     }
   }
 
-  public adjustStackLines(lines: string[], parentStackFrame: StackFrame | undefined, asyncId: number): void {
+  public adjustStackLines(params: LongStackTracesDesktopComponentAdjustStackLinesParams): void {
+    const { asyncId, lines, parentStackFrame } = params;
     this.filterInternalStackFrames(lines);
 
     if (parentStackFrame) {
-      this.addStackFrame(lines, ensureNonNullable(parentStackFrame.parentStackError.stack).split('\n').slice(1), parentStackFrame.title);
+      this.addStackFrame({
+        newLines: ensureNonNullable(parentStackFrame.parentStackError.stack).split('\n').slice(1),
+        previousLines: lines,
+        title: parentStackFrame.title
+      });
     }
 
     this.applyStackTraceLimit(lines);
@@ -288,7 +306,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
           // eslint-disable-next-line @typescript-eslint/unbound-method -- Property descriptor getter is not a class method; extracting it is safe.
           const originalStack = ensureNonNullable(originalStackPropertyDescriptor.get).call(error) as string;
           const lines = originalStack.split('\n');
-          thisWrapper.value.adjustStackLines(lines, parentStackFrame, asyncId);
+          thisWrapper.value.adjustStackLines({ asyncId, lines, parentStackFrame });
           cachedStack = lines.join('\n');
           return cachedStack;
         },

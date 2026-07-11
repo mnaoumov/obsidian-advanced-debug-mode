@@ -170,7 +170,7 @@ describe('LongStackTracesComponentDesktop', () => {
 
     const LINE_COUNT = 20;
     const lines = Array.from({ length: LINE_COUNT }, (_, i) => `    at fn${String(i)} (file.js:${String(i)}:0)`);
-    component.adjustStackLines(lines, undefined, 0);
+    component.adjustStackLines({ asyncId: 0, lines, parentStackFrame: undefined });
 
     expect(lines.length).toBe(SMALL_LIMIT + 1);
     expect(lines[SMALL_LIMIT]).toContain('STACK TRACE LIMIT REACHED');
@@ -185,7 +185,7 @@ describe('LongStackTracesComponentDesktop', () => {
 
     const LINE_COUNT = 5;
     const lines = Array.from({ length: LINE_COUNT }, (_, i) => `    at fn${String(i)} (file.js:${String(i)}:0)`);
-    component.adjustStackLines(lines, undefined, 0);
+    component.adjustStackLines({ asyncId: 0, lines, parentStackFrame: undefined });
 
     expect(lines.length).toBe(LINE_COUNT);
 
@@ -199,7 +199,7 @@ describe('LongStackTracesComponentDesktop', () => {
     const previousLines = ['    at fnA (a.js:1:0)', '    at fnB (b.js:2:0)'];
     const newLines = ['    at fnB (b.js:2:0)', '    at fnC (c.js:3:0)'];
 
-    component.addStackFrame(previousLines, newLines, 'test frame');
+    component.addStackFrame({ newLines, previousLines, title: 'test frame' });
 
     expect(previousLines).toContain('    at fnC (c.js:3:0)');
     expect(previousLines.some((l) => l.includes('test frame'))).toBe(true);
@@ -214,7 +214,7 @@ describe('LongStackTracesComponentDesktop', () => {
     const previousLines = ['    at fnA (a.js:1:0)'];
     const originalLength = previousLines.length;
 
-    component.addStackFrame(previousLines, ['    at fnA (a.js:1:0)'], 'test frame');
+    component.addStackFrame({ newLines: ['    at fnA (a.js:1:0)'], previousLines, title: 'test frame' });
 
     expect(previousLines.length).toBe(originalLength);
 
@@ -235,7 +235,7 @@ describe('LongStackTracesComponentDesktop', () => {
       '    at something (plugin:test-plugin:1:0)'
     ];
 
-    component.adjustStackLines(lines, undefined, 0);
+    component.adjustStackLines({ asyncId: 0, lines, parentStackFrame: undefined });
 
     expect(lines.some((l) => l.includes('node:internal'))).toBe(false);
     expect(lines.some((l) => l.includes('plugin:test-plugin'))).toBe(false);
@@ -255,7 +255,7 @@ describe('LongStackTracesComponentDesktop', () => {
     ];
     const originalLength = lines.length;
 
-    component.adjustStackLines(lines, undefined, 0);
+    component.adjustStackLines({ asyncId: 0, lines, parentStackFrame: undefined });
 
     expect(lines.length).toBe(originalLength);
 
@@ -274,7 +274,7 @@ describe('LongStackTracesComponentDesktop', () => {
 
     const lines = ['    at currentFn (current.js:1:0)'];
 
-    component.adjustStackLines(lines, parentStackFrame, 0);
+    component.adjustStackLines({ asyncId: 0, lines, parentStackFrame });
 
     expect(lines.length).toBeGreaterThan(1);
 
@@ -387,7 +387,7 @@ describe('LongStackTracesComponentDesktop', () => {
       '    at fnB (b.js:1:0)'
     ];
 
-    component.addStackFrame(previousLines, newLines, 'outer');
+    component.addStackFrame({ newLines, previousLines, title: 'outer' });
 
     const nonTitleLines = previousLines.filter((l) => !l.includes('at ---'));
     expect(nonTitleLines.length).toBeGreaterThan(0);
