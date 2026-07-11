@@ -4,7 +4,6 @@ export class EmulateMobileMode {
   public constructor(private readonly app: App) {}
 
   public isEmulateMobileMode(): boolean {
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need root document.
     return document.body.hasClass('emulate-mobile');
   }
 

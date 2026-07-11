@@ -17,17 +17,15 @@ function createMockApp(overrides: StrictProxyPartial<App> = {}): App {
 
 describe('EmulateMobileMode', () => {
   it('should return true when body has emulate-mobile class', () => {
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need root document.
     document.body.addClass('emulate-mobile');
     const app = createMockApp();
     const mode = new EmulateMobileMode(app);
     expect(mode.isEmulateMobileMode()).toBe(true);
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need root document.
+
     document.body.removeClass('emulate-mobile');
   });
 
   it('should return false when body does not have emulate-mobile class', () => {
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need root document.
     document.body.removeClass('emulate-mobile');
     const app = createMockApp();
     const mode = new EmulateMobileMode(app);

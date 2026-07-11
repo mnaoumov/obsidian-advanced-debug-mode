@@ -5,15 +5,24 @@ import { defineEslintConfigs } from 'obsidian-dev-utils/script-utils/linters/esl
 
 export const configs: Linter.Config[] = defineEslintConfigs({
   customConfigs() {
-    return defineConfig({
-      rules: {
-        'obsidianmd/ui/sentence-case': [
-          'error',
-          {
-            brands: ['Error']
-          }
-        ]
+    return defineConfig([
+      {
+        rules: {
+          'obsidianmd/ui/sentence-case': [
+            'error',
+            {
+              brands: ['Error']
+            }
+          ]
+        }
+      },
+      {
+        files: ['src/**/*-desktop-component.ts'],
+        rules: {
+          // These components execute only on desktop (guarded by Platform.isDesktop) and deliberately import Node.js built-ins; the rule cannot be disabled inline.
+          'obsidianmd/no-nodejs-modules': 'off'
+        }
       }
-    });
+    ]);
   }
 });

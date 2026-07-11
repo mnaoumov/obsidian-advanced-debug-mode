@@ -10,7 +10,6 @@ export class DevToolsComponent extends ComponentEx {
   }
 
   public override onload(): void {
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need root document.
     const erudaDiv = document.body.createDiv();
     eruda.init({
       container: erudaDiv

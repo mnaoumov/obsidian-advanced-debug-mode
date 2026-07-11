@@ -78,7 +78,6 @@ describe('DevToolsComponent', () => {
   it('should remove eruda container div on unload', () => {
     component.load();
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need root document.
     const containerDiv = document.body.lastElementChild;
     expect(containerDiv).toBeTruthy();
 
@@ -90,7 +89,6 @@ describe('DevToolsComponent', () => {
   it('should stop focusin event propagation', () => {
     component.load();
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need root document.
     const containerDiv = document.body.lastElementChild as HTMLElement;
     const focusEvent = new FocusEvent('focusin', { bubbles: true });
     const stopPropagationSpy = vi.spyOn(focusEvent, 'stopPropagation');

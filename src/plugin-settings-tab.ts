@@ -87,10 +87,8 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         f.createEl('br');
         f.appendText('For more information, see the ');
         f.createEl('a', {
-          href: 'https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md',
-          // eslint-disable-next-line obsidianmd/ui/sentence-case -- OK
-          text: 'documentation'
-        });
+          href: 'https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md'
+        }).appendText('documentation');
       }))
       .addTextArea((textArea) => {
         textArea

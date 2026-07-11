@@ -14,9 +14,7 @@ import { castTo } from 'obsidian-dev-utils/object-utils';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import { ensureGenericObject } from 'obsidian-dev-utils/type-guards';
 import {
-  afterEach,
   beforeAll,
-  beforeEach,
   describe,
   expect,
   it,
@@ -64,10 +62,6 @@ function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): 
   });
 
   const app = new App();
-  // Initialize obsidianDevUtilsState on the app (needed by getDebugger())
-  ensureGenericObject(app)['obsidianDevUtilsState'] = {};
-  // eslint-disable-next-line @typescript-eslint/dot-notation, @typescript-eslint/no-deprecated -- Test setup: window.app is deprecated but required for plugin initialization.
-  ensureGenericObject(window)['app'] = app;
   const manifest = { author: 'test', id: 'test-plugin', minAppVersion: '0.0.0', name: 'Test Plugin', version: '1.0.0' };
   // Plugin may be abstract in typings — use it as a constructor directly since the mock is concrete.
   const PluginConstructor = castTo<new (app: App, manifest: Record<string, string>) => Plugin>(Plugin);
@@ -105,18 +99,6 @@ function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): 
 }
 
 describe('PluginSettingsTab', () => {
-  let savedGlobalApp: App;
-
-  beforeEach(() => {
-    // eslint-disable-next-line @typescript-eslint/dot-notation, @typescript-eslint/no-deprecated -- Test setup: window.app is deprecated but required for plugin initialization.
-    savedGlobalApp = ensureGenericObject(window)['app'];
-  });
-
-  afterEach(() => {
-    // eslint-disable-next-line @typescript-eslint/dot-notation, @typescript-eslint/no-deprecated -- Test teardown: restoring window.app.
-    ensureGenericObject(window)['app'] = savedGlobalApp;
-  });
-
   it('should construct without errors', () => {
     expect(() => {
       createPluginSettingsTab();

@@ -52,7 +52,6 @@ Advanced Debug Mode is an Obsidian plugin that enhances the debugging experience
   - `patches/file-system-adapter-queue-patch-component.ts` — patches `FileSystemAdapter.queue` to log timed-out task details
   - `patches/file-system-adapter-things-happening-patch-component.ts` — patches `thingsHappening` to disable the long-running-task timeout
   - `styles/` — `main.scss` (plugin styles) and `scss.d.ts` (SCSS module type declaration)
-  - `test-helpers/setup.ts` — unit-test setup
 - **`main` field** points to `src/main.ts` (Obsidian plugin source entry; built artifact is `dist/build/main.js`, not published to npm).
 
 ## Known Issues
