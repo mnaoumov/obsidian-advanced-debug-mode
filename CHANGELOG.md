@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.9.18
+
+- refactor: adopt pre-wired commandHandlerComponent
+- chore: update libs
+
 ## 1.9.17
 
 - chore: overexposed
