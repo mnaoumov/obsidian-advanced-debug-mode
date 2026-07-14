@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.9.19
+
+- docs: fix url
+
 ## 1.9.18
 
 - refactor: adopt pre-wired commandHandlerComponent
