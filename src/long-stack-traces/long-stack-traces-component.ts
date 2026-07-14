@@ -27,7 +27,6 @@ export class LongStackTracesComponent extends ComponentEx {
 
   public override async onloadAsync(): Promise<void> {
     if (Platform.isDesktop) {
-      // eslint-disable-next-line no-restricted-syntax -- Lazy loading.
       const longStackTracesComponentDesktop = new (await import('./long-stack-traces-desktop-component.ts')).LongStackTracesDesktopComponent({
         app: this.app,
         pluginId: this.pluginId,
