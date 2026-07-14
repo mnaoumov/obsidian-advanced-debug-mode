@@ -2,12 +2,12 @@ import type {
   App as AppOriginal,
   PluginManifest
 } from 'obsidian';
+import type { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
 
 import { Component } from 'obsidian';
 import { castTo } from 'obsidian-dev-utils/object-utils';
-import { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
-import { MenuEventRegistrarComponent } from 'obsidian-dev-utils/obsidian/components/menu-event-registrar-component';
 import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
@@ -26,20 +26,6 @@ import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
 // --- Collaborator dev-utils components added as children: stub as constructor spies that return a real Component so the real addChild lifecycle can load them while capturing constructor args. ---
 
-vi.mock('obsidian-dev-utils/obsidian/command-handlers/command-handler-component', () => ({
-  // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
-  CommandHandlerComponent: vi.fn(function commandHandlerComponentStub() {
-    return new Component();
-  })
-}));
-
-vi.mock('obsidian-dev-utils/obsidian/components/menu-event-registrar-component', () => ({
-  // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
-  MenuEventRegistrarComponent: vi.fn(function menuEventRegistrarComponentStub() {
-    return new Component();
-  })
-}));
-
 vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', () => ({
   // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
   PluginSettingsTabComponent: vi.fn(function pluginSettingsTabComponentStub() {
@@ -49,16 +35,8 @@ vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', 
 
 // --- Collaborator dev-utils components NOT added as children: bare constructor spies. ---
 
-vi.mock('obsidian-dev-utils/obsidian/active-file-provider', () => ({
-  AppActiveFileProvider: vi.fn()
-}));
-
 vi.mock('obsidian-dev-utils/obsidian/command-handlers/open-settings-command-handler', () => ({
   OpenSettingsCommandHandler: vi.fn()
-}));
-
-vi.mock('obsidian-dev-utils/obsidian/command-registrar', () => ({
-  PluginCommandRegistrar: vi.fn()
 }));
 
 vi.mock('obsidian-dev-utils/obsidian/data-handler', () => ({
@@ -122,11 +100,10 @@ vi.mock('./plugin-settings-tab.ts', () => ({
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { Plugin } from './plugin.ts';
 
-interface AppGlobal {
-  app: AppOriginal;
+interface PluginInternals {
+  _commandHandlerComponent: CommandHandlerComponent;
+  onloadImpl(): void;
 }
-
-const STRICT_PROXY_TARGET_SYMBOL = Symbol.for('strictProxyTarget');
 
 const manifest = castTo<PluginManifest>({
   author: 'test',
@@ -141,37 +118,25 @@ let app: AppOriginal;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  const appMock = App.createConfigured__();
-  appMock.workspace.onLayoutReady = vi.fn((cb: () => void) => {
-    cb();
-  });
-  app = appMock.asOriginalType__();
-
-  // Seed the obsidianDevUtilsState holder on the raw target behind the strict-proxy App so the real getObsidianDevUtilsState can read/write it (the proxy throws on first access to an unassigned property).
-  seedOnRawTarget(app, 'obsidianDevUtilsState', {});
-
-  // Expose the app as the global instance so dev-utils helpers that resolve shared state without an explicit app argument read/write the same seeded holder.
-  castTo<AppGlobal>(window).app = app;
+  app = App.createConfigured__().asOriginalType__();
 });
 
-function seedOnRawTarget(strictProxiedObject: object, key: string, value: unknown): void {
-  const proxyWithTarget = castTo<Partial<Record<symbol, object>>>(strictProxiedObject);
-  const rawTarget = proxyWithTarget[STRICT_PROXY_TARGET_SYMBOL] ?? strictProxiedObject;
-  castTo<Record<string, unknown>>(rawTarget)[key] = value;
-}
-
 describe('Plugin', () => {
-  it('should wire up all child components on load', async () => {
+  it('should wire up all child components on load', () => {
     const plugin = new Plugin(app, manifest);
-    await plugin.onload();
+    const internals = castTo<PluginInternals>(plugin);
+    const registerCommandHandlers = vi.fn();
+    // The base PluginBase.onload seeds and pre-wires commandHandlerComponent before onloadImpl; seed it here so onloadImpl can register the plugin's command handlers on it.
+    internals._commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers });
+
+    internals.onloadImpl();
 
     expect(plugin).toBeInstanceOf(Plugin);
     expect(PluginSettingsComponent).toHaveBeenCalledOnce();
     expect(PluginSettingsTabComponent).toHaveBeenCalledOnce();
     expect(PluginSettingsTab).toHaveBeenCalledOnce();
     expect(DevToolsComponent).toHaveBeenCalledOnce();
-    expect(MenuEventRegistrarComponent).toHaveBeenCalledOnce();
-    expect(CommandHandlerComponent).toHaveBeenCalledOnce();
+    expect(registerCommandHandlers).toHaveBeenCalledOnce();
     expect(LongRunningTasksComponent).toHaveBeenCalledOnce();
     expect(ErrorStackTraceLimitComponent).toHaveBeenCalledOnce();
     expect(LongStackTracesComponent).toHaveBeenCalledOnce();

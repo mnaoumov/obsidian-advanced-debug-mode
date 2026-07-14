@@ -282,7 +282,9 @@ describe('LongStackTracesComponentDesktop', () => {
   });
 
   it('should set stack trace limit via property', () => {
-    const { component } = createComponent();
+    const { component, pluginSettingsComponent } = createComponent();
+    // Stub the fire-and-forget persist so the synchronous setter does not reject on the unloaded settings component.
+    vi.spyOn(pluginSettingsComponent, 'editAndSave').mockResolvedValue(undefined);
     component.load();
 
     const NEW_LIMIT = 50;
@@ -366,8 +368,10 @@ describe('LongStackTracesComponentDesktop', () => {
   });
 
   it('should handle stackTraceLimit of 0', () => {
-    const { component } = createComponent({ stackTraceLimit: 0 });
+    const { component, pluginSettingsComponent } = createComponent({ stackTraceLimit: 0 });
 
+    // Stub the fire-and-forget persist so the synchronous setter does not reject on the unloaded settings component.
+    vi.spyOn(pluginSettingsComponent, 'editAndSave').mockResolvedValue(undefined);
     component.load();
 
     // StackTraceLimit getter returns the settings value
@@ -600,7 +604,9 @@ describe('LongStackTracesComponentDesktop', () => {
   });
 
   it('should use Infinity for stackTraceLimit when setting value is 0', () => {
-    const { component } = createComponent({ stackTraceLimit: 0 });
+    const { component, pluginSettingsComponent } = createComponent({ stackTraceLimit: 0 });
+    // Stub the fire-and-forget persist so the synchronous setter does not reject on the unloaded settings component.
+    vi.spyOn(pluginSettingsComponent, 'editAndSave').mockResolvedValue(undefined);
     component.load();
 
     // When stackTraceLimit is 0 (falsy), the code uses Infinity
