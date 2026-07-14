@@ -87,7 +87,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         f.createEl('br');
         f.appendText('For more information, see the ');
         f.createEl('a', {
-          href: 'https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md'
+          href: 'https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/'
         }).appendText('documentation');
       }))
       .addTextArea((textArea) => {
