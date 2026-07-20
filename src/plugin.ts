@@ -1,6 +1,7 @@
 import type { FileSystemAdapter } from 'obsidian';
 
 import { getDebugController } from 'obsidian-dev-utils/debug';
+import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
 import { OpenSettingsCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-settings-command-handler';
 import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
 import { PluginDataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
@@ -46,7 +47,13 @@ export class Plugin extends PluginBase {
         app: this.app,
         settingTab: pluginSettingsTab
       }),
-      new ToggleDevToolsButtonCommandHandler(devToolsComponent)
+      new ToggleDevToolsButtonCommandHandler(devToolsComponent),
+      new OpenDemoVaultCommandHandler({
+        app: this.app,
+        pluginId: this.manifest.id,
+        pluginNoticeComponent: this.pluginNoticeComponent,
+        pluginVersion: this.manifest.version
+      })
     ]);
 
     new LongRunningTasksComponent({
