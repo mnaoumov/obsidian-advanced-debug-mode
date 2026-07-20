@@ -4,7 +4,7 @@ Welcome to the [Advanced Debug Mode](https://github.com/mnaoumov/obsidian-advanc
 
 > [!TIP] Interactive buttons
 >
-> Some notes have **Run** buttons, powered by [`CodeScript Toolkit`](https://github.com/mnaoumov/obsidian-codescript-toolkit/), which this vault installs for you automatically on first open (see [[08 CodeScript Toolkit prerequisite]]). Every button here is honest about what it does - most just throw an error on purpose so you can read the resulting stack trace in DevTools.
+> Some notes have **Run** buttons, powered by [`CodeScript Toolkit`](https://github.com/mnaoumov/obsidian-codescript-toolkit/), which this vault installs for you automatically on first open (see [[CodeScript Toolkit prerequisite]]). Every button here is honest about what it does - most just throw an error on purpose so you can read the resulting stack trace in DevTools.
 
 ## Features
 
@@ -17,5 +17,5 @@ Welcome to the [Advanced Debug Mode](https://github.com/mnaoumov/obsidian-advanc
 
 ## Setup
 
-- [[07 Code buttons check]]
-- [[08 CodeScript Toolkit prerequisite]]
+- [[Code buttons check]]
+- [[CodeScript Toolkit prerequisite]]
