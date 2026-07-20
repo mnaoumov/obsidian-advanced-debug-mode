@@ -1,9 +1,8 @@
-# Advanced Debug Mode demo vault
+This is an [Obsidian](https://obsidian.md/) vault demonstrating features of the [Advanced Debug Mode](https://github.com/mnaoumov/obsidian-advanced-debug-mode) plugin.
 
-A small Obsidian vault that demonstrates the [Advanced Debug Mode](https://github.com/mnaoumov/obsidian-advanced-debug-mode) plugin - a developer tool that enriches Obsidian's debug mode and the DevTools console so plugin bugs are easier to track down.
+## Opening this vault
 
-Open [00 Start](<./00 Start.md>) and keep DevTools open (`Ctrl`/`Cmd` + `Shift` + `I`). The star of the vault is [02 Long stack traces](<./02 Long stack traces.md>): its **Run** button throws an error through nine async boundaries so you can watch the plugin stitch the whole call chain back together in the console.
+- **If you already have the plugin installed**, run the **Advanced Debug Mode: Open demo vault** command — it downloads and opens the latest demo vault automatically.
+- **Otherwise**, download `advanced-debug-mode.demo-vault.zip` from the [plugin releases](https://github.com/mnaoumov/obsidian-advanced-debug-mode/releases), unzip it, and in Obsidian choose `Manage vaults...` → `Open folder as vault` → select the unzipped folder.
 
-## First open
-
-The first time you open this vault, Obsidian treats it as **untrusted**, so the bundled plugins are listed but not loaded until you **Trust author and enable plugins** and reload. After that, the Demo Vault Helper installs [CodeScript Toolkit](https://github.com/mnaoumov/obsidian-codescript-toolkit) (which powers the **Run** buttons in the notes) and opens the start note for you.
+On first open, Obsidian treats the vault as untrusted — choose **Trust author and enable plugins** (or enable Community plugins manually), then open [00 Start](<./00 Start.md>).
