@@ -3,9 +3,11 @@ import type {
   PluginManifest
 } from 'obsidian';
 import type { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
+import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
 
 import { Component } from 'obsidian';
 import { castTo } from 'obsidian-dev-utils/object-utils';
+import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
 import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import { App } from 'obsidian-test-mocks/obsidian';
@@ -34,6 +36,10 @@ vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', 
 }));
 
 // --- Collaborator dev-utils components NOT added as children: bare constructor spies. ---
+
+vi.mock('obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler', () => ({
+  OpenDemoVaultCommandHandler: vi.fn()
+}));
 
 vi.mock('obsidian-dev-utils/obsidian/command-handlers/open-settings-command-handler', () => ({
   OpenSettingsCommandHandler: vi.fn()
@@ -102,6 +108,7 @@ import { Plugin } from './plugin.ts';
 
 interface PluginInternals {
   _commandHandlerComponent: CommandHandlerComponent;
+  _pluginNoticeComponent: PluginNoticeComponent;
   onloadImpl(): void;
 }
 
@@ -128,6 +135,8 @@ describe('Plugin', () => {
     const registerCommandHandlers = vi.fn();
     // The base PluginBase.onload seeds and pre-wires commandHandlerComponent before onloadImpl; seed it here so onloadImpl can register the plugin's command handlers on it.
     internals._commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers });
+    // The base PluginBase.onload also seeds pluginNoticeComponent before onloadImpl; seed it here so the OpenDemoVaultCommandHandler can read it via the non-null getter.
+    internals._pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
 
     internals.onloadImpl();
 
@@ -137,6 +146,7 @@ describe('Plugin', () => {
     expect(PluginSettingsTab).toHaveBeenCalledOnce();
     expect(DevToolsComponent).toHaveBeenCalledOnce();
     expect(registerCommandHandlers).toHaveBeenCalledOnce();
+    expect(OpenDemoVaultCommandHandler).toHaveBeenCalledOnce();
     expect(LongRunningTasksComponent).toHaveBeenCalledOnce();
     expect(ErrorStackTraceLimitComponent).toHaveBeenCalledOnce();
     expect(LongStackTracesComponent).toHaveBeenCalledOnce();
