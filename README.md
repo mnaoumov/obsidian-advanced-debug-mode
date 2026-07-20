@@ -263,6 +263,14 @@ There are some default timeouts for long running tasks. Sometimes those timeouts
 
 The plugin allows to temporarily disable those timeouts to keep debugging.
 
+## Demo vault
+
+A demo vault with usage examples ships with every release. You can access it via any of the following:
+
+1. Running the **Advanced Debug Mode: Open demo vault** command.
+2. Downloading `advanced-debug-mode.demo-vault.zip` from the [Releases](https://github.com/mnaoumov/obsidian-advanced-debug-mode/releases).
+3. Browsing its source in [`demo-vault/`](./demo-vault/README.md) in this repository.
+
 ## Installation
 
 The plugin is available in [the official Community Plugins repository](https://obsidian.md/plugins?id=advanced-debug-mode).
