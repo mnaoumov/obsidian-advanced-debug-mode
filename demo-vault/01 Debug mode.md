@@ -9,7 +9,7 @@ Advanced Debug Mode gives you a one-click switch for it.
 ## How to turn it on
 
 1. Open the command palette (`Ctrl`/`Cmd` + `P`).
-2. Run **Advanced Debug Mode: Open plugin settings** (or open **Settings -> Community plugins -> Advanced Debug Mode**).
+2. Run **Advanced Debug Mode: Open settings** (or open **Settings -> Community plugins -> Advanced Debug Mode**).
 3. Toggle **Debug mode** on.
 
 Obsidian reloads the plugins so the source maps take effect.
