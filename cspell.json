@@ -9,6 +9,7 @@
   "dictionaryDefinitions": [],
   "dictionaries": [],
   "words": [
+    "Invocables",
     "Microtask",
     "Microtasks",
     "mnaoumov",
@@ -16,7 +17,8 @@
     "obsidianmd",
     "offref",
     "Promisable",
-    "tsbuildinfo"
+    "tsbuildinfo",
+    "unnumber"
   ],
   "ignoreWords": [],
   "import": [],
