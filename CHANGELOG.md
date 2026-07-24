@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.9.24
+
+- chore: update libs
+- chore: update libs
+
 ## 1.9.23
 
 - docs: fix command name
