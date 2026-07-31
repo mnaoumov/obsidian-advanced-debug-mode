@@ -168,6 +168,9 @@ describe('PluginSettingsTab', () => {
     expect(isRowDisabled(tab, 'Desktop: Include async long stack traces')).toBe(false);
     expect(isRowDisabled(tab, 'Include internal stack frames')).toBe(false);
     expect(isRowDisabled(tab, 'Desktop: Include timed out tasks details')).toBe(false);
+    // The desktop-only rows read `Platform.isMobile`, which is false under jsdom.
+    expect(isRowDisabled(tab, 'Desktop: Timeout long running tasks')).toBe(false);
+    expect(isRowDisabled(tab, 'Desktop: Emulate mobile mode')).toBe(false);
   });
 
   it('should re-display when shouldIncludeLongStackTraces toggle changes', async () => {
