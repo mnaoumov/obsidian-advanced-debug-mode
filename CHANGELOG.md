@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.10.0
+
+- test(settings): evaluate the desktop-only disabled predicates
+- refactor(settings): move the settings tab onto the declarative settings API
+- chore: update libs and clear the npm audit
+- docs: fix the demo vault download instructions
+
 ## 1.9.24
 
 - chore: update libs
