@@ -1,14 +1,11 @@
+import type { SettingDefinitionItem } from 'obsidian';
 import type { DebugController } from 'obsidian-dev-utils/debug-controller';
 import type { PluginSettingsTabBaseConstructorParams } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
 
-import {
-  Platform,
-  Setting
-} from 'obsidian';
+import { Platform } from 'obsidian';
 import { getDebugger } from 'obsidian-dev-utils/debug';
 import { appendCodeBlock } from 'obsidian-dev-utils/obsidian/html-element';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
-import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 import type { DebugMode } from './debug-mode.ts';
 import type { EmulateMobileMode } from './emulate-mobile-mode.ts';
@@ -19,6 +16,8 @@ interface PluginSettingsTabConstructorParams extends PluginSettingsTabBaseConstr
   readonly debugMode: DebugMode;
   readonly emulateMobileMode: EmulateMobileMode;
 }
+
+const OBSIDIAN_DEV_UTILS_TIMEOUT_NAMESPACE = '*:obsidian-dev-utils:Async:runWithTimeout:timeout';
 
 export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   private readonly debugController: DebugController;
@@ -32,218 +31,236 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
     this.emulateMobileMode = params.emulateMobileMode;
   }
 
-  public override displayLegacy(): void {
-    super.displayLegacy();
-
-    new Setting(this.containerEl)
-      .setName('Obsidian debug mode')
-      .setDesc(createFragment((f) => {
-        f.appendText('Enable/disable Obsidian debug mode.');
-        f.createEl('br');
-        f.appendText('When enabled, inline source maps will not be stripped from loaded plugins.');
-        f.createEl('br');
-        f.appendText('⚠️ This setting change will reload the app.');
-      }))
-      .addToggle((toggle) => {
-        toggle
-          .setValue(this.debugMode.isDebugMode())
-          .onChange((value) => {
-            this.debugMode.toggleDebugMode(value);
+  protected override getSettingDefinitionItems(): SettingDefinitionItem[] {
+    return [
+      this.settingEx({
+        desc: createFragment((f) => {
+          f.appendText('Enable/disable Obsidian debug mode.');
+          f.createEl('br');
+          f.appendText('When enabled, inline source maps will not be stripped from loaded plugins.');
+          f.createEl('br');
+          f.appendText('⚠️ This setting change will reload the app.');
+        }),
+        name: 'Obsidian debug mode',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            toggle
+              .setValue(this.debugMode.isDebugMode())
+              .onChange((value) => {
+                this.debugMode.toggleDebugMode(value);
+              });
           });
-      });
+        }
+      }),
+      this.settingEx({
+        desc: createFragment((f) => {
+          f.appendText('Enable/disable emulating mobile mode ');
 
-    new Setting(this.containerEl)
-      .setName('Desktop: Emulate mobile mode')
-      .setDesc(createFragment((f) => {
-        f.appendText('Enable/disable emulating mobile mode ');
-
-        f.createEl('strong', { text: '(Desktop only)' });
-        f.appendText('.');
-        f.createEl('br');
-        f.appendText('⚠️ This setting change will reload the app.');
-      }))
-      .addToggle((toggle) => {
-        toggle
-          .setValue(this.emulateMobileMode.isEmulateMobileMode())
-          .onChange((value) => {
-            this.emulateMobileMode.toggleEmulateMobileMode(value);
-          })
-          /* v8 ignore start -- Platform.isMobile is always false in unit tests (jsdom). */
-          .setDisabled(Platform.isMobile && !this.emulateMobileMode.isEmulateMobileMode());
-        /* v8 ignore stop */
-      });
-
-    new Setting(this.containerEl)
-      .setName('Debug namespaces')
-      .setDesc(createFragment((f) => {
-        f.appendText('Configure the debug namespaces.');
-        f.createEl('br');
-        f.appendText('Add each namespace on a new line.');
-        f.createEl('br');
-        f.appendText('To disable a namespace, prefix it with a dash: ');
-        appendCodeBlock(f, '-foo:bar:*');
-        f.createEl('br');
-        f.appendText('Usually the setting is applied immediately, but for some plugins it works only after reloading the app.');
-        f.createEl('br');
-        f.appendText('For more information, see the ');
-        f.createEl('a', {
-          href: 'https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/'
-        }).appendText('documentation');
-      }))
-      .addTextArea((textArea) => {
-        textArea
-          .setValue(this.debugController.get().join('\n'))
-          .onChange((value) => {
-            const namespaces = value.split('\n');
-            this.debugController.set(namespaces);
+          f.createEl('strong', { text: '(Desktop only)' });
+          f.appendText('.');
+          f.createEl('br');
+          f.appendText('⚠️ This setting change will reload the app.');
+        }),
+        /* v8 ignore next -- Platform.isMobile is always false in unit tests (jsdom). */
+        disabled: () => Platform.isMobile && !this.emulateMobileMode.isEmulateMobileMode(),
+        name: 'Desktop: Emulate mobile mode',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            toggle
+              .setValue(this.emulateMobileMode.isEmulateMobileMode())
+              .onChange((value) => {
+                this.emulateMobileMode.toggleEmulateMobileMode(value);
+              });
           });
+        }
+      }),
+      this.settingEx({
+        desc: createFragment((f) => {
+          f.appendText('Configure the debug namespaces.');
+          f.createEl('br');
+          f.appendText('Add each namespace on a new line.');
+          f.createEl('br');
+          f.appendText('To disable a namespace, prefix it with a dash: ');
+          appendCodeBlock(f, '-foo:bar:*');
+          f.createEl('br');
+          f.appendText('Usually the setting is applied immediately, but for some plugins it works only after reloading the app.');
+          f.createEl('br');
+          f.appendText('For more information, see the ');
+          f.createEl('a', {
+            href: 'https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/'
+          }).appendText('documentation');
+        }),
+        name: 'Debug namespaces',
+        render: (setting) => {
+          setting.addTextArea((textArea) => {
+            textArea
+              .setValue(this.debugController.get().join('\n'))
+              .onChange((value) => {
+                const namespaces = value.split('\n');
+                this.debugController.set(namespaces);
+              });
 
-        textArea.inputEl.addClass('debug-namespaces-setting-control');
-      });
-
-    new Setting(this.containerEl)
-      .setName('Include long stack traces')
-      .setDesc('Whether to include long stack traces to the JavaScript Error objects.')
-      .addToggle((toggle) => {
-        this.bind({
-          onChanged: () => {
-            this.displayLegacy();
-          },
-          propertyName: 'shouldIncludeLongStackTraces',
-          valueComponent: toggle
-        });
-      });
-
-    new Setting(this.containerEl)
-      .setName('Desktop: Include async long stack traces')
-      .setDesc(createFragment((f) => {
-        f.appendText('Whether to include long stack traces to the JavaScript Error objects from the async operations ');
-
-        f.createEl('strong', { text: '(Desktop only)' });
-        f.appendText('.');
-        f.createEl('br');
-        f.appendText('⚠️ WARNING: If enabled, the autocomplete in the DevTools Console will stop working.');
-      }))
-      .addToggle((toggle) => {
-        this
-          .bind({
-            propertyName: 'shouldIncludeAsyncLongStackTraces',
-            valueComponent: toggle
-          })
-          .setDisabled(!this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces || Platform.isMobile);
-      });
-
-    new Setting(this.containerEl)
-      .setName('Include internal stack frames')
-      .setDesc('Whether to include internal stack frames to the JavaScript Error objects.')
-      .addToggle((toggle) => {
-        this
-          .bind({
-            propertyName: 'shouldIncludeInternalStackFrames',
-            valueComponent: toggle
-          })
-          .setDisabled(!this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces);
-      });
-
-    new SettingEx(this.containerEl)
-      .setName('Stack trace limit')
-      .setDesc(createFragment((f) => {
-        f.appendText('The maximum number of stack frames to include in the error stack trace.');
-        f.createEl('br');
-        f.appendText('The higher the value, the more memory intensive the plugin will be.');
-        f.createEl('br');
-        f.appendText('Use 0 to disable the limit ');
-        f.createEl('strong', { text: '(Not recommended)' });
-        f.appendText('.');
-      }))
-      .addNumber((numberComponent) => {
-        this.bind({
-          propertyName: 'stackTraceLimit',
-          valueComponent: numberComponent
-        });
-      });
-
-    new Setting(this.containerEl)
-      .setName('Desktop: Timeout long running tasks')
-      .setDesc(createFragment((f) => {
-        f.appendText('Whether to timeout long running tasks ');
-
-        f.createEl('strong', { text: '(Desktop only)' });
-        f.appendText('.');
-        f.createEl('br');
-        f.appendText('If enabled, long running tasks will be killed after 60 seconds (default Obsidian behavior).');
-        f.createEl('br');
-        f.appendText(
-          'If disabled, long running tasks will not be killed. It is useful when some tasks fail due to timeout while you are staying on the breakpoint.'
-        );
-      }))
-      .addToggle((toggle) => {
-        this
-          .bind({
-            onChanged: () => {
-              this.displayLegacy();
-            },
-            propertyName: 'shouldTimeoutLongRunningTasks',
-            valueComponent: toggle
-          })
-          .setDisabled(Platform.isMobile);
-      });
-
-    new Setting(this.containerEl)
-      .setName('Desktop: Include timed out tasks details')
-      .setDesc(createFragment((f) => {
-        f.appendText('Whether to include the details of timed out tasks in the console ');
-
-        f.createEl('strong', { text: '(Desktop only)' });
-        f.appendText('.');
-      }))
-      .addToggle((toggle) => {
-        this
-          .bind({
-            propertyName: 'shouldIncludeTimedOutTasksDetails',
-            valueComponent: toggle
-          })
-          .setDisabled(!this.pluginSettingsComponent.settings.shouldTimeoutLongRunningTasks || Platform.isMobile);
-      });
-
-    new Setting(this.containerEl)
-      .setName(createFragment((f) => {
-        appendCodeBlock(f, 'Obsidian Dev Utils');
-        f.appendText(': Timeout long running tasks');
-      }))
-      .setDesc(createFragment((f) => {
-        f.appendText('Whether to timeout long running tasks within ');
-        f.createEl('a', {
-          href: 'https://github.com/mnaoumov/obsidian-dev-utils',
-          text: createFragment((f2) => {
-            appendCodeBlock(f2, 'Obsidian Dev Utils');
-          })
-        });
-        f.appendText(' library.');
-        f.createEl('br');
-        f.appendText('Some plugins use functionality from that library that have some default timeouts.');
-        f.createEl('br');
-        f.appendText('If enabled, long running tasks will be killed after predefined timeouts (default ');
-        appendCodeBlock(f, 'Obsidian Dev Utils');
-        f.appendText('library behavior).');
-        f.createEl('br');
-        f.appendText(
-          'If disabled, long running tasks will not be killed. It is useful when some tasks fail due to timeout while you are staying on the breakpoint.'
-        );
-      }))
-      .addToggle((toggle) => {
-        const NAMESPACE = '*:obsidian-dev-utils:Async:runWithTimeout:timeout';
-        const timeoutDebugger = getDebugger(NAMESPACE);
-        toggle
-          .setValue(!timeoutDebugger.enabled)
-          .onChange((value) => {
-            if (value) {
-              this.debugController.disable(NAMESPACE);
-            } else {
-              this.debugController.enable(NAMESPACE);
-            }
-            this.displayLegacy();
+            textArea.inputEl.addClass('debug-namespaces-setting-control');
           });
-      });
+        }
+      }),
+      this.settingEx({
+        desc: 'Whether to include long stack traces to the JavaScript Error objects.',
+        name: 'Include long stack traces',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            this.bind({
+              onChanged: () => {
+                // Two rows below only read this value through their `disabled` predicate, so Obsidian
+                // Re-evaluates them in place instead of re-rendering the tab.
+                this.refreshDomState();
+              },
+              propertyName: 'shouldIncludeLongStackTraces',
+              valueComponent: toggle
+            });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: createFragment((f) => {
+          f.appendText('Whether to include long stack traces to the JavaScript Error objects from the async operations ');
+
+          f.createEl('strong', { text: '(Desktop only)' });
+          f.appendText('.');
+          f.createEl('br');
+          f.appendText('⚠️ WARNING: If enabled, the autocomplete in the DevTools Console will stop working.');
+        }),
+        disabled: () => !this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces || Platform.isMobile,
+        name: 'Desktop: Include async long stack traces',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            this.bind({
+              propertyName: 'shouldIncludeAsyncLongStackTraces',
+              valueComponent: toggle
+            });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: 'Whether to include internal stack frames to the JavaScript Error objects.',
+        disabled: () => !this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces,
+        name: 'Include internal stack frames',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            this.bind({
+              propertyName: 'shouldIncludeInternalStackFrames',
+              valueComponent: toggle
+            });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: createFragment((f) => {
+          f.appendText('The maximum number of stack frames to include in the error stack trace.');
+          f.createEl('br');
+          f.appendText('The higher the value, the more memory intensive the plugin will be.');
+          f.createEl('br');
+          f.appendText('Use 0 to disable the limit ');
+          f.createEl('strong', { text: '(Not recommended)' });
+          f.appendText('.');
+        }),
+        name: 'Stack trace limit',
+        render: (setting) => {
+          setting.addNumber((numberComponent) => {
+            this.bind({
+              propertyName: 'stackTraceLimit',
+              valueComponent: numberComponent
+            });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: createFragment((f) => {
+          f.appendText('Whether to timeout long running tasks ');
+
+          f.createEl('strong', { text: '(Desktop only)' });
+          f.appendText('.');
+          f.createEl('br');
+          f.appendText('If enabled, long running tasks will be killed after 60 seconds (default Obsidian behavior).');
+          f.createEl('br');
+          f.appendText(
+            'If disabled, long running tasks will not be killed. It is useful when some tasks fail due to timeout while you are staying on the breakpoint.'
+          );
+        }),
+        disabled: () => Platform.isMobile,
+        name: 'Desktop: Timeout long running tasks',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            this.bind({
+              onChanged: () => {
+                // Only the row below reads this value, through its `disabled` predicate.
+                this.refreshDomState();
+              },
+              propertyName: 'shouldTimeoutLongRunningTasks',
+              valueComponent: toggle
+            });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: createFragment((f) => {
+          f.appendText('Whether to include the details of timed out tasks in the console ');
+
+          f.createEl('strong', { text: '(Desktop only)' });
+          f.appendText('.');
+        }),
+        disabled: () => !this.pluginSettingsComponent.settings.shouldTimeoutLongRunningTasks || Platform.isMobile,
+        name: 'Desktop: Include timed out tasks details',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            this.bind({
+              propertyName: 'shouldIncludeTimedOutTasksDetails',
+              valueComponent: toggle
+            });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: createFragment((f) => {
+          f.appendText('Whether to timeout long running tasks within ');
+          f.createEl('a', {
+            href: 'https://github.com/mnaoumov/obsidian-dev-utils',
+            text: createFragment((f2) => {
+              appendCodeBlock(f2, 'Obsidian Dev Utils');
+            })
+          });
+          f.appendText(' library.');
+          f.createEl('br');
+          f.appendText('Some plugins use functionality from that library that have some default timeouts.');
+          f.createEl('br');
+          f.appendText('If enabled, long running tasks will be killed after predefined timeouts (default ');
+          appendCodeBlock(f, 'Obsidian Dev Utils');
+          f.appendText('library behavior).');
+          f.createEl('br');
+          f.appendText(
+            'If disabled, long running tasks will not be killed. It is useful when some tasks fail due to timeout while you are staying on the breakpoint.'
+          );
+        }),
+        name: 'Obsidian Dev Utils: Timeout long running tasks',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            const timeoutDebugger = getDebugger(OBSIDIAN_DEV_UTILS_TIMEOUT_NAMESPACE);
+            toggle
+              .setValue(!timeoutDebugger.enabled)
+              .onChange((value) => {
+                if (value) {
+                  this.debugController.disable(OBSIDIAN_DEV_UTILS_TIMEOUT_NAMESPACE);
+                } else {
+                  this.debugController.enable(OBSIDIAN_DEV_UTILS_TIMEOUT_NAMESPACE);
+                }
+
+                // The row's value is derived from the debugger state rather than from the plugin settings,
+                // So the tab has to be re-rendered for it to pick the new value up.
+                this.refresh();
+              });
+          });
+        }
+      })
+    ];
   }
 }

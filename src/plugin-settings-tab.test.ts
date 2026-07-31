@@ -1,3 +1,4 @@
+import type { SettingGroup } from 'obsidian';
 import type { DebugController } from 'obsidian-dev-utils/debug-controller';
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
@@ -11,6 +12,7 @@ import {
 } from 'obsidian';
 import { waitForAllAsyncOperations } from 'obsidian-dev-utils/async';
 import { castTo } from 'obsidian-dev-utils/object-utils';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import { ensureGenericObject } from 'obsidian-dev-utils/type-guards';
 import {
@@ -45,6 +47,10 @@ interface CreatePluginSettingsTabOverrides {
 interface CreatePluginSettingsTabResult {
   readonly pluginSettingsComponent: PluginSettingsComponent;
   readonly tab: PluginSettingsTab;
+}
+
+interface DisabledPredicateRow {
+  disabled(): boolean;
 }
 
 function createPluginEventSource(): PluginEventSource {
@@ -98,6 +104,32 @@ function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): 
   return { pluginSettingsComponent, tab };
 }
 
+/**
+ * Evaluates a declared row's `disabled` predicate.
+ *
+ * @param tab - The settings tab.
+ * @param name - The row name.
+ * @returns Whether the row is disabled.
+ */
+function isRowDisabled(tab: PluginSettingsTab, name: string): boolean {
+  const row = tab.getSettingDefinitions().find((definition) => 'name' in definition && definition.name === name);
+  return castTo<DisabledPredicateRow>(row).disabled();
+}
+
+/**
+ * Invokes every declared row's `render` callback the way Obsidian does when the tab is opened, so the
+ * bindings are still exercised now that the rows are declarative.
+ *
+ * @param tab - The settings tab.
+ */
+function renderRows(tab: PluginSettingsTab): void {
+  for (const definition of tab.getSettingDefinitions()) {
+    if ('render' in definition) {
+      definition.render(new SettingEx(tab.containerEl), castTo<SettingGroup>(null));
+    }
+  }
+}
+
 describe('PluginSettingsTab', () => {
   it('should construct without errors', () => {
     expect(() => {
@@ -108,13 +140,13 @@ describe('PluginSettingsTab', () => {
   it('should render settings without errors', () => {
     const { tab } = createPluginSettingsTab();
     expect(() => {
-      tab.displayLegacy();
+      renderRows(tab);
     }).not.toThrow();
   });
 
   it('should create setting elements in containerEl', () => {
     const { tab } = createPluginSettingsTab();
-    tab.displayLegacy();
+    renderRows(tab);
 
     // Settings mock creates divs inside containerEl
     expect(tab.containerEl.children.length).toBeGreaterThan(0);
@@ -124,9 +156,18 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab();
 
     expect(() => {
-      tab.displayLegacy();
-      tab.displayLegacy();
+      renderRows(tab);
+      renderRows(tab);
     }).not.toThrow();
+  });
+
+  it('should declare disabled predicates for the rows that depend on other settings', () => {
+    const { tab } = createPluginSettingsTab();
+
+    // Both defaults are `true`, so the dependent rows start enabled.
+    expect(isRowDisabled(tab, 'Desktop: Include async long stack traces')).toBe(false);
+    expect(isRowDisabled(tab, 'Include internal stack frames')).toBe(false);
+    expect(isRowDisabled(tab, 'Desktop: Include timed out tasks details')).toBe(false);
   });
 
   it('should re-display when shouldIncludeLongStackTraces toggle changes', async () => {
@@ -143,17 +184,17 @@ describe('PluginSettingsTab', () => {
     );
 
     const { pluginSettingsComponent, tab } = createPluginSettingsTab();
-    tab.displayLegacy();
+    renderRows(tab);
 
     addToggleSpy.mockRestore();
 
     // Mock setProperty to resolve so bind's async handler doesn't fail silently
     vi.spyOn(pluginSettingsComponent, 'setProperty').mockResolvedValue('');
 
-    // Spy on display to detect re-display, replace with noop to prevent cascade
-    const displaySpy = vi.spyOn(tab, 'displayLegacy').mockImplementation(() => {
-      // No-op to prevent cascading re-display
-    });
+    // The dependent rows only read this value through their `disabled` predicates, so the tab asks
+    // Obsidian to re-evaluate them in place instead of re-rendering.
+    const refreshDomStateSpy = vi.fn();
+    tab.refreshDomState = refreshDomStateSpy;
 
     // Toggle index 2 is "Include long stack traces"
     const LONG_STACK_TRACES_INDEX = 2;
@@ -164,7 +205,7 @@ describe('PluginSettingsTab', () => {
     // The onChange handler is fire-and-forget via convertAsyncToSync; drain the tracked operation.
     await waitForAllAsyncOperations();
 
-    expect(displaySpy).toHaveBeenCalled();
+    expect(refreshDomStateSpy).toHaveBeenCalled();
   });
 
   it('should re-display when shouldTimeoutLongRunningTasks toggle changes', async () => {
@@ -181,15 +222,14 @@ describe('PluginSettingsTab', () => {
     );
 
     const { pluginSettingsComponent, tab } = createPluginSettingsTab();
-    tab.displayLegacy();
+    renderRows(tab);
 
     addToggleSpy.mockRestore();
 
     vi.spyOn(pluginSettingsComponent, 'setProperty').mockResolvedValue('');
 
-    const displaySpy = vi.spyOn(tab, 'displayLegacy').mockImplementation(() => {
-      // No-op to prevent cascading re-display
-    });
+    const refreshDomStateSpy = vi.fn();
+    tab.refreshDomState = refreshDomStateSpy;
 
     // Toggle index 5 is "Timeout long running tasks"
     const TIMEOUT_TOGGLE_INDEX = 5;
@@ -200,7 +240,7 @@ describe('PluginSettingsTab', () => {
     // The onChange handler is fire-and-forget via convertAsyncToSync; drain the tracked operation.
     await waitForAllAsyncOperations();
 
-    expect(displaySpy).toHaveBeenCalled();
+    expect(refreshDomStateSpy).toHaveBeenCalled();
   });
 
   it('should call debugMode.toggleDebugMode when debug toggle changes', () => {
@@ -224,7 +264,7 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab({
       debugModeOverrides: debugModeMock
     });
-    tab.displayLegacy();
+    renderRows(tab);
     addToggleSpy.mockRestore();
 
     // Toggle index 0 is "Obsidian debug mode"
@@ -256,7 +296,7 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab({
       emulateMobileModeOverrides: emulateMobileMock
     });
-    tab.displayLegacy();
+    renderRows(tab);
     addToggleSpy.mockRestore();
 
     // Toggle index 1 is "Desktop: Emulate mobile mode"
@@ -293,7 +333,7 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab({
       debugControllerOverrides: debugControllerMock
     });
-    tab.displayLegacy();
+    renderRows(tab);
     addTextAreaSpy.mockRestore();
 
     const textArea = capturedTextAreas[0];
@@ -328,14 +368,12 @@ describe('PluginSettingsTab', () => {
     const { tab } = createPluginSettingsTab({
       debugControllerOverrides: debugControllerMock
     });
-    tab.displayLegacy();
+    renderRows(tab);
 
     addToggleSpy.mockRestore();
 
-    // Mock display to prevent infinite recursion
-    vi.spyOn(tab, 'displayLegacy').mockImplementation(() => {
-      // No-op
-    });
+    // The row's value comes from the debugger state, so it asks for a re-render; neutralize it.
+    tab.refresh = vi.fn();
 
     // Toggle index 7 is the "Dev Utils timeout" toggle
     const DEV_UTILS_TIMEOUT_INDEX = 7;
