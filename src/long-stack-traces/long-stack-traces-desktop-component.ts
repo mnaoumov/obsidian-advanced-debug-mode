@@ -18,11 +18,11 @@ import {
 import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
 
 import type {
-  AfterPatchFn,
+  AfterPatchFunction,
   AfterPatchParams
 } from '../patches/add-long-stack-traces-patch-component.ts';
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
-import type { GenericFunctionWithOriginalFn } from '../types.ts';
+import type { GenericFunctionWithOriginalFunction } from '../types.ts';
 
 import { AddLongStackTracesPatchComponent } from '../patches/add-long-stack-traces-patch-component.ts';
 import { EventTargetRemoveEventListenerPatchComponent } from '../patches/event-target-remove-event-listener-patch-component.ts';
@@ -34,7 +34,7 @@ export interface StackFrame {
   title: string;
 }
 
-type GenericConstructor = new (...args: unknown[]) => unknown;
+type GenericConstructor = new (...$arguments: unknown[]) => unknown;
 
 interface LongStackTracesDesktopComponentAddStackFrameParams {
   readonly newLines: string[];
@@ -54,14 +54,14 @@ interface LongStackTracesDesktopComponentConstructorParams {
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
-type LongStackTracesDesktopComponentPatchWithLongStackTracesParams<Obj extends object> = PatchParams<Obj>;
+type LongStackTracesDesktopComponentPatchWithLongStackTracesParams<$Object extends object> = PatchParams<$Object>;
 
-interface PatchParams<Obj extends object> {
-  readonly afterPatch?: AfterPatchFn;
-  readonly handlerArgIndex: number | number[];
+interface PatchParams<$Object extends object> {
+  readonly $object: $Object;
+  readonly afterPatch?: AfterPatchFunction;
+  readonly handlerArgumentIndex: number | number[];
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- Need Function generics.
-  readonly methodName: ConditionalKeys<Obj, Function>;
-  readonly obj: Obj;
+  readonly methodName: ConditionalKeys<$Object, Function>;
   readonly shouldConvertStringToFunction?: boolean;
   readonly stackFrameTitle: string;
 }
@@ -100,7 +100,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   public addStackFrame(params: LongStackTracesDesktopComponentAddStackFrameParams): void {
     const { previousLines, title } = params;
     const previousLinesSet = new Set(previousLines);
-    const newLines = params.newLines.slice();
+    const newLines = [...params.newLines];
     this.filterInternalStackFrames(newLines);
 
     const STACK_FRAME_TITLE_PREFIX = 'at ---';
@@ -108,8 +108,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     filterInPlace(newLines, (line, index) => !line.includes(STACK_FRAME_TITLE_PREFIX) || newLines[index + 1]?.includes(STACK_FRAME_TITLE_PREFIX) === false);
 
     if (newLines.length > 0) {
-      previousLines.push(generateStackTraceLine(title));
-      previousLines.push(...newLines);
+      previousLines.push(generateStackTraceLine(title), ...newLines);
     }
   }
 
@@ -152,67 +151,67 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
       'requestAnimationFrame'
     ];
 
-    const methodNamesWithPossibleStringHandlers = [
-      'setTimeout',
-      'setInterval'
-    ];
+    const methodNamesWithPossibleStringHandlers = new Set([
+      'setInterval',
+      'setTimeout'
+    ]);
 
     this.addChild(new AllWindowsEventComponent(this.app)).registerAllWindowsHandler((win) => {
       for (const methodName of methodNames) {
         this.patchWithLongStackTraces({
-          handlerArgIndex: 0,
+          $object: win as WindowEx,
+          handlerArgumentIndex: 0,
           methodName,
-          obj: win as WindowEx,
-          shouldConvertStringToFunction: methodNamesWithPossibleStringHandlers.includes(methodName),
+          shouldConvertStringToFunction: methodNamesWithPossibleStringHandlers.has(methodName),
           stackFrameTitle: methodName
         });
       }
     });
 
     this.patchWithLongStackTraces({
+      $object: EventTarget.prototype,
       afterPatch: this.afterPatchAddEventListener.bind(this),
-      handlerArgIndex: 1,
+      handlerArgumentIndex: 1,
       methodName: 'addEventListener',
-      obj: EventTarget.prototype,
       stackFrameTitle: 'addEventListener'
     });
 
     this.addChild(new EventTargetRemoveEventListenerPatchComponent());
 
     this.patchWithLongStackTraces({
-      handlerArgIndex: [0, 1],
+      $object: Promise.prototype,
+      handlerArgumentIndex: [0, 1],
       methodName: 'then',
-      obj: Promise.prototype,
       stackFrameTitle: 'Promise.then'
     });
 
     this.patchWithLongStackTraces({
-      handlerArgIndex: 0,
+      $object: Promise.prototype,
+      handlerArgumentIndex: 0,
       methodName: 'catch',
-      obj: Promise.prototype,
       stackFrameTitle: 'Promise.catch'
     });
 
     this.patchWithLongStackTraces({
-      handlerArgIndex: 0,
+      $object: Promise.prototype,
+      handlerArgumentIndex: 0,
       methodName: 'finally',
-      obj: Promise.prototype,
       stackFrameTitle: 'Promise.finally'
     });
 
     this.addChild(new AllWindowsEventComponent(this.app)).registerAllWindowsHandler((win) => {
       this.patchWithLongStackTraces({
-        handlerArgIndex: 0,
+        $object: win as WindowEx,
+        handlerArgumentIndex: 0,
         methodName: 'setImmediate',
-        obj: win as WindowEx,
         stackFrameTitle: 'setImmediate'
       });
     });
 
     this.patchWithLongStackTraces({
-      handlerArgIndex: 0,
+      $object: process,
+      handlerArgumentIndex: 0,
       methodName: 'nextTick',
-      obj: process,
       stackFrameTitle: 'process.nextTick'
     });
 
@@ -223,24 +222,26 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     this.addChild(this.asyncLongStackTracesComponent);
   }
 
-  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Implements the shared AfterPatchFn callback signature, so it must reuse AfterPatchParams.
+  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Implements the shared AfterPatchFunction callback signature, so it must reuse AfterPatchParams.
   private afterPatchAddEventListener(params: AfterPatchParams): void {
     const eventTarget = params.originalThis as EventTarget;
-    const type = params.originalArgs[0] as string;
-    const keys: [EventTarget, string, GenericFunctionWithOriginalFn] = [eventTarget, type, params.fn];
+    const type = params.originalArguments[0] as string;
+    const keys: [EventTarget, string, GenericFunctionWithOriginalFunction] = [eventTarget, type, params.fn];
     const previousWrappedHandler = eventHandlersMap.get(keys);
 
     if (previousWrappedHandler) {
       eventTarget.removeEventListener(type, previousWrappedHandler);
     }
-    eventHandlersMap.set(keys, params.wrappedFn);
+    eventHandlersMap.set(keys, params.wrappedFunction);
   }
 
   private applyStackTraceLimit(lines: string[]): void {
-    if (lines.length > this.pluginSettingsComponent.settings.stackTraceLimit) {
-      lines.splice(this.pluginSettingsComponent.settings.stackTraceLimit);
-      lines.push(generateStackTraceLine('STACK TRACE LIMIT REACHED'));
+    if (!(lines.length > this.pluginSettingsComponent.settings.stackTraceLimit)) {
+      return;
     }
+
+    lines.splice(this.pluginSettingsComponent.settings.stackTraceLimit);
+    lines.push(generateStackTraceLine('STACK TRACE LIMIT REACHED'));
   }
 
   private filterInternalStackFrames(lines: string[]): void {
@@ -292,7 +293,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
       const parentStackFrame = thisWrapper.value.parentStackFrame;
       const asyncId = thisWrapper.value.getAsyncId();
 
-      let cachedStack: string | undefined = undefined;
+      let cachedStack: string | undefined;
 
       const originalStackPropertyDescriptor = ensureNonNullable(Object.getOwnPropertyDescriptor(error, 'stack'));
       Object.defineProperty(error, 'stack', {
@@ -342,13 +343,14 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   private patchErrorClasses(): void {
     this.patchBaseErrorClass();
 
-    const originalPrototypeToPatchedClassMap = new Map();
-    originalPrototypeToPatchedClassMap.set(this.OriginalError.prototype, window.Error);
+    // Explicitly typed: the map holds every patched Error class, whose shapes differ, so seeding it
+    // In the constructor must not narrow the value type to the base class alone.
+    const originalPrototypeToPatchedClassMap = new Map<unknown, unknown>([[this.OriginalError.prototype, window.Error]]);
 
     const windowWithErrorConstructors = window as WindowWithErrorConstructors;
     const childErrorClassNames = this.getChildErrorClassNames();
 
-    for (const childErrorClassName of childErrorClassNames.slice()) {
+    for (const childErrorClassName of childErrorClassNames) {
       const OriginalChildError = ensureNonNullable(windowWithErrorConstructors[childErrorClassName]);
 
       const baseClassPrototype = Object.getPrototypeOf(OriginalChildError.prototype as object);
@@ -357,16 +359,16 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
         continue;
       }
 
-      function PatchedChildError(this: unknown, ...args: unknown[]): unknown {
+      function PatchedChildError(this: unknown, ...$arguments: unknown[]): unknown {
         const PatchedChildErrorWrapper = ensureNonNullable(windowWithErrorConstructors[childErrorClassName]);
 
         if (!(this instanceof PatchedChildErrorWrapper)) {
-          return new (castTo<GenericConstructor>(PatchedChildErrorWrapper))(...args);
+          return new (castTo<GenericConstructor>(PatchedChildErrorWrapper))(...$arguments);
         }
 
         assertNonNullable(PatchedBaseError);
 
-        const error = Reflect.construct(PatchedBaseError, args, castTo<GenericConstructor>(ensureNonNullable(new.target as unknown))) as Error;
+        const error = Reflect.construct(PatchedBaseError, $arguments, castTo<GenericConstructor>(ensureNonNullable(new.target as unknown))) as Error;
         error.name = childErrorClassName;
         return error;
       }
@@ -385,16 +387,16 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     }
   }
 
-  private patchWithLongStackTraces<Obj extends object>(params: LongStackTracesDesktopComponentPatchWithLongStackTracesParams<Obj>): void {
-    const genericObj = params.obj as Record<string, GenericFunctionWithOriginalFn>;
+  private patchWithLongStackTraces<$Object extends object>(params: LongStackTracesDesktopComponentPatchWithLongStackTracesParams<$Object>): void {
+    const generic$Object = params.$object as Record<string, GenericFunctionWithOriginalFunction>;
 
     this.addChild(
       new AddLongStackTracesPatchComponent({
+        $object: generic$Object,
         afterPatch: params.afterPatch,
-        handlerArgIndex: params.handlerArgIndex,
+        handlerArgumentIndex: params.handlerArgumentIndex,
         longStackTracesDesktopComponent: this,
         methodName: params.methodName,
-        obj: genericObj,
         shouldConvertStringToFunction: params.shouldConvertStringToFunction,
         stackFrameTitle: params.stackFrameTitle
       })

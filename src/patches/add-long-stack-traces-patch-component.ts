@@ -7,61 +7,63 @@ import type {
   StackFrame
 } from '../long-stack-traces/long-stack-traces-desktop-component.ts';
 import type {
-  GenericFunctionWithOriginalFn,
-  GenericFunctionWithOriginalFnObject
+  GenericFunctionWithOriginalFunction,
+  GenericFunctionWithOriginalFunctionObject
 } from '../types.ts';
 
 import { isEventListenerObject } from '../long-stack-traces/event-listener.ts';
 
-export type AfterPatchFn = (this: void, params: AfterPatchParams) => void;
+export type AfterPatchFunction = (this: void, params: AfterPatchParams) => void;
 
 export interface AfterPatchParams {
-  readonly fn: GenericFunctionWithOriginalFn;
-  readonly originalArgs: unknown[];
+  // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
+  readonly fn: GenericFunctionWithOriginalFunction;
+  readonly originalArguments: unknown[];
   readonly originalThis: unknown;
-  readonly wrappedFn: GenericFunctionWithOriginalFn;
+  readonly wrappedFunction: GenericFunctionWithOriginalFunction;
 }
 
 interface AddLongStackTracesPatchComponentConstructorParams {
-  readonly afterPatch: AfterPatchFn | undefined;
-  readonly handlerArgIndex: number | number[];
+  readonly $object: GenericFunctionWithOriginalFunctionObject;
+  readonly afterPatch: AfterPatchFunction | undefined;
+  readonly handlerArgumentIndex: number | number[];
   readonly longStackTracesDesktopComponent: LongStackTracesDesktopComponent;
   readonly methodName: string;
-  readonly obj: GenericFunctionWithOriginalFnObject;
   readonly shouldConvertStringToFunction: boolean | undefined;
   readonly stackFrameTitle: string;
 }
 
 interface AddLongStackTracesPatchComponentPatchWithLongStackTracesParams {
-  readonly originalArgs: unknown[];
-  readonly originalMethodBound: GenericFunctionWithOriginalFn;
+  readonly originalArguments: unknown[];
+  readonly originalMethodBound: GenericFunctionWithOriginalFunction;
   readonly originalThis: unknown;
 }
 
 interface AddLongStackTracesPatchComponentWrapWithStackTracesImplParams {
   readonly stackFrame: StackFrame;
-  wrappedFn(): unknown;
+  wrappedFunction(): unknown;
 }
 
 interface AddLongStackTracesPatchComponentWrapWithStackTracesParams extends AddLongStackTracesPatchComponentPatchWithLongStackTracesParams {
-  readonly fn: GenericFunctionWithOriginalFn;
+  // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
+  readonly fn: GenericFunctionWithOriginalFunction;
 }
 
 export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
-  private readonly afterPatch: AfterPatchFn | undefined;
-  private readonly handlerArgIndex: number | number[];
+  private readonly $object: GenericFunctionWithOriginalFunctionObject;
+  private readonly afterPatch: AfterPatchFunction | undefined;
+  private readonly handlerArgumentIndex: number | number[];
   private readonly longStackTracesDesktopComponent: LongStackTracesDesktopComponent;
   private readonly methodName: string;
-  private readonly obj: GenericFunctionWithOriginalFnObject;
   private readonly shouldConvertStringToFunction: boolean | undefined;
   private readonly stackFrameTitle: string;
 
   public constructor(params: AddLongStackTracesPatchComponentConstructorParams) {
     super();
-    this.obj = params.obj;
+    this.$object = params.$object;
     this.methodName = params.methodName;
     this.afterPatch = params.afterPatch;
-    this.handlerArgIndex = params.handlerArgIndex;
+    this.handlerArgumentIndex = params.handlerArgumentIndex;
     this.shouldConvertStringToFunction = params.shouldConvertStringToFunction;
     this.stackFrameTitle = params.stackFrameTitle;
     this.longStackTracesDesktopComponent = params.longStackTracesDesktopComponent;
@@ -69,15 +71,15 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: this.$object,
       methodName: this.methodName,
-      obj: this.obj,
       patchHandler: ({
-        originalArgs,
+        originalArguments,
         originalMethodBound,
         originalThis
       }) => {
         return this.patchWithLongStackTraces({
-          originalArgs,
+          originalArguments,
           originalMethodBound,
           originalThis
         });
@@ -86,38 +88,39 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
   }
 
   private patchWithLongStackTraces(params: AddLongStackTracesPatchComponentPatchWithLongStackTracesParams): unknown {
-    const handlerArgIndices = Array.isArray(this.handlerArgIndex) ? this.handlerArgIndex : [this.handlerArgIndex];
-    const argsWithWrappedHandler = params.originalArgs.slice();
+    const handlerArgumentIndices = Array.isArray(this.handlerArgumentIndex) ? this.handlerArgumentIndex : [this.handlerArgumentIndex];
+    const argumentsWithWrappedHandler = [...params.originalArguments];
 
-    for (const handlerArgIndex of handlerArgIndices) {
-      const handler = params.originalArgs[handlerArgIndex];
+    for (const handlerArgumentIndex of handlerArgumentIndices) {
+      const handler = params.originalArguments[handlerArgumentIndex];
 
-      let fn: GenericFunctionWithOriginalFn;
+      let $function: GenericFunctionWithOriginalFunction;
 
       if (typeof handler === 'string' && this.shouldConvertStringToFunction) {
-        fn = createFunction<GenericFunctionWithOriginalFn>({
+        $function = createFunction<GenericFunctionWithOriginalFunction>({
           functionBody: handler
         });
       } else if (typeof handler === 'function') {
-        fn = handler as GenericFunctionWithOriginalFn;
+        $function = handler as GenericFunctionWithOriginalFunction;
       } else if (isEventListenerObject(handler)) {
-        fn = handler.handleEvent.bind(handler) as GenericFunctionWithOriginalFn;
+        $function = handler.handleEvent.bind(handler) as GenericFunctionWithOriginalFunction;
       } else {
         continue;
       }
 
       const wrappedHandler = this.wrapWithStackTraces({
         ...params,
-        fn
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
+        fn: $function
       });
 
-      argsWithWrappedHandler[handlerArgIndex] = wrappedHandler;
+      argumentsWithWrappedHandler[handlerArgumentIndex] = wrappedHandler;
     }
 
-    return params.originalMethodBound(...argsWithWrappedHandler);
+    return params.originalMethodBound(...argumentsWithWrappedHandler);
   }
 
-  private wrapWithStackTraces(params: AddLongStackTracesPatchComponentWrapWithStackTracesParams): GenericFunctionWithOriginalFn {
+  private wrapWithStackTraces(params: AddLongStackTracesPatchComponentWrapWithStackTracesParams): GenericFunctionWithOriginalFunction {
     const stackFrame = {
       parentStackError: new Error(),
       title: this.stackFrameTitle
@@ -126,18 +129,19 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
     const thisWrapper = ValueWrapper.of(this);
 
     this.afterPatch?.({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
       fn: params.fn,
-      originalArgs: params.originalArgs,
+      originalArguments: params.originalArguments,
       originalThis: params.originalThis,
-      wrappedFn: wrappedFn2
+      wrappedFunction: wrappedFunction2
     });
 
-    return Object.assign(wrappedFn2, { originalFn: params.fn });
+    return Object.assign(wrappedFunction2, { originalFunction: params.fn });
 
-    function wrappedFn2(this: unknown, ...wrappedFnArgs: unknown[]): unknown {
+    function wrappedFunction2(this: unknown, ...wrappedFunctionArguments: unknown[]): unknown {
       return thisWrapper.value.wrapWithStackTracesImpl({
         stackFrame,
-        wrappedFn: () => params.fn.call(this, ...wrappedFnArgs)
+        wrappedFunction: () => params.fn.call(this, ...wrappedFunctionArguments)
       });
     }
   }
@@ -147,7 +151,7 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
     this.longStackTracesDesktopComponent.parentStackFrame = params.stackFrame;
 
     try {
-      return params.wrappedFn();
+      return params.wrappedFunction();
     } finally {
       this.longStackTracesDesktopComponent.parentStackFrame = previousParentStackFrame;
     }

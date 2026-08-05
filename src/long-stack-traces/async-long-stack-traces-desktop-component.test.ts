@@ -194,7 +194,7 @@ describe('AsyncLongStackTracesComponent', () => {
 
     const lines = ['    at test (test.js:1:0)'];
     const originalLength = lines.length;
-    const NON_EXISTENT_ASYNC_ID = 99999;
+    const NON_EXISTENT_ASYNC_ID = 99_999;
 
     ComponentEx.adjustStackLines(lines, NON_EXISTENT_ASYNC_ID);
 
@@ -264,7 +264,7 @@ describe('AsyncLongStackTracesComponent', () => {
       shouldIncludeLongStackTraces: true
     });
 
-    const ASYNC_ID = 12345;
+    const ASYNC_ID = 12_345;
 
     // Access private maps via the proxy
     const componentAny = castTo<AsyncComponentPrivateMembers>(ComponentEx);
@@ -316,8 +316,8 @@ describe('AsyncLongStackTracesComponent', () => {
       shouldIncludeLongStackTraces: true
     });
 
-    const ASYNC_ID = 12346;
-    const PARENT_ASYNC_ID = 12340;
+    const ASYNC_ID = 12_346;
+    const PARENT_ASYNC_ID = 12_340;
 
     const componentAny = castTo<AsyncComponentPrivateMembersWithoutParent>(ComponentEx);
 
@@ -359,7 +359,7 @@ describe('AsyncLongStackTracesComponent', () => {
       shouldIncludeLongStackTraces: true
     });
 
-    const ASYNC_ID = 99999;
+    const ASYNC_ID = 99_999;
 
     const componentAny = castTo<AsyncComponentPrivateStackFrameMap>(ComponentEx);
 

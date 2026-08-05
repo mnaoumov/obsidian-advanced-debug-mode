@@ -3,7 +3,7 @@ import type { Promisable } from 'type-fest';
 
 import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
 
-import type { RejectFn } from '../long-running-tasks-component.ts';
+import type { RejectFunction } from '../long-running-tasks-component.ts';
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 
 interface FileSystemAdapterQueuePatchComponentConstructorParams {
@@ -23,16 +23,16 @@ export class FileSystemAdapterQueuePatchComponent extends MonkeyAroundComponent 
   public override onload(): void {
     if (this.pluginSettingsComponent.settings.shouldIncludeTimedOutTasksDetails) {
       this.registerMethodPatch({
+        $object: this.fileSystemAdapter,
         methodName: 'queue',
-        obj: this.fileSystemAdapter,
-        patchHandler: ({ originalArgs: [fn] }) => {
-          return this.queue(fn);
+        patchHandler: ({ originalArguments: [$function] }) => {
+          return this.queue($function);
         }
       });
     }
   }
 
-  private async makeNextPromise<T>(fn: () => Promisable<T>): Promise<T> {
+  private async makeNextPromise<T>($function: () => Promisable<T>): Promise<T> {
     const lastPromise = this.fileSystemAdapter.promise;
     try {
       await lastPromise;
@@ -49,34 +49,36 @@ export class FileSystemAdapterQueuePatchComponent extends MonkeyAroundComponent 
 
     async function run(): Promise<T> {
       try {
-        return await fn();
-      } catch (e) {
+        return await $function();
+      } catch (error) {
         console.error('Failed function', {
-          fn
+          // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
+          fn: $function
         });
-        console.error(e);
-        throw e;
+        console.error(error);
+        throw error;
       } finally {
         isTimedOut = false;
       }
     }
 
-    function rejectWithDetails(reject: RejectFn): RejectFn {
+    function rejectWithDetails(reject: RejectFunction): RejectFunction {
       return (error: Error): void => {
         if (!isTimedOut) {
           return;
         }
 
         console.error('Timed out function', {
-          fn
+          // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
+          fn: $function
         });
         reject(error);
       };
     }
   }
 
-  private queue<T>(fn: () => Promisable<T>): Promise<T> {
-    const nextPromise = this.makeNextPromise(fn);
+  private queue<T>($function: () => Promisable<T>): Promise<T> {
+    const nextPromise = this.makeNextPromise($function);
     this.fileSystemAdapter.promise = nextPromise;
     return nextPromise;
   }

@@ -27,7 +27,8 @@ export class LongStackTracesComponent extends ComponentEx {
 
   public override async onloadAsync(): Promise<void> {
     if (Platform.isDesktop) {
-      const longStackTracesComponentDesktop = new (await import('./long-stack-traces-desktop-component.ts')).LongStackTracesDesktopComponent({
+      const desktopModule = await import('./long-stack-traces-desktop-component.ts');
+      const longStackTracesComponentDesktop = new desktopModule.LongStackTracesDesktopComponent({
         app: this.app,
         pluginId: this.pluginId,
         pluginSettingsComponent: this.pluginSettingsComponent
@@ -38,10 +39,12 @@ export class LongStackTracesComponent extends ComponentEx {
     registerAsyncEvent(
       this,
       this.pluginSettingsComponent.on('loadSettings', async (_loadedState, isInitialLoad) => {
-        if (!isInitialLoad) {
-          this.unload();
-          await this.loadWithPromises();
+        if (isInitialLoad) {
+          return;
         }
+
+        this.unload();
+        await this.loadWithPromises();
       })
     );
 

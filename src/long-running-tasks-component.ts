@@ -7,7 +7,7 @@ import type { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { FileSystemAdapterQueuePatchComponent } from './patches/file-system-adapter-queue-patch-component.ts';
 import { FileSystemAdapterThingsHappeningPatchComponent } from './patches/file-system-adapter-things-happening-patch-component.ts';
 
-export type RejectFn = (e: Error) => void;
+export type RejectFunction = (error: Error) => void;
 
 interface LongRunningTasksComponentConstructorParams {
   readonly fileSystemAdapter: FileSystemAdapter;
@@ -41,10 +41,12 @@ export class LongRunningTasksComponent extends ComponentEx {
     registerAsyncEvent(
       this,
       this.pluginSettingsComponent.on('loadSettings', (_loadedState, isInitialLoad) => {
-        if (!isInitialLoad) {
-          this.unload();
-          this.load();
+        if (isInitialLoad) {
+          return;
         }
+
+        this.unload();
+        this.load();
       })
     );
 
