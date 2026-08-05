@@ -32,9 +32,9 @@ import { PluginSettingsTab } from './plugin-settings-tab.ts';
 // Patch ToggleComponent to have setPlaceholderValue so that
 // PluginSettingsTabBase.bind() can duck-type it.
 beforeAll(() => {
-  const proto = ensureGenericObject(ToggleComponent.prototype);
-  if (!('setPlaceholderValue' in proto)) {
-    proto['setPlaceholderValue'] = undefined;
+  const prototype = ensureGenericObject(ToggleComponent.prototype);
+  if (!('setPlaceholderValue' in prototype)) {
+    prototype['setPlaceholderValue'] = undefined;
   }
 });
 
@@ -177,10 +177,10 @@ describe('PluginSettingsTab', () => {
     const capturedToggles: ToggleComponent[] = [];
     const originalAddToggle = Setting.prototype.addToggle;
     const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
-      function mockAddToggle(this: Setting, cb: (toggle: ToggleComponent) => void) {
+      function mockAddToggle(this: Setting, callback: (toggle: ToggleComponent) => void) {
         const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
           capturedToggles.push(toggle);
-          cb(toggle);
+          callback(toggle);
         });
         return result;
       }
@@ -215,10 +215,10 @@ describe('PluginSettingsTab', () => {
     const capturedToggles: ToggleComponent[] = [];
     const originalAddToggle = Setting.prototype.addToggle;
     const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
-      function mockAddToggle(this: Setting, cb: (toggle: ToggleComponent) => void) {
+      function mockAddToggle(this: Setting, callback: (toggle: ToggleComponent) => void) {
         const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
           capturedToggles.push(toggle);
-          cb(toggle);
+          callback(toggle);
         });
         return result;
       }
@@ -255,10 +255,10 @@ describe('PluginSettingsTab', () => {
     const capturedToggles: ToggleComponent[] = [];
     const originalAddToggle = Setting.prototype.addToggle;
     const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
-      function mockAddToggle(this: Setting, cb: (toggle: ToggleComponent) => void) {
+      function mockAddToggle(this: Setting, callback: (toggle: ToggleComponent) => void) {
         const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
           capturedToggles.push(toggle);
-          cb(toggle);
+          callback(toggle);
         });
         return result;
       }
@@ -287,10 +287,10 @@ describe('PluginSettingsTab', () => {
     const capturedToggles: ToggleComponent[] = [];
     const originalAddToggle = Setting.prototype.addToggle;
     const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
-      function mockAddToggle(this: Setting, cb: (toggle: ToggleComponent) => void) {
+      function mockAddToggle(this: Setting, callback: (toggle: ToggleComponent) => void) {
         const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
           capturedToggles.push(toggle);
-          cb(toggle);
+          callback(toggle);
         });
         return result;
       }
@@ -325,10 +325,10 @@ describe('PluginSettingsTab', () => {
 
     const capturedTextAreas: MockTextArea[] = [];
     const originalAddTextArea = Setting.prototype.addTextArea;
-    const addTextAreaSpy = vi.spyOn(Setting.prototype, 'addTextArea').mockImplementation(function mockAddTextArea(this: Setting, cb) {
+    const addTextAreaSpy = vi.spyOn(Setting.prototype, 'addTextArea').mockImplementation(function mockAddTextArea(this: Setting, callback) {
       const result = originalAddTextArea.call(this, (textArea: MockTextArea & TextAreaComponent) => {
         capturedTextAreas.push(textArea);
-        cb(textArea);
+        callback(textArea);
       });
       return result;
     });
@@ -359,10 +359,10 @@ describe('PluginSettingsTab', () => {
     const capturedToggles: ToggleComponent[] = [];
     const originalAddToggle = Setting.prototype.addToggle;
     const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
-      function mockAddToggle(this: Setting, cb: (toggle: ToggleComponent) => void) {
+      function mockAddToggle(this: Setting, callback: (toggle: ToggleComponent) => void) {
         const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
           capturedToggles.push(toggle);
-          cb(toggle);
+          callback(toggle);
         });
         return result;
       }

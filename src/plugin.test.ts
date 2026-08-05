@@ -132,7 +132,7 @@ describe('Plugin', () => {
   it('should wire up all child components on load', () => {
     const plugin = new Plugin(app, manifest);
     const internals = castTo<PluginInternals>(plugin);
-    const registerCommandHandlers = vi.fn();
+    const registerCommandHandlers = vi.fn<CommandHandlerComponent['registerCommandHandlers']>();
     // The base PluginBase.onload seeds and pre-wires commandHandlerComponent before onloadImpl; seed it here so onloadImpl can register the plugin's command handlers on it.
     internals._commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers });
     // The base PluginBase.onload also seeds pluginNoticeComponent before onloadImpl; seed it here so the OpenDemoVaultCommandHandler can read it via the non-null getter.
@@ -146,6 +146,8 @@ describe('Plugin', () => {
     expect(PluginSettingsTab).toHaveBeenCalledOnce();
     expect(DevToolsComponent).toHaveBeenCalledOnce();
     expect(registerCommandHandlers).toHaveBeenCalledOnce();
+    // Since obsidian-dev-utils 89.0.0 the handlers are built lazily by a factory, so build them here.
+    registerCommandHandlers.mock.calls[0]?.[0]();
     expect(OpenDemoVaultCommandHandler).toHaveBeenCalledOnce();
     expect(LongRunningTasksComponent).toHaveBeenCalledOnce();
     expect(ErrorStackTraceLimitComponent).toHaveBeenCalledOnce();

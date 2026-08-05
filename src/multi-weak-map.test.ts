@@ -41,10 +41,10 @@ describe('MultiWeakMap', () => {
 
   it('should handle mixed object and primitive keys', () => {
     const map = new MultiWeakMap<[object, string, object], number>();
-    const obj1 = {};
-    const obj2 = {};
-    map.set([obj1, 'primitive', obj2], 42);
-    expect(map.get([obj1, 'primitive', obj2])).toBe(42);
+    const object1 = {};
+    const object2 = {};
+    map.set([object1, 'primitive', object2], 42);
+    expect(map.get([object1, 'primitive', object2])).toBe(42);
   });
 
   it('should handle primitive-only keys via Map path', () => {

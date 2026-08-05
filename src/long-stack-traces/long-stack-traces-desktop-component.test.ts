@@ -144,7 +144,7 @@ describe('LongStackTracesComponentDesktop', () => {
     const { component } = createComponent();
     component.load();
 
-    const error = Error('test without new');
+    const error = new Error('test without new');
     expect(error).toBeInstanceOf(Error);
     expect(error.message).toBe('test without new');
 
@@ -169,7 +169,7 @@ describe('LongStackTracesComponentDesktop', () => {
     component.load();
 
     const LINE_COUNT = 20;
-    const lines = Array.from({ length: LINE_COUNT }, (_, i) => `    at fn${String(i)} (file.js:${String(i)}:0)`);
+    const lines = Array.from({ length: LINE_COUNT }, (_, index) => `    at fn${String(index)} (file.js:${String(index)}:0)`);
     component.adjustStackLines({ asyncId: 0, lines, parentStackFrame: undefined });
 
     expect(lines.length).toBe(SMALL_LIMIT + 1);
@@ -184,7 +184,7 @@ describe('LongStackTracesComponentDesktop', () => {
     component.load();
 
     const LINE_COUNT = 5;
-    const lines = Array.from({ length: LINE_COUNT }, (_, i) => `    at fn${String(i)} (file.js:${String(i)}:0)`);
+    const lines = Array.from({ length: LINE_COUNT }, (_, index) => `    at fn${String(index)} (file.js:${String(index)}:0)`);
     component.adjustStackLines({ asyncId: 0, lines, parentStackFrame: undefined });
 
     expect(lines.length).toBe(LINE_COUNT);
@@ -301,6 +301,7 @@ describe('LongStackTracesComponentDesktop', () => {
 
     const error = new Error('test');
     const customStack = 'Custom stack trace';
+    // eslint-disable-next-line unicorn/no-error-property-assignment -- Assigning `stack` IS the behavior under test: the patched Error must preserve a caller-set stack.
     error.stack = customStack;
     expect(error.stack).toBe(customStack);
 
@@ -339,7 +340,7 @@ describe('LongStackTracesComponentDesktop', () => {
     const { component } = createComponent();
     component.load();
 
-    const error = TypeError('no new');
+    const error = new TypeError('no new');
     expect(error).toBeInstanceOf(TypeError);
     expect(error.message).toBe('no new');
 
@@ -427,7 +428,7 @@ describe('LongStackTracesComponentDesktop', () => {
     const { component } = createComponent();
     component.load();
 
-    const result = await Promise.reject(new Error('err')).catch((e: unknown) => (e as Error).message);
+    const result = await Promise.reject(new Error('err')).catch((error: unknown) => (error as Error).message);
     expect(result).toBe('err');
 
     component.unload();
@@ -437,11 +438,11 @@ describe('LongStackTracesComponentDesktop', () => {
     const { component } = createComponent();
     component.load();
 
-    let finallyCalled = false;
+    let isFinallyCalled = false;
     await noopAsync().finally(() => {
-      finallyCalled = true;
+      isFinallyCalled = true;
     });
-    expect(finallyCalled).toBe(true);
+    expect(isFinallyCalled).toBe(true);
 
     component.unload();
   });

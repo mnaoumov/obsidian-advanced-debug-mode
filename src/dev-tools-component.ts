@@ -28,7 +28,7 @@ export class DevToolsComponent extends ComponentEx {
     this.erudaButton?.toggle(!this.erudaButton.isShown());
   }
 
-  private onFocusIn(evt: FocusEvent): void {
-    evt.stopPropagation();
+  private onFocusIn($event: FocusEvent): void {
+    $event.stopPropagation();
   }
 }

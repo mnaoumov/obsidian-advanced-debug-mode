@@ -42,7 +42,7 @@ export class Plugin extends PluginBase {
 
     const devToolsComponent = this.addChild(new DevToolsComponent());
 
-    this.commandHandlerComponent.registerCommandHandlers([
+    this.commandHandlerComponent.registerCommandHandlers(() => [
       new OpenSettingsCommandHandler({
         app: this.app,
         settingTab: pluginSettingsTab

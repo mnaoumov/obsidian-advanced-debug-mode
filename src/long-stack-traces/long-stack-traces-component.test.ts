@@ -30,21 +30,21 @@ interface CreateComponentResult {
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
-type EventCallback = (...args: unknown[]) => unknown;
+type EventCallback = (...$arguments: unknown[]) => unknown;
 
 function captureEventCallbacks(pluginSettingsComponent: PluginSettingsComponent): Map<string, EventCallback[]> {
   const captured = new Map<string, EventCallback[]>();
 
-  const originalOn = (pluginSettingsComponent.on as (...args: unknown[]) => unknown).bind(pluginSettingsComponent);
+  const originalOn = (pluginSettingsComponent.on as (...$arguments: unknown[]) => unknown).bind(pluginSettingsComponent);
 
-  (vi.spyOn(pluginSettingsComponent, 'on') as ReturnType<typeof vi.fn>).mockImplementation((name: string, callback: EventCallback, ctx?: unknown) => {
+  (vi.spyOn(pluginSettingsComponent, 'on') as ReturnType<typeof vi.fn>).mockImplementation((name: string, callback: EventCallback, context?: unknown) => {
     let callbacks = captured.get(name);
     if (!callbacks) {
       callbacks = [];
       captured.set(name, callbacks);
     }
     callbacks.push(callback);
-    return originalOn(name, callback, ctx);
+    return originalOn(name, callback, context);
   });
 
   return captured;
@@ -76,10 +76,10 @@ function createPluginEventSource(): PluginEventSource {
 }
 
 describe('LongStackTracesComponent', () => {
-  let savedIsDesktop: boolean;
+  let isSavedIsDesktop: boolean;
 
   beforeEach(() => {
-    savedIsDesktop = Platform.isDesktop;
+    isSavedIsDesktop = Platform.isDesktop;
     MockLongStackTracesDesktopComponent.mockClear();
     MockLongStackTracesDesktopComponent.mockImplementation(mockComponent);
 
@@ -89,7 +89,7 @@ describe('LongStackTracesComponent', () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(Platform, 'isDesktop', { configurable: true, value: savedIsDesktop });
+    Object.defineProperty(Platform, 'isDesktop', { configurable: true, value: isSavedIsDesktop });
     vi.restoreAllMocks();
   });
 
@@ -134,8 +134,8 @@ describe('LongStackTracesComponent', () => {
     const unloadSpy = vi.spyOn(component, 'unload');
     const loadWithPromisesSpy = vi.spyOn(component, 'loadWithPromises').mockResolvedValue(undefined);
 
-    for (const cb of loadSettingsCallbacks ?? []) {
-      await cb({}, false);
+    for (const callback of loadSettingsCallbacks ?? []) {
+      await callback({}, false);
     }
 
     expect(unloadSpy).toHaveBeenCalledOnce();
@@ -155,8 +155,8 @@ describe('LongStackTracesComponent', () => {
     const loadSettingsCallbacks = captured.get('loadSettings');
     expect(loadSettingsCallbacks).toBeDefined();
 
-    for (const cb of loadSettingsCallbacks ?? []) {
-      await cb({}, true);
+    for (const callback of loadSettingsCallbacks ?? []) {
+      await callback({}, true);
     }
 
     expect(unloadSpy).not.toHaveBeenCalled();
@@ -177,8 +177,8 @@ describe('LongStackTracesComponent', () => {
     const saveSettingsCallbacks = captured.get('saveSettings');
     expect(saveSettingsCallbacks).toBeDefined();
 
-    for (const cb of saveSettingsCallbacks ?? []) {
-      await cb({}, {}, undefined);
+    for (const callback of saveSettingsCallbacks ?? []) {
+      await callback({}, {}, undefined);
     }
 
     expect(unloadSpy).toHaveBeenCalledOnce();

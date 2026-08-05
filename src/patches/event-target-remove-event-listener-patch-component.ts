@@ -1,6 +1,6 @@
 import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
 
-import type { GenericFunctionWithOriginalFn } from '../types.ts';
+import type { GenericFunctionWithOriginalFunction } from '../types.ts';
 
 import { eventHandlersMap } from '../long-stack-traces/event-handlers-map.ts';
 import { isEventListenerObject } from '../long-stack-traces/event-listener.ts';
@@ -8,11 +8,11 @@ import { isEventListenerObject } from '../long-stack-traces/event-listener.ts';
 export class EventTargetRemoveEventListenerPatchComponent extends MonkeyAroundComponent {
   public override onload(): void {
     this.registerMethodPatch({
+      $object: EventTarget.prototype,
       methodName: 'removeEventListener',
-      obj: EventTarget.prototype,
       patchHandler: ({
         fallback,
-        originalArgs: [type, callback, options],
+        originalArguments: [type, callback, options],
         originalMethodBound,
         originalThis
       }) => {
@@ -22,7 +22,7 @@ export class EventTargetRemoveEventListenerPatchComponent extends MonkeyAroundCo
           return;
         }
 
-        const wrappedHandler = eventHandlersMap.get([originalThis, type, handler as GenericFunctionWithOriginalFn]);
+        const wrappedHandler = eventHandlersMap.get([originalThis, type, handler as GenericFunctionWithOriginalFunction]);
 
         if (wrappedHandler) {
           originalMethodBound(type, wrappedHandler, options);
