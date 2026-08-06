@@ -121,6 +121,10 @@ interface PluginInternals {
   onloadImpl(): Promise<void>;
 }
 
+interface VaultWithAdapter {
+  adapter: unknown;
+}
+
 const manifest = castTo<PluginManifest>({
   author: 'test',
   description: 'test',
@@ -164,6 +168,25 @@ describe('Plugin', () => {
     expect(LongRunningTasksComponent).toHaveBeenCalledOnce();
     // Constructing it is not enough: it was constructed but never added for a while, so its FileSystemAdapter patches never loaded. Compared by identity, as every component stub is structurally an empty Component.
     expect(addChildSpy.mock.calls.map(([child]) => child)).toContain(vi.mocked(LongRunningTasksComponent).mock.results[0]?.value);
+    expect(ErrorStackTraceLimitComponent).toHaveBeenCalledOnce();
+    expect(LongStackTracesComponent).toHaveBeenCalledOnce();
+  });
+
+  it('should not wire the long-running-tasks component when the vault has no desktop adapter', async () => {
+    // On mobile the adapter is a CapacitorAdapter, which has none of the `queue`/`thingsHappening`
+    // Methods that component patches. Loading it there leaves the vault broken and Obsidian never
+    // Reaches layout-ready, so the plugin does not finish loading at all.
+    castTo<VaultWithAdapter>(app.vault).adapter = { getName: (): string => 'capacitor' };
+
+    const plugin = new Plugin(app, manifest);
+    const internals = castTo<PluginInternals>(plugin);
+    internals._commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers: vi.fn<CommandHandlerComponent['registerCommandHandlers']>() });
+    internals._pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
+
+    await internals.onloadImpl();
+
+    expect(LongRunningTasksComponent).not.toHaveBeenCalled();
+    // The rest of the plugin still loads.
     expect(ErrorStackTraceLimitComponent).toHaveBeenCalledOnce();
     expect(LongStackTracesComponent).toHaveBeenCalledOnce();
   });

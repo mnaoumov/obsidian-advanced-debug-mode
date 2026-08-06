@@ -340,8 +340,23 @@ describe('LongStackTracesComponentDesktop', () => {
     const { component } = createComponent();
     component.load();
 
-    const error = new TypeError('no new');
+    // `TypeError('x')` without `new` is legal and must still return an error. Called through a
+    // Plain-function view of the constructor, because writing it literally is what the lint rules stop.
+    const callWithoutNew = castTo<(message: string) => TypeError>(window.TypeError);
+    const error = callWithoutNew('no new');
     expect(error).toBeInstanceOf(TypeError);
+    expect(error.message).toBe('no new');
+
+    component.unload();
+  });
+
+  it('should handle Error called without new', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const callWithoutNew = castTo<(message: string) => Error>(window.Error);
+    const error = callWithoutNew('no new');
+    expect(error).toBeInstanceOf(Error);
     expect(error.message).toBe('no new');
 
     component.unload();

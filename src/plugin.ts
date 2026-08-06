@@ -1,5 +1,4 @@
-import type { FileSystemAdapter } from 'obsidian';
-
+import { FileSystemAdapter } from 'obsidian';
 import { getDebugController } from 'obsidian-dev-utils/debug';
 import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
 import { OpenSettingsCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-settings-command-handler';
@@ -59,12 +58,20 @@ export class Plugin extends PluginBase {
       })
     ]);
 
-    this.addChild(
-      new LongRunningTasksComponent({
-        fileSystemAdapter: this.app.vault.adapter as FileSystemAdapter,
-        pluginSettingsComponent
-      })
-    );
+    // LongRunningTasksComponent patches `queue` and `thingsHappening`, which only the desktop
+    // FileSystemAdapter has, so it is added only where that adapter is the real one. While the component
+    // Was constructed and then dropped the unchecked cast never mattered; now that it is actually added
+    // And loaded, letting it patch Android's CapacitorAdapter leaves the vault broken and Obsidian never
+    // Reaches layout-ready — the plugin does not finish loading at all.
+    const { adapter } = this.app.vault;
+    if (adapter instanceof FileSystemAdapter) {
+      this.addChild(
+        new LongRunningTasksComponent({
+          fileSystemAdapter: adapter,
+          pluginSettingsComponent
+        })
+      );
+    }
 
     this.addChild(new ErrorStackTraceLimitComponent());
 
