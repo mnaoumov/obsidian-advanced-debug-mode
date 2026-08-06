@@ -109,7 +109,7 @@ import { Plugin } from './plugin.ts';
 interface PluginInternals {
   _commandHandlerComponent: CommandHandlerComponent;
   _pluginNoticeComponent: PluginNoticeComponent;
-  onloadImpl(): void;
+  onloadImpl(): Promise<void>;
 }
 
 const manifest = castTo<PluginManifest>({
@@ -129,7 +129,7 @@ beforeEach(() => {
 });
 
 describe('Plugin', () => {
-  it('should wire up all child components on load', () => {
+  it('should wire up all child components on load', async () => {
     const plugin = new Plugin(app, manifest);
     const internals = castTo<PluginInternals>(plugin);
     const registerCommandHandlers = vi.fn<CommandHandlerComponent['registerCommandHandlers']>();
@@ -138,7 +138,9 @@ describe('Plugin', () => {
     // The base PluginBase.onload also seeds pluginNoticeComponent before onloadImpl; seed it here so the OpenDemoVaultCommandHandler can read it via the non-null getter.
     internals._pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
 
-    internals.onloadImpl();
+    // Awaited because registerCommandHandlers is async since obsidian-dev-utils 90.0.0.
+    // So onloadImpl suspends on it, and the components wired after it are not constructed yet.
+    await internals.onloadImpl();
 
     expect(plugin).toBeInstanceOf(Plugin);
     expect(PluginSettingsComponent).toHaveBeenCalledOnce();
