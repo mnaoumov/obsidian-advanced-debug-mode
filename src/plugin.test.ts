@@ -6,8 +6,13 @@ import type { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/comman
 import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
 
 import { Component } from 'obsidian';
+import {
+  noop,
+  noopAsync
+} from 'obsidian-dev-utils/function';
 import { castTo } from 'obsidian-dev-utils/object-utils';
 import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
+import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
 import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import { App } from 'obsidian-test-mocks/obsidian';
@@ -82,7 +87,10 @@ vi.mock('./error-stack-trace-limit-component.ts', () => ({
 }));
 
 vi.mock('./long-running-tasks-component.ts', () => ({
-  LongRunningTasksComponent: vi.fn()
+  // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
+  LongRunningTasksComponent: vi.fn(function longRunningTasksComponentStub() {
+    return new Component();
+  })
 }));
 
 vi.mock('./long-stack-traces/long-stack-traces-component.ts', () => ({
@@ -95,7 +103,8 @@ vi.mock('./long-stack-traces/long-stack-traces-component.ts', () => ({
 vi.mock('./plugin-settings-component.ts', () => ({
   // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
   PluginSettingsComponent: vi.fn(function pluginSettingsComponentStub() {
-    return new Component();
+    // A ComponentEx, not a plain Component: onloadImpl awaits its `loadWithPromises`.
+    return new ComponentEx();
   })
 }));
 
@@ -137,6 +146,7 @@ describe('Plugin', () => {
     internals._commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers });
     // The base PluginBase.onload also seeds pluginNoticeComponent before onloadImpl; seed it here so the OpenDemoVaultCommandHandler can read it via the non-null getter.
     internals._pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
+    const addChildSpy = vi.spyOn(plugin, 'addChild');
 
     // Awaited because registerCommandHandlers is async since obsidian-dev-utils 90.0.0.
     // So onloadImpl suspends on it, and the components wired after it are not constructed yet.
@@ -152,7 +162,38 @@ describe('Plugin', () => {
     registerCommandHandlers.mock.calls[0]?.[0]();
     expect(OpenDemoVaultCommandHandler).toHaveBeenCalledOnce();
     expect(LongRunningTasksComponent).toHaveBeenCalledOnce();
+    // Constructing it is not enough: it was constructed but never added for a while, so its FileSystemAdapter patches never loaded. Compared by identity, as every component stub is structurally an empty Component.
+    expect(addChildSpy.mock.calls.map(([child]) => child)).toContain(vi.mocked(LongRunningTasksComponent).mock.results[0]?.value);
     expect(ErrorStackTraceLimitComponent).toHaveBeenCalledOnce();
+    expect(LongStackTracesComponent).toHaveBeenCalledOnce();
+  });
+
+  it('should await the settings load before wiring the components that read the settings', async () => {
+    const plugin = new Plugin(app, manifest);
+    const internals = castTo<PluginInternals>(plugin);
+    internals._commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers: vi.fn<CommandHandlerComponent['registerCommandHandlers']>() });
+    internals._pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
+
+    // Hold the settings load open: since obsidian-dev-utils 90 a child loads as it is added, so without the await the components below would be wired from the default settings while this load is still in flight.
+    const pluginSettingsComponent = new ComponentEx();
+    let resolveSettingsLoad: () => void = noop;
+    const settingsLoadPromise = new Promise<void>((resolve) => {
+      resolveSettingsLoad = resolve;
+    });
+    vi.spyOn(pluginSettingsComponent, 'loadWithPromises').mockReturnValue(settingsLoadPromise);
+    // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns this instance.
+    vi.mocked(PluginSettingsComponent).mockImplementation(function pluginSettingsComponentStub() {
+      return castTo<PluginSettingsComponent>(pluginSettingsComponent);
+    });
+
+    const onloadImplPromise = internals.onloadImpl();
+    await noopAsync();
+
+    expect(LongStackTracesComponent).not.toHaveBeenCalled();
+
+    resolveSettingsLoad();
+    await onloadImplPromise;
+
     expect(LongStackTracesComponent).toHaveBeenCalledOnce();
   });
 });
