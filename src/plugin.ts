@@ -19,7 +19,7 @@ import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
 export class Plugin extends PluginBase {
-  protected override onloadImpl(): void {
+  protected override async onloadImpl(): Promise<void> {
     const pluginSettingsComponent = this.addChild(
       new PluginSettingsComponent({
         dataHandler: new PluginDataHandler(this),
@@ -42,7 +42,7 @@ export class Plugin extends PluginBase {
 
     const devToolsComponent = this.addChild(new DevToolsComponent());
 
-    this.commandHandlerComponent.registerCommandHandlers(() => [
+    await this.commandHandlerComponent.registerCommandHandlers(() => [
       new OpenSettingsCommandHandler({
         app: this.app,
         settingTab: pluginSettingsTab
