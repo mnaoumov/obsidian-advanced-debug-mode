@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.10.1
+
+- fix: add the long-running-tasks component only where the desktop adapter is real
+- fix: load the settings before wiring the components that read them
+- chore: update libs
+- chore: update libs
+- chore(vitest): adopt the shared Obsidian plugin vitest configuration
+
 ## 1.10.0
 
 - test(settings): evaluate the desktop-only disabled predicates
