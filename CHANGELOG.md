@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.10.2
+
+- chore: update libs and adopt obsidian-integration-testing 10
+
 ## 1.10.1
 
 - fix: add the long-running-tasks component only where the desktop adapter is real
