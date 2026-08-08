@@ -16,7 +16,7 @@ import { isEventListenerObject } from '../long-stack-traces/event-listener.ts';
 export type AfterPatchFunction = (this: void, params: AfterPatchParams) => void;
 
 export interface AfterPatchParams {
-  // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
+  // eslint-disable-next-line unicorn/name-replacements -- The rule's replacement `function` is a reserved word and cannot be a binding name.
   readonly fn: GenericFunctionWithOriginalFunction;
   readonly originalArguments: unknown[];
   readonly originalThis: unknown;
@@ -45,7 +45,7 @@ interface AddLongStackTracesPatchComponentWrapWithStackTracesImplParams {
 }
 
 interface AddLongStackTracesPatchComponentWrapWithStackTracesParams extends AddLongStackTracesPatchComponentPatchWithLongStackTracesParams {
-  // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
+  // eslint-disable-next-line unicorn/name-replacements -- The rule's replacement `function` is a reserved word and cannot be a binding name.
   readonly fn: GenericFunctionWithOriginalFunction;
 }
 
@@ -110,7 +110,7 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
 
       const wrappedHandler = this.wrapWithStackTraces({
         ...params,
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
+        // eslint-disable-next-line unicorn/name-replacements -- The rule's replacement `function` is a reserved word and cannot be a binding name.
         fn: $function
       });
 
@@ -129,7 +129,7 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
     const thisWrapper = ValueWrapper.of(this);
 
     this.afterPatch?.({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
+      // eslint-disable-next-line unicorn/name-replacements -- The rule's replacement `function` is a reserved word and cannot be a binding name.
       fn: params.fn,
       originalArguments: params.originalArguments,
       originalThis: params.originalThis,

@@ -1,5 +1,5 @@
 import { evalInObsidian } from 'obsidian-integration-testing';
-import { getTempVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
+import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 import {
   describe,
   expect,
@@ -8,14 +8,13 @@ import {
 
 describe('Desktop Integration', () => {
   it('should load plugin on Desktop', () => {
-    const vault = getTempVault();
+    const vault = getTemporaryVault();
     expect(vault.path).toBeTruthy();
   });
 
   it('should have plugin loaded and enabled', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      fn({ app }) {
+      callback({ app }) {
         const plugin = app.plugins.getPlugin('advanced-debug-mode');
         return {
           isEnabled: !!plugin,
@@ -30,8 +29,7 @@ describe('Desktop Integration', () => {
 
   it('should have patched Error class for long stack traces', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      fn() {
+      callback() {
         const error = new Error('integration test');
         return {
           hasStack: !!error.stack,
@@ -51,8 +49,7 @@ describe('Desktop Integration', () => {
     }
 
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      async fn({ app }): Promise<AsyncErrorResult> {
+      async callback({ app }): Promise<AsyncErrorResult> {
         const pluginId = 'advanced-debug-mode';
 
         // Enable async long stack traces the way a real user would — persist the setting and reload the plugin so it re-reads it and activates the async-hooks tracking that links stack frames across `await` boundaries.
@@ -87,8 +84,7 @@ describe('Desktop Integration', () => {
 
   it('should have Error.stackTraceLimit set from settings', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      fn() {
+      callback() {
         return {
           stackTraceLimit: Error.stackTraceLimit
         };
@@ -100,8 +96,7 @@ describe('Desktop Integration', () => {
 
   it('should be able to read debug mode state', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      fn({ app }) {
+      callback({ app }) {
         return {
           debugModeValue: app.loadLocalStorage('DebugMode') ?? ''
         };
@@ -113,8 +108,7 @@ describe('Desktop Integration', () => {
 
   it('should have settings accessible', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      fn({ app }) {
+      callback({ app }) {
         const plugin = app.plugins.getPlugin('advanced-debug-mode');
         if (!plugin) {
           return { hasSettings: false };
@@ -131,8 +125,7 @@ describe('Desktop Integration', () => {
 
   it('should register commands', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      fn({ app }) {
+      callback({ app }) {
         const commands = Object.keys(app.commands.commands).filter((id) => id.startsWith('advanced-debug-mode:'));
         return { commands };
       }

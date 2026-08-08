@@ -52,7 +52,7 @@ export class FileSystemAdapterQueuePatchComponent extends MonkeyAroundComponent 
         return await $function();
       } catch (error) {
         console.error('Failed function', {
-          // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
+          // eslint-disable-next-line unicorn/name-replacements -- The rule's replacement `function` is a reserved word and cannot be a binding name.
           fn: $function
         });
         console.error(error);
@@ -69,7 +69,7 @@ export class FileSystemAdapterQueuePatchComponent extends MonkeyAroundComponent 
         }
 
         console.error('Timed out function', {
-          // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
+          // eslint-disable-next-line unicorn/name-replacements -- The rule's replacement `function` is a reserved word and cannot be a binding name.
           fn: $function
         });
         reject(error);
