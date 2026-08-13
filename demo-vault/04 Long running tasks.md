@@ -6,8 +6,10 @@ Advanced Debug Mode lets you relax those timeouts while you debug.
 
 ## The settings involved
 
-- `shouldTimeoutLongRunningTasks` - leave this **on** for normal use, and turn it **off** before a debugging session so tasks are allowed to run (or pause) indefinitely.
-- `shouldIncludeTimedOutTasksDetails` - when a task does time out, include extra details about it in the console so you can see which task was aborted and why.
+- `shouldTimeoutLongRunningTasks`
+  - leave this **on** for normal use, and turn it **off** before a debugging session so tasks are allowed to run (or pause) indefinitely.
+- `shouldIncludeTimedOutTasksDetails`
+  - when a task does time out, include extra details about it in the console so you can see which task was aborted and why.
 
 Both live in **Settings -> Community plugins -> Advanced Debug Mode** and are documented in [06 Settings](<./06 Settings.md>).
 

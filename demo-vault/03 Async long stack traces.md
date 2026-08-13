@@ -15,6 +15,8 @@ Advanced Debug Mode can preserve those `async` frames too, but it is a separate,
 1. Open **Settings -> Community plugins -> Advanced Debug Mode**.
 2. Toggle **Include async long stack traces** on. This flips the `shouldIncludeAsyncLongStackTraces` setting.
 
+![An async stack trace keeping its `--- async ---` hops](<./_assets/images/async-long-stack-traces.png>)
+
 ## Try it
 
 With DevTools open on the **Console** tab, click the button. It awaits two async hops and then throws.
