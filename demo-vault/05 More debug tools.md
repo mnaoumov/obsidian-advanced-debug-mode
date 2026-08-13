@@ -1,5 +1,3 @@
-[Docs](https://github.com/mnaoumov/obsidian-advanced-debug-mode/)
-
 # More debug tools
 
 Two smaller features round out the plugin. Neither has its own setting - they are surfaced through a command and the settings tab.
@@ -20,4 +18,4 @@ Many plugins - and `obsidian-dev-utils` itself - use the [`debug`](https://githu
 
 For the full explanation of debug namespaces, see the [obsidian-dev-utils debugging guide](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/).
 
-Head to [[06 Settings]] for the settings-backed features.
+Head to [06 Settings](<./06 Settings.md>) for the settings-backed features.

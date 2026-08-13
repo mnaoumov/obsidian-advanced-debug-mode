@@ -1,3 +1,5 @@
+# Advanced Debug Mode demo vault
+
 This is an [Obsidian](https://obsidian.md/) vault demonstrating features of the [Advanced Debug Mode](https://github.com/mnaoumov/obsidian-advanced-debug-mode) plugin.
 
 ## Opening this vault
