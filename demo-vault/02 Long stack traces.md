@@ -1,5 +1,3 @@
-[Docs](https://github.com/mnaoumov/obsidian-advanced-debug-mode/)
-
 # Long stack traces
 
 This is the headline feature. When an error is thrown after it has passed through an async boundary - `setTimeout`, `setInterval`, `queueMicrotask`, `requestAnimationFrame`, `addEventListener`, or a `Promise` chain - the JavaScript engine throws away every frame that scheduled the work. The console then shows only the last few frames, which rarely tell you where the problem actually started.
@@ -96,7 +94,7 @@ Uncaught Error: Error from foo11
 - `stackTraceLimit` caps how many frames are kept (100 by default) so very deep chains stay readable.
 - `shouldIncludeInternalStackFrames` adds Obsidian/Electron-internal frames when you need the whole picture.
 
-See [[06 Settings]] for all of them, and [[03 Async long stack traces]] for the `async`/`await` variant.
+See [06 Settings](<./06 Settings.md>) for all of them, and [03 Async long stack traces](<./03 Async long stack traces.md>) for the `async`/`await` variant.
 
 > [!NOTE]
 > `process.nextTick` and `setImmediate` are Node globals, so the button above works on desktop. The rest of the chain works on mobile too.
