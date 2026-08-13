@@ -25,6 +25,7 @@ export class Plugin extends PluginBase {
         pluginEventSource: new PluginEventSourceImpl(this)
       })
     );
+    this.pluginSettingsComponent = pluginSettingsComponent;
     // Since obsidian-dev-utils 90 a child is loaded as it is added, so the settings' async load tail runs in parallel with the components added below instead of before them. Those components read the settings in their synchronous `onload` and only re-read them on a later `loadSettings`/`saveSettings` event, never on the initial load, so without this wait they wire themselves up from the defaults for the whole session — a stored `shouldIncludeAsyncLongStackTraces: true` would be read as its default `false`.
     await pluginSettingsComponent.loadWithPromises();
 

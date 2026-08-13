@@ -33,6 +33,10 @@ import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
 // --- Collaborator dev-utils components added as children: stub as constructor spies that return a real Component so the real addChild lifecycle can load them while capturing constructor args. ---
 
+vi.mock('obsidian-dev-utils/obsidian/data-handler', () => ({
+  PluginDataHandler: vi.fn()
+}));
+
 vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', () => ({
   // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
   PluginSettingsTabComponent: vi.fn(function pluginSettingsTabComponentStub() {
@@ -48,10 +52,6 @@ vi.mock('obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-ha
 
 vi.mock('obsidian-dev-utils/obsidian/command-handlers/open-settings-command-handler', () => ({
   OpenSettingsCommandHandler: vi.fn()
-}));
-
-vi.mock('obsidian-dev-utils/obsidian/data-handler', () => ({
-  PluginDataHandler: vi.fn()
 }));
 
 vi.mock('obsidian-dev-utils/obsidian/plugin/plugin-event-source', () => ({
@@ -115,10 +115,12 @@ vi.mock('./plugin-settings-tab.ts', () => ({
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { Plugin } from './plugin.ts';
 
+// Seeded THROUGH the base accessors: since obsidian-dev-utils 93.2 the components live in a bag behind
+// Them, so writing the old `_`-prefixed backing field no longer feeds the getter, which throws when unset.
 interface PluginInternals {
-  _commandHandlerComponent: CommandHandlerComponent;
-  _pluginNoticeComponent: PluginNoticeComponent;
+  commandHandlerComponent: CommandHandlerComponent;
   onloadImpl(): Promise<void>;
+  pluginNoticeComponent: PluginNoticeComponent;
 }
 
 interface VaultWithAdapter {
@@ -147,9 +149,9 @@ describe('Plugin', () => {
     const internals = castTo<PluginInternals>(plugin);
     const registerCommandHandlers = vi.fn<CommandHandlerComponent['registerCommandHandlers']>();
     // The base PluginBase.onload seeds and pre-wires commandHandlerComponent before onloadImpl; seed it here so onloadImpl can register the plugin's command handlers on it.
-    internals._commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers });
+    internals.commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers });
     // The base PluginBase.onload also seeds pluginNoticeComponent before onloadImpl; seed it here so the OpenDemoVaultCommandHandler can read it via the non-null getter.
-    internals._pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
+    internals.pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
     const addChildSpy = vi.spyOn(plugin, 'addChild');
 
     // Awaited because registerCommandHandlers is async since obsidian-dev-utils 90.0.0.
@@ -180,8 +182,8 @@ describe('Plugin', () => {
 
     const plugin = new Plugin(app, manifest);
     const internals = castTo<PluginInternals>(plugin);
-    internals._commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers: vi.fn<CommandHandlerComponent['registerCommandHandlers']>() });
-    internals._pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
+    internals.commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers: vi.fn<CommandHandlerComponent['registerCommandHandlers']>() });
+    internals.pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
 
     await internals.onloadImpl();
 
@@ -194,8 +196,8 @@ describe('Plugin', () => {
   it('should await the settings load before wiring the components that read the settings', async () => {
     const plugin = new Plugin(app, manifest);
     const internals = castTo<PluginInternals>(plugin);
-    internals._commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers: vi.fn<CommandHandlerComponent['registerCommandHandlers']>() });
-    internals._pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
+    internals.commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers: vi.fn<CommandHandlerComponent['registerCommandHandlers']>() });
+    internals.pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
 
     // Hold the settings load open: since obsidian-dev-utils 90 a child loads as it is added, so without the await the components below would be wired from the default settings while this load is still in flight.
     const pluginSettingsComponent = new ComponentEx();
