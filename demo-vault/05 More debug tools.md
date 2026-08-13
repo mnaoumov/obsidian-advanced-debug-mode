@@ -9,6 +9,8 @@ Obsidian's desktop app has DevTools built in; the mobile app does not, which mak
 - Run **Advanced Debug Mode: Toggle DevTools button** from the command palette to show or hide the button.
 - On desktop this is unnecessary (`Ctrl` + `Shift` + `I` already opens DevTools), so the button is aimed at mobile.
 
+![The DevTools button floating over the mobile app](<./_assets/images/devtools.jpg>)
+
 ## Debug namespaces
 
 Many plugins - and `obsidian-dev-utils` itself - use the [`debug`](https://github.com/debug-js/debug) library to emit `console.debug` messages that are hidden unless their namespace is enabled. Advanced Debug Mode adds a UI for managing those namespaces so you can switch specific channels of debug output on and off without editing `localStorage` by hand.

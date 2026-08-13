@@ -4,6 +4,8 @@ This is the headline feature. When an error is thrown after it has passed throug
 
 Advanced Debug Mode stitches those boundaries back together, so the stack trace spans the whole call chain.
 
+![A long stack trace, with the frames that would otherwise be lost](<./_assets/images/long-stack-traces.png>)
+
 ## Try it
 
 1. Make sure DevTools is open (`Ctrl`/`Cmd` + `Shift` + `I`) and switch to the **Console** tab.

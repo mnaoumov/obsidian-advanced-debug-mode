@@ -5,271 +5,45 @@
 [![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-advanced-debug-mode/total)](https://github.com/mnaoumov/obsidian-advanced-debug-mode/releases)
 [![Coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/mnaoumov/obsidian-advanced-debug-mode)
 
-This is a plugin for [Obsidian](https://obsidian.md/) that enhances Obsidian debug mode.
+An error thrown inside a callback or an `await` arrives in the console with most of its stack already
+gone: you get the frame that threw and almost nothing about who called it. Debugging a plugin in
+[Obsidian](https://obsidian.md/) then means guessing, or littering the code with logging until the path
+becomes obvious.
 
-## Features
-
-### Obsidian Debug mode
-
-The plugin adds an easy way to switch Obsidian debug mode on/off. When active, inline source maps will not be stripped from loaded plugins.
-
-### Long stack traces
-
-Error stack traces are usually very limited and stack frames for function like `setTimeout` or `addEventListener` are usually not included, so sometimes it's difficult to find the root cause of the error.
-
-The plugin tries to preserve long stack traces as much as possible.
-
-![Long stack traces](images/long-stack-traces.png)
-
-```js
-function foo1() {
-  setTimeout(foo2, 100);
-}
-
-function foo2() {
-  const intervalId = setInterval(foo3, 100);
-  setTimeout(() => {
-    clearInterval(intervalId);
-  }, 150);
-}
-
-function foo3() {
-  queueMicrotask(foo4);
-}
-
-function foo4() {
-  requestAnimationFrame(foo5);
-}
-
-function foo5() {
-  process.nextTick(foo6);
-}
-
-function foo6() {
-  setImmediate(foo7);
-}
-
-function foo7() {
-  Promise.resolve().then(foo8);
-}
-
-function foo8() {
-  Promise.reject(new Error('Error from Promise')).catch(foo9);
-}
-
-function foo9() {
-  Promise.resolve().finally(foo10);
-}
-
-function foo10() {
-  const div = createDiv();
-  div.addEventListener('click', foo11);
-  div.click();
-}
-
-function foo11() {
-  throw new Error('Error from foo11');
-}
-
-foo1();
-```
-
-Without the plugin you get the error in the console
-
-```text
-Uncaught Error: Error from foo11
-    at HTMLDivElement.foo11 (<anonymous>:47:9)
-    at foo10 (<anonymous>:43:7)
-    at <anonymous>
-```
-
-With the plugin you get
-
-```text
-Uncaught Error: Error from foo11
-    at HTMLDivElement.foo11 (<anonymous>:47:9)
-    at foo10 (<anonymous>:43:7)
-    at <anonymous>
-    at --- addEventListener --- (0)
-    at foo10 (<anonymous>:42:7)
-    at --- Promise.finally --- (0)
-    at foo9 (<anonymous>:37:28)
-    at --- Promise.catch --- (0)
-    at foo8 (<anonymous>:33:56)
-    at --- Promise.then --- (0)
-    at Immediate.foo7 (<anonymous>:29:21)
-    at --- setImmediate --- (0)
-    at foo6 (<anonymous>:25:3)
-    at --- process.nextTick --- (0)
-    at foo5 (<anonymous>:21:11)
-    at --- requestAnimationFrame --- (0)
-    at foo4 (<anonymous>:17:3)
-    at --- queueMicrotask --- (0)
-    at foo3 (<anonymous>:13:3)
-    at --- setInterval --- (0)
-    at foo2 (<anonymous>:6:22)
-    at --- setTimeout --- (0)
-    at foo1 (<anonymous>:2:3)
-    at <anonymous>:50:1
-```
-
-#### Async long stack traces
-
-Async long stack traces are the traces for async functions.
-
-```js
-async function foo() {
-  await bar();
-}
-```
-
-> [!WARNING]
->
-> The plugin adds async long stack traces only on desktop. Adding it to mobile is impossible due to the current JavaScript Engine limitations.
->
-> Async long stack traces might contain some duplicates.
->
-> When async long stack traces are enabled, the autocompletion in DevTools console stops working. It seems to be a bug in Electron.
-
-![Async long stack traces](images/async-long-stack-traces.png)
-
-```js
-function foo1() {
-  setTimeout(foo2, 100);
-}
-
-function foo2() {
-  const intervalId = setInterval(foo3, 100);
-  setTimeout(() => {
-    clearInterval(intervalId);
-  }, 150);
-}
-
-function foo3() {
-  queueMicrotask(foo4);
-}
-
-function foo4() {
-  requestAnimationFrame(foo5);
-}
-
-function foo5() {
-  process.nextTick(foo6);
-}
-
-function foo6() {
-  setImmediate(foo7);
-}
-
-function foo7() {
-  Promise.resolve().then(foo8);
-}
-
-function foo8() {
-  Promise.reject(new Error('Error from Promise')).catch(foo9);
-}
-
-function foo9() {
-  Promise.resolve().finally(foo10);
-}
-
-function foo10() {
-  const div = createDiv();
-  div.addEventListener('click', foo11);
-  div.click();
-}
-
-function foo11() {
-  barAsync1();
-}
-
-async function barAsync1() {
-  await sleep(50);
-  await barAsync2();
-}
-
-async function barAsync2() {
-  await sleep(50);
-  throw new Error('Error from barAsync2');
-}
-
-foo1();
-```
-
-Without the plugin you get the error in the console
-
-```text
-Uncaught (in promise) Error: Error from barAsync2
-    at barAsync2 (<anonymous>:58:9)
-    at async barAsync1 (<anonymous>:52:3)
-```
-
-With the plugin you get
-
-```text
-Uncaught (in promise) Error: Error from barAsync2
-    at barAsync2 (<anonymous>:58:9)
-    at async barAsync1 (<anonymous>:52:3)
-    at --- async --- (0)
-    at barAsync2 (<anonymous>:57:9)
-    at barAsync1 (<anonymous>:52:9)
-    at --- async --- (0)
-    at enhance.js:1:13289
-    at --- async --- (0)
-    at barAsync1 (<anonymous>:51:9)
-    at HTMLDivElement.foo11 (<anonymous>:47:3)
-    at foo10 (<anonymous>:43:7)
-    at <anonymous>
-    at --- addEventListener --- (0)
-    at foo10 (<anonymous>:42:7)
-    at --- Promise.finally --- (0)
-    at foo9 (<anonymous>:37:28)
-    at --- Promise.catch --- (0)
-    at foo8 (<anonymous>:33:56)
-    at --- Promise.then --- (0)
-    at Immediate.foo7 (<anonymous>:29:21)
-    at --- setImmediate --- (0)
-    at foo6 (<anonymous>:25:3)
-    at --- process.nextTick --- (0)
-    at foo5 (<anonymous>:21:11)
-    at --- requestAnimationFrame --- (0)
-    at foo4 (<anonymous>:17:3)
-    at --- queueMicrotask --- (0)
-    at foo3 (<anonymous>:13:3)
-    at --- setInterval --- (0)
-    at foo2 (<anonymous>:6:22)
-    at --- setTimeout --- (0)
-    at foo1 (<anonymous>:2:3)
-    at <anonymous>:61:1
-```
-
-### DevTools for mobile app
-
-The plugin adds DevTools for the mobile app. This helps to debug the plugins without connecting mobile to the desktop.
-
-![DevTools](images/devtools.jpg)
-
-### Debug namespaces management
-
-Some plugins use [debug](https://github.com/debug-js/debug) library to conditionally show/hide `console.debug` messages.
-
-The plugin adds an ability to manage those debug namespaces from the UI.
-
-For more details, refer to the [documentation](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/).
-
-### Timeout long running tasks
-
-There are some default timeouts for long running tasks. Sometimes those timeouts are being hit while you are debugging some code and staying on the breakpoint for too long.
-
-The plugin allows to temporarily disable those timeouts to keep debugging.
+This plugin restores those frames. It keeps long stack traces across callback and `async` boundaries,
+turns off the timeouts that fire while you sit on a breakpoint, brings DevTools to the mobile app, and
+gives the `debug` namespaces a UI instead of hand-edited `localStorage`.
 
 ## Demo vault
 
-A demo vault with usage examples ships with every release. You can access it via any of the following:
+**The documentation is a demo vault.** Every feature has a note that explains what it does and why you
+would want it, with buttons that throw real errors so you can watch the traces yourself.
+
+**[Start reading here](<./demo-vault/00 Start.md>)** — it is plain markdown, so it works on GitHub with
+nothing installed.
+
+A copy of the vault ships with every release. You can access it via any of the following:
 
 1. Running the **Advanced Debug Mode: Open demo vault** command.
 2. Downloading `advanced-debug-mode-demo-vault-<version>.zip` (`<version>` is the release version) from the [Releases](https://github.com/mnaoumov/obsidian-advanced-debug-mode/releases).
 3. Browsing its source in [`demo-vault/`](./demo-vault/README.md) in this repository.
+
+## What it does
+
+- **Obsidian's own debug mode**, toggled from a command instead of the console.
+  [01 Debug mode](<./demo-vault/01 Debug mode.md>)
+- **Long stack traces** — the frames behind a callback boundary, kept rather than discarded.
+  [02 Long stack traces](<./demo-vault/02 Long stack traces.md>)
+- **Async long stack traces** — the same across `await`, opt-in because it is desktop-only and costs
+  DevTools console autocompletion while enabled.
+  [03 Async long stack traces](<./demo-vault/03 Async long stack traces.md>)
+- **Timeouts that do not fire while you are on a breakpoint**, so a slow debugging session does not
+  trip Obsidian's own long-running-task limits.
+  [04 Long running tasks](<./demo-vault/04 Long running tasks.md>)
+- **DevTools on mobile**, where the app has none, plus a UI for the `debug` library's namespaces.
+  [05 More debug tools](<./demo-vault/05 More debug tools.md>)
+- **Every setting**, by the key it is stored under.
+  [06 Settings](<./demo-vault/06 Settings.md>)
 
 ## Installation
 
@@ -282,6 +56,29 @@ To install the latest beta release of this plugin (regardless if it is available
 1. Ensure you have the [BRAT plugin](https://obsidian.md/plugins?id=obsidian42-brat) installed and enabled.
 2. Click [Install via BRAT](https://intradeus.github.io/http-protocol-redirector?r=obsidian://brat?plugin=https://github.com/mnaoumov/obsidian-advanced-debug-mode).
 3. An Obsidian pop-up window should appear. In the window, click the `Add plugin` button once and wait a few seconds for the plugin to install.
+
+## Debugging
+
+By default, debug messages for this plugin are hidden.
+
+To show them, run the following command:
+
+```js
+window.DEBUG.enable('advanced-debug-mode');
+```
+
+For more details, refer to the [documentation](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/).
+
+Managing those namespaces is itself one of this plugin's features, so you can do the same thing from
+its settings tab — see [05 More debug tools](<./demo-vault/05 More debug tools.md>).
+
+## Changelog
+
+All notable changes to this project will be documented in the [CHANGELOG](./CHANGELOG.md).
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING](./CONTRIBUTING.md) to get set up.
 
 ## Support
 
