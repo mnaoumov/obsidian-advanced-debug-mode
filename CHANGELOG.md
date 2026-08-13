@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.10.4
+
+- docs: describe debugging the way this plugin actually does it
+
 ## 1.10.3
 
 - docs: make the demo vault the documentation, in the standard layout
