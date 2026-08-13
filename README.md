@@ -59,18 +59,20 @@ To install the latest beta release of this plugin (regardless if it is available
 
 ## Debugging
 
-By default, debug messages for this plugin are hidden.
+Every other plugin documents a console command here. This one does not need to: **turning debug
+namespaces on and off is what it does**. Open `Settings -> Community plugins -> Advanced Debug Mode`,
+find the debug-namespaces section, and switch on `advanced-debug-mode` — or any other plugin's
+namespace — without touching the console or `localStorage`. See
+[05 More debug tools](<./demo-vault/05 More debug tools.md>).
 
-To show them, run the following command:
+The console form still works, and is the one to use if this plugin is not loaded yet, which is exactly
+when you would need it:
 
 ```js
 window.DEBUG.enable('advanced-debug-mode');
 ```
 
 For more details, refer to the [documentation](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/).
-
-Managing those namespaces is itself one of this plugin's features, so you can do the same thing from
-its settings tab — see [05 More debug tools](<./demo-vault/05 More debug tools.md>).
 
 ## Changelog
 
