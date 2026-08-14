@@ -3,8 +3,8 @@
 [02 Long stack traces](<./02 Long stack traces.md>) covers errors routed through callback-style async boundaries. Real code also uses `async`/`await`, and an error thrown inside an awaited function loses the callers that awaited it just the same:
 
 ```js
-async function foo() {
-  await bar();
+async function alpha() {
+  await bravo();
 }
 ```
 
