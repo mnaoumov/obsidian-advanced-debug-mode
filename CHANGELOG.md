@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.10.6
+
+- docs(demo-vault): finish the placeholder rename that 1.10.5 missed
+
 ## 1.10.5
 
 - docs(demo-vault): use NATO placeholders instead of foo and bar
