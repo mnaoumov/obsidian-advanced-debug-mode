@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.10.5
+
+- docs(demo-vault): use NATO placeholders instead of foo and bar
+
 ## 1.10.4
 
 - docs: describe debugging the way this plugin actually does it
