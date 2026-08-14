@@ -9,63 +9,63 @@ Advanced Debug Mode stitches those boundaries back together, so the stack trace 
 ## Try it
 
 1. Make sure DevTools is open (`Ctrl`/`Cmd` + `Shift` + `I`) and switch to the **Console** tab.
-2. Click the **Run** button below. It deliberately throws `Error from foo11` after routing through nine different async hops.
+2. Click the **Run** button below. It deliberately throws `Error from alpha11` after routing through nine different async hops.
 3. Read the stack trace that appears in the console.
 
 ```code-button
 ---
 caption: Throw an error through async boundaries
 ---
-function foo1() {
-  setTimeout(foo2, 100);
+function alpha1() {
+  setTimeout(alpha2, 100);
 }
 
-function foo2() {
-  const intervalId = setInterval(foo3, 100);
+function alpha2() {
+  const intervalId = setInterval(alpha3, 100);
   setTimeout(() => {
     clearInterval(intervalId);
   }, 150);
 }
 
-function foo3() {
-  queueMicrotask(foo4);
+function alpha3() {
+  queueMicrotask(alpha4);
 }
 
-function foo4() {
-  requestAnimationFrame(foo5);
+function alpha4() {
+  requestAnimationFrame(alpha5);
 }
 
-function foo5() {
-  process.nextTick(foo6);
+function alpha5() {
+  process.nextTick(alpha6);
 }
 
-function foo6() {
-  setImmediate(foo7);
+function alpha6() {
+  setImmediate(alpha7);
 }
 
-function foo7() {
-  Promise.resolve().then(foo8);
+function alpha7() {
+  Promise.resolve().then(alpha8);
 }
 
-function foo8() {
-  Promise.reject(new Error('Error from Promise')).catch(foo9);
+function alpha8() {
+  Promise.reject(new Error('Error from Promise')).catch(alpha9);
 }
 
-function foo9() {
-  Promise.resolve().finally(foo10);
+function alpha9() {
+  Promise.resolve().finally(alpha10);
 }
 
-function foo10() {
+function alpha10() {
   const div = createDiv();
-  div.addEventListener('click', foo11);
+  div.addEventListener('click', alpha11);
   div.click();
 }
 
-function foo11() {
-  throw new Error('Error from foo11');
+function alpha11() {
+  throw new Error('Error from alpha11');
 }
 
-foo1();
+alpha1();
 ```
 
 ## What to look for
@@ -73,21 +73,21 @@ foo1();
 **Without** the plugin the console shows only the tail of the trace:
 
 ```text
-Uncaught Error: Error from foo11
-    at HTMLDivElement.foo11 (<anonymous>)
-    at foo10 (<anonymous>)
+Uncaught Error: Error from alpha11
+    at HTMLDivElement.alpha11 (<anonymous>)
+    at alpha10 (<anonymous>)
 ```
 
-**With** the plugin enabled, each async hop is labelled and the full chain back to `foo1` is preserved:
+**With** the plugin enabled, each async hop is labelled and the full chain back to `alpha1` is preserved:
 
 ```text
-Uncaught Error: Error from foo11
-    at HTMLDivElement.foo11 (<anonymous>)
-    at foo10 (<anonymous>)
+Uncaught Error: Error from alpha11
+    at HTMLDivElement.alpha11 (<anonymous>)
+    at alpha10 (<anonymous>)
     at --- addEventListener --- (0)
     ...
     at --- setTimeout --- (0)
-    at foo1 (<anonymous>)
+    at alpha1 (<anonymous>)
 ```
 
 ## Related settings
