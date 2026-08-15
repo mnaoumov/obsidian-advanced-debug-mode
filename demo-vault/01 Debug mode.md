@@ -6,11 +6,33 @@ Advanced Debug Mode gives you a one-click switch for it.
 
 ## How to turn it on
 
-1. Open the command palette (`Ctrl`/`Cmd` + `P`).
-2. Run **Advanced Debug Mode: Open settings** (or open **Settings -> Community plugins -> Advanced Debug Mode**).
-3. Toggle **Debug mode** on.
+```code-button
+---
+caption: Turn debug mode on
+---
+require('/demoSetup.ts').setDebugMode(app, true);
+```
+
+Manual equivalent: run **Advanced Debug Mode: Open settings** (or open **Settings -> Community plugins -> Advanced Debug Mode**) and toggle **Debug mode** on.
 
 Obsidian reloads the plugins so the source maps take effect.
+
+Everything in this vault reads differently depending on whether debug mode is on, and the toggle
+reloads plugins - so check rather than flip:
+
+```code-button
+---
+caption: Is debug mode on?
+---
+require('/demoSetup.ts').reportDebugMode(app);
+```
+
+```code-button
+---
+caption: Turn debug mode off
+---
+require('/demoSetup.ts').setDebugMode(app, false);
+```
 
 ## How to see the difference
 

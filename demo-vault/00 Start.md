@@ -6,7 +6,7 @@ Welcome to the [Advanced Debug Mode](https://github.com/mnaoumov/obsidian-advanc
 
 > [!TIP] Interactive buttons
 >
-> Some notes have **Run** buttons, powered by [`CodeScript Toolkit`](https://github.com/mnaoumov/obsidian-codescript-toolkit/). Every button here is honest about what it does - most just throw an error on purpose so you can read the resulting stack trace in DevTools.
+> Every note has buttons, powered by [`CodeScript Toolkit`](https://github.com/mnaoumov/obsidian-codescript-toolkit/), and each one says what it does by hand. They come in two kinds: some **throw an error on purpose** so you can read the resulting stack trace in DevTools, and the rest **flip the setting** a walkthrough needs - always with a counterpart that puts it back, because several of these settings are meant to be on only while you are debugging.
 
 ## Features
 

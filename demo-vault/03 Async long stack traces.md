@@ -12,8 +12,14 @@ Advanced Debug Mode can preserve those `async` frames too, but it is a separate,
 
 ## Turn it on
 
-1. Open **Settings -> Community plugins -> Advanced Debug Mode**.
-2. Toggle **Include async long stack traces** on. This flips the `shouldIncludeAsyncLongStackTraces` setting.
+```code-button
+---
+caption: Include async long stack traces
+---
+await require('/demoSetup.ts').changeSettings(app, { shouldIncludeAsyncLongStackTraces: true });
+```
+
+Manual equivalent: open **Settings -> Community plugins -> Advanced Debug Mode** and toggle **Include async long stack traces** on. This flips the `shouldIncludeAsyncLongStackTraces` setting.
 
 ![An async stack trace keeping its `--- async ---` hops](<./_assets/images/async-long-stack-traces.png>)
 
@@ -47,4 +53,13 @@ With the setting on, the trace keeps the `--- async ---` hops back through `barA
 > - The trace may contain some duplicate frames.
 > - While the setting is on, autocompletion in the DevTools console stops working (an Electron bug).
 
-Turn it off again when you are done to get console autocompletion back.
+Turn it off again when you are done to get console autocompletion back:
+
+```code-button
+---
+caption: Stop including async long stack traces (the default)
+---
+await require('/demoSetup.ts').changeSettings(app, { shouldIncludeAsyncLongStackTraces: false });
+```
+
+Manual equivalent: toggle **Include async long stack traces** back off.

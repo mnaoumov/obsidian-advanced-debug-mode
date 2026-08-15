@@ -9,6 +9,15 @@ Obsidian's desktop app has DevTools built in; the mobile app does not, which mak
 - Run **Advanced Debug Mode: Toggle DevTools button** from the command palette to show or hide the button.
 - On desktop this is unnecessary (`Ctrl` + `Shift` + `I` already opens DevTools), so the button is aimed at mobile.
 
+```code-button
+---
+caption: Toggle the DevTools button
+---
+require('/demoSetup.ts').toggleDevToolsButton(app);
+```
+
+Manual equivalent: run **Advanced Debug Mode: Toggle DevTools button** from the command palette. Press it twice to put things back.
+
 ![The DevTools button floating over the mobile app](<./_assets/images/devtools.jpg>)
 
 ## Debug namespaces
