@@ -15,8 +15,29 @@ Both live in **Settings -> Community plugins -> Advanced Debug Mode** and are do
 
 ## Typical workflow
 
-1. Open **Settings -> Community plugins -> Advanced Debug Mode** and turn **Timeout long running tasks** off.
+1. Turn the timeouts off:
+
+   ```code-button
+   ---
+   caption: Let long running tasks run (start debugging)
+   ---
+   await require('/demoSetup.ts').changeSettings(app, { shouldTimeoutLongRunningTasks: false });
+   ```
+
+   Manual equivalent: open **Settings -> Community plugins -> Advanced Debug Mode** and turn **Timeout long running tasks** off.
+
 2. Set your breakpoints in DevTools and reproduce the slow operation - it will now wait on your breakpoints instead of being aborted.
-3. When you are done, turn the setting back on so Obsidian's normal safety timeouts are restored.
+3. When you are done, turn the setting back on so Obsidian's normal safety timeouts are restored:
+
+   ```code-button
+   ---
+   caption: Restore the timeouts (stop debugging)
+   ---
+   await require('/demoSetup.ts').changeSettings(app, { shouldTimeoutLongRunningTasks: true });
+   ```
+
+   Manual equivalent: turn **Timeout long running tasks** back on.
+
+This is the one pair worth binding to muscle memory - the warning below is about forgetting step 3.
 
 Leaving timeouts disabled outside a debugging session is not recommended - a genuinely stuck task would then hang instead of recovering.
