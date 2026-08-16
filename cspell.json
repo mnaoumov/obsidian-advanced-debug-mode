@@ -19,7 +19,9 @@
     "offref",
     "Promisable",
     "tsbuildinfo",
-    "unnumber"
+    "unnumber",
+    "unvalidated",
+    "wdio"
   ],
   "ignoreWords": [],
   "import": [],
