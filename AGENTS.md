@@ -8,22 +8,25 @@ Advanced Debug Mode is an Obsidian plugin that enhances the debugging experience
 
 ## Commands
 
-| Task              | Command                    |
-|-------------------|----------------------------|
-| TypeScript check  | `npm run build:compile`    |
-| Build             | `npm run build`            |
-| Dev (watch)       | `npm run dev`              |
-| Lint              | `npm run lint`             |
-| Lint (fix)        | `npm run lint:fix`         |
-| Format            | `npm run format`           |
-| Format (check)    | `npm run format:check`     |
-| Spellcheck        | `npm run spellcheck`       |
-| Markdown lint     | `npm run lint:md`          |
-| Markdown lint fix | `npm run lint:md:fix`      |
-| Unit tests        | `npm test`                 |
-| Coverage          | `npm run test:coverage`    |
-| Integration tests | `npm run test:integration` |
-| Commit (wizard)   | `npm run commit`           |
+| Task                        | Command                                 |
+|-----------------------------|-----------------------------------------|
+| TypeScript check            | `npm run build:compile`                 |
+| Build                       | `npm run build`                         |
+| Dev (watch)                 | `npm run dev`                           |
+| Lint                        | `npm run lint`                          |
+| Lint (fix)                  | `npm run lint:fix`                      |
+| Format                      | `npm run format`                        |
+| Format (check)              | `npm run format:check`                  |
+| Spellcheck                  | `npm run spellcheck`                    |
+| Markdown lint               | `npm run lint:md`                       |
+| Markdown lint fix           | `npm run lint:md:fix`                   |
+| Unit tests                  | `npm test`                              |
+| Coverage                    | `npm run test:coverage`                 |
+| Integration tests           | `npm run test:integration`              |
+| Store screenshots           | `npm run capture:screenshots`           |
+| Store screenshots (desktop) | `npm run capture:screenshots:desktop`   |
+| Store screenshots (Android) | `npm run capture:screenshots:android`   |
+| Commit (wizard)             | `npm run commit`                        |
 
 ## Architecture
 

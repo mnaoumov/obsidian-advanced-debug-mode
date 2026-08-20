@@ -16,6 +16,8 @@
     "build:compile": "jiti scripts/build-compile.ts",
     "build:compile:typescript": "jiti scripts/build-compile-typescript.ts",
     "capture:screenshots": "jiti scripts/capture-screenshots.ts",
+    "capture:screenshots:android": "jiti scripts/capture-screenshots-android.ts",
+    "capture:screenshots:desktop": "jiti scripts/capture-screenshots-desktop.ts",
     "commit": "jiti scripts/commit.ts",
     "dev": "jiti scripts/dev.ts",
     "find-overexposed": "jiti scripts/find-overexposed.ts",
