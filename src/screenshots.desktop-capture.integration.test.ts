@@ -52,6 +52,13 @@ const HEIGHT_IN_PIXELS = 800;
 const PLUGIN_ID = 'advanced-debug-mode';
 
 /**
+ * The command the last shot is about: the one that turns the dev tools on.
+ * Typed into the palette verbatim, so the row the picture highlights is the row
+ * the caption means.
+ */
+const TOGGLE_COMMAND_NAME = 'Toggle dev tools button';
+
+/**
  * How many frames of the chain a trace has to show before the shot may claim the
  * frames were kept. The chain has six named hops; without the plugin only the
  * throwing one survives.
@@ -137,12 +144,107 @@ describe('desktop store screenshots', () => {
     await shoot(4, 'Real dev tools, inside the app itself');
   });
 
-  it('5 - what it puts on the palette', async () => {
-    const commandNames = await openCommandPalette('Advanced Debug Mode');
-    expect(commandNames.join('\n')).toContain('Toggle dev tools button');
+  it('5 - the command that turns it on', async () => {
+    // The console from shot 4 covers four fifths of the window, and a palette
+    // Photographed through it is one clipped row of a command nobody asked about.
+    // The subject here is Obsidian itself, so the console goes away first.
+    await closeConsole();
+    const palette = await openCommandPalette(TOGGLE_COMMAND_NAME);
+    expect(palette.visible.join('\n')).toContain(TOGGLE_COMMAND_NAME);
+    expect(palette.selected).toContain(TOGGLE_COMMAND_NAME);
     await shoot(5, 'Turn it on from the command palette');
   });
 });
+
+/**
+ * Closes the in-page console and takes its floating button away with it.
+ *
+ * The panel is toggled off through the same entry button that opened it — POINTER
+ * events again, for the same reason — and the button is then hidden through the
+ * plugin's own command, which leaves the window in the state a reader is in
+ * BEFORE they run it. That is what the palette shot is a picture of.
+ */
+async function closeConsole(): Promise<void> {
+  await evalInObsidian({
+    async callback({ app, lib: { waitUntil }, pluginId }) {
+      const CLOSE_TIMEOUT_IN_MILLISECONDS = 15_000;
+      const SETTLE_DELAY_IN_MILLISECONDS = 1500;
+
+      function findConsoleRoot(): null | ShadowRoot {
+        const host = [...document.body.children].find((child) => Boolean(child.shadowRoot));
+        return host?.shadowRoot ?? null;
+      }
+
+      function findEntryButton(): HTMLElement | null {
+        const entryButton = findConsoleRoot()?.querySelector('.eruda-entry-btn');
+        return entryButton instanceof HTMLElement ? entryButton : null;
+      }
+
+      function isConsoleOpen(): boolean {
+        const panel = findConsoleRoot()?.querySelector('.eruda-dev-tools');
+        return (panel?.getBoundingClientRect().height ?? 0) > 0;
+      }
+
+      if (isConsoleOpen()) {
+        const entryButton = findEntryButton();
+        if (!entryButton) {
+          throw new TypeError('The dev tools button is gone, so the console cannot be closed.');
+        }
+
+        const rect = entryButton.getBoundingClientRect();
+        const eventInit = {
+          bubbles: true,
+          cancelable: true,
+          clientX: rect.left + rect.width / 2,
+          clientY: rect.top + rect.height / 2,
+          composed: true,
+          pointerId: 1,
+          pointerType: 'mouse'
+        };
+        entryButton.dispatchEvent(new PointerEvent('pointerdown', eventInit));
+        entryButton.dispatchEvent(new PointerEvent('pointerup', eventInit));
+        entryButton.dispatchEvent(new MouseEvent('click', eventInit));
+
+        await waitUntil({
+          message: 'the in-page console to close',
+          predicate: () => !isConsoleOpen(),
+          timeoutInMilliseconds: CLOSE_TIMEOUT_IN_MILLISECONDS
+        });
+      }
+
+      // The command toggles the BUTTON, not the panel, so it is only useful once
+      // The panel is already shut — otherwise it would leave a console on screen
+      // With no way back to it.
+      if (findEntryButton()?.isShown() ?? false) {
+        app.commands.executeCommandById(`${pluginId}:toggle-dev-tools-button`);
+      }
+
+      // The Elements shot leaves a DOM highlighter behind: a full-window canvas
+      // Over `body` plus the info tooltip that names it, which in a frame about
+      // The palette reads as a rendering fault. Closing the console does not
+      // Take it with it, because it is mounted on a SECOND shadow host of its
+      // Own (`.__chobitsu-hide__`) rather than inside the console's — hence the
+      // Sweep over every shadow host in the document rather than a look in one
+      // Of them.
+      for (const host of document.querySelectorAll('*')) {
+        const hostShadowRoot = host.shadowRoot;
+        if (!hostShadowRoot) {
+          continue;
+        }
+
+        for (const highlighter of hostShadowRoot.querySelectorAll('.luna-dom-highlighter')) {
+          if (highlighter.instanceOf(HTMLElement)) {
+            highlighter.hide();
+          }
+        }
+      }
+
+      await sleep(SETTLE_DELAY_IN_MILLISECONDS);
+    },
+    input: { pluginId: PLUGIN_ID },
+    vaultPath: vaultPath()
+  });
+}
 
 /**
  * Counts how many hops of the thrown chain the trace still names.
@@ -155,17 +257,42 @@ function countKeptFrames(trace: string): number {
 }
 
 /**
- * Opens the command palette and filters it to this plugin's commands.
+ * Opens the command palette, filters it, and reads back what is ON SCREEN.
+ *
+ * Deliberately the rendered rows rather than `app.commands.commands`: the
+ * registry answers the same whether the palette is on screen, empty, or buried
+ * under the console — which is how this shot once shipped with a clipped
+ * "Open settings" under a caption about turning the dev tools on.
  *
  * @param query - What to type into the palette.
- * @returns The names of the commands this plugin registers.
+ * @returns The suggestions the palette is showing, and the one it has selected.
  */
-async function openCommandPalette(query: string): Promise<string[]> {
+async function openCommandPalette(query: string): Promise<PaletteState> {
   return await evalInObsidian({
-    async callback({ app, lib: { waitUntil }, pluginId, query: text }) {
+    async callback({ app, lib: { waitUntil }, query: text }) {
       const PALETTE_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1200;
       const RESIZE_SETTLE_DELAY_IN_MILLISECONDS = 2000;
+
+      /**
+       * The suggestions a reader would see: rendered, and with a height, so a
+       * Row scrolled out of the list cannot stand in for one in frame.
+       *
+       * @returns Each visible suggestion's text.
+       */
+      function readVisibleItems(): string[] {
+        return [...document.querySelectorAll('.prompt-results .suggestion-item')]
+          .filter((item) => item.getBoundingClientRect().height > 0)
+          .map((item) => item.textContent.trim());
+      }
+
+      /**
+       * @returns The text of the highlighted suggestion, or an empty string.
+       */
+      function readSelectedItem(): string {
+        const selected = document.querySelector('.prompt-results .suggestion-item.is-selected');
+        return selected?.textContent.trim() ?? '';
+      }
 
       await sleep(RESIZE_SETTLE_DELAY_IN_MILLISECONDS);
 
@@ -187,13 +314,20 @@ async function openCommandPalette(query: string): Promise<string[]> {
       // Alone would leave every command in the vault on screen.
       input.dispatchEvent(new Event('input'));
 
+      await waitUntil({
+        message: 'the palette to filter down to the typed command',
+        predicate: () => readVisibleItems().some((item) => item.includes(text)),
+        timeoutInMilliseconds: PALETTE_TIMEOUT_IN_MILLISECONDS
+      });
+
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
-      return Object.values(app.commands.commands)
-        .filter((command) => command.id.startsWith(`${pluginId}:`))
-        .map((command) => command.name);
+      return {
+        selected: readSelectedItem(),
+        visible: readVisibleItems()
+      };
     },
-    input: { pluginId: PLUGIN_ID, query },
+    input: { query },
     vaultPath: vaultPath()
   });
 }
@@ -610,6 +744,21 @@ const HOP_NAMES = [
   'hopThroughInterval',
   'throwIt'
 ];
+
+/**
+ * What the command palette is showing, as opposed to what it could show.
+ */
+interface PaletteState {
+  /**
+   * The text of the highlighted suggestion — the command the shot is about.
+   */
+  readonly selected: string;
+
+  /**
+   * The text of every suggestion with a height on screen.
+   */
+  readonly visible: string[];
+}
 
 /**
  * Parameters for {@link setFeatures}.
