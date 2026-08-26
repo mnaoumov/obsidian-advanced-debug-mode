@@ -17,8 +17,7 @@ Manual equivalent: run **Advanced Debug Mode: Open settings** (or open **Setting
 
 Obsidian reloads the plugins so the source maps take effect.
 
-Everything in this vault reads differently depending on whether debug mode is on, and the toggle
-reloads plugins - so check rather than flip:
+Everything in this vault reads differently depending on whether debug mode is on, and the toggle reloads plugins - so check rather than flip:
 
 ```code-button
 ---

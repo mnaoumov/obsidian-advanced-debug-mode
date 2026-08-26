@@ -24,8 +24,7 @@ Change any of these and reproduce the matching scenario to watch the behavior up
 
 ## Try the trace settings against the Run button
 
-The quickest loop is: press a button here, then re-run the thrower in
-[02 Long stack traces](<./02 Long stack traces.md>) and read the console.
+The quickest loop is: press a button here, then re-run the thrower in [02 Long stack traces](<./02 Long stack traces.md>) and read the console.
 
 ```code-button
 ---

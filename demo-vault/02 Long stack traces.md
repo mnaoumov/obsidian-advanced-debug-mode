@@ -98,5 +98,4 @@ Uncaught Error: Error from alpha11
 
 See [06 Settings](<./06 Settings.md>) for all of them, and [03 Async long stack traces](<./03 Async long stack traces.md>) for the `async`/`await` variant.
 
-> [!NOTE]
-> `process.nextTick` and `setImmediate` are Node globals, so the button above works on desktop. The rest of the chain works on mobile too.
+> [!NOTE] `process.nextTick` and `setImmediate` are Node globals, so the button above works on desktop. The rest of the chain works on mobile too.

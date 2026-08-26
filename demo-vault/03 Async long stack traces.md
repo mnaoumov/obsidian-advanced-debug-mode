@@ -46,8 +46,7 @@ void barAsync1();
 
 With the setting on, the trace keeps the `--- async ---` hops back through `barAsync1`; with it off you see only `barAsync2`.
 
-> [!WARNING]
-> This is the reason it is opt-in:
+> [!WARNING] This is the reason it is opt-in:
 >
 > - Async long stack traces are added **only on desktop** - the mobile JavaScript engine cannot support them.
 > - The trace may contain some duplicate frames.
