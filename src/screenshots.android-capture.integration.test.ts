@@ -199,6 +199,8 @@ async function closeConsole(): Promise<void> {
           throw new TypeError('The dev tools button is gone, so the console cannot be closed.');
         }
 
+        // A permanent exception to the trusted-input convention: the trusted `clickElement` its desktop
+        // Twin now uses is built on `window.electron`, which does not exist on the phone.
         const rect = entryButton.getBoundingClientRect();
         const eventInit = {
           bubbles: true,
@@ -508,6 +510,8 @@ async function openConsole(): Promise<void> {
           throw new TypeError('The dev tools button never appeared.');
         }
 
+        // A permanent exception to the trusted-input convention: the trusted `clickElement` its desktop
+        // Twin now uses is built on `window.electron`, which does not exist on the phone.
         const rect = entryButton.getBoundingClientRect();
         const eventInit = {
           bubbles: true,

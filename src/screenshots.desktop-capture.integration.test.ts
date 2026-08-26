@@ -159,14 +159,14 @@ describe('desktop store screenshots', () => {
 /**
  * Closes the in-page console and takes its floating button away with it.
  *
- * The panel is toggled off through the same entry button that opened it — POINTER
- * events again, for the same reason — and the button is then hidden through the
- * plugin's own command, which leaves the window in the state a reader is in
+ * The panel is toggled off through the same entry button that opened it — one
+ * trusted click again, for the same reason — and the button is then hidden through
+ * the plugin's own command, which leaves the window in the state a reader is in
  * BEFORE they run it. That is what the palette shot is a picture of.
  */
 async function closeConsole(): Promise<void> {
   await evalInObsidian({
-    async callback({ app, lib: { waitUntil }, pluginId }) {
+    async callback({ app, lib: { clickElement, waitUntil }, pluginId }) {
       const CLOSE_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
@@ -191,19 +191,9 @@ async function closeConsole(): Promise<void> {
           throw new TypeError('The dev tools button is gone, so the console cannot be closed.');
         }
 
-        const rect = entryButton.getBoundingClientRect();
-        const eventInit = {
-          bubbles: true,
-          cancelable: true,
-          clientX: rect.left + rect.width / 2,
-          clientY: rect.top + rect.height / 2,
-          composed: true,
-          pointerId: 1,
-          pointerType: 'mouse'
-        };
-        entryButton.dispatchEvent(new PointerEvent('pointerdown', eventInit));
-        entryButton.dispatchEvent(new PointerEvent('pointerup', eventInit));
-        entryButton.dispatchEvent(new MouseEvent('click', eventInit));
+        // One trusted click, from which Chromium synthesizes the whole pointerdown -> pointerup -> click
+        // Sequence this used to hand-build — and eruda's own handlers see `isTrusted === true`.
+        clickElement({ element: entryButton });
 
         await waitUntil({
           message: 'the in-page console to close',
@@ -335,13 +325,14 @@ async function openCommandPalette(query: string): Promise<PaletteState> {
 /**
  * Opens the in-page console the plugin ships.
  *
- * The entry button needs POINTER events: a bare `click()` leaves it shut, because
- * the console's own button listens for `pointerdown`/`pointerup` rather than a
- * synthesized click.
+ * The entry button needs real POINTER events: a bare `click()` leaves it shut,
+ * because the console's own button listens for `pointerdown`/`pointerup` rather
+ * than a synthesized click. A trusted click supplies the whole sequence, so
+ * Chromium produces them and eruda sees `isTrusted === true`.
  */
 async function openConsole(): Promise<void> {
   await evalInObsidian({
-    async callback({ app, lib: { waitUntil }, pluginId }) {
+    async callback({ app, lib: { clickElement, waitUntil }, pluginId }) {
       const OPEN_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
       const RESIZE_SETTLE_DELAY_IN_MILLISECONDS = 2000;
@@ -367,19 +358,9 @@ async function openConsole(): Promise<void> {
           throw new TypeError('The dev tools button never appeared.');
         }
 
-        const rect = entryButton.getBoundingClientRect();
-        const eventInit = {
-          bubbles: true,
-          cancelable: true,
-          clientX: rect.left + rect.width / 2,
-          clientY: rect.top + rect.height / 2,
-          composed: true,
-          pointerId: 1,
-          pointerType: 'mouse'
-        };
-        entryButton.dispatchEvent(new PointerEvent('pointerdown', eventInit));
-        entryButton.dispatchEvent(new PointerEvent('pointerup', eventInit));
-        entryButton.dispatchEvent(new MouseEvent('click', eventInit));
+        // One trusted click, from which Chromium synthesizes the whole pointerdown -> pointerup -> click
+        // Sequence this used to hand-build — and eruda's own handlers see `isTrusted === true`.
+        clickElement({ element: entryButton });
 
         await waitUntil({
           message: 'the in-page console to open',
