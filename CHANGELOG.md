@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 1.10.7
+
+- docs(demo-vault): unwrap the notes so Obsidian stops rendering a break per line
+- docs(readme): render the same in Obsidian's plugin page as on GitHub
+- chore: update libs
+- chore: update obsidian-dev-utils to 94.6.1
+- chore: update obsidian-dev-utils to 94.6.0
+- fix: override deepmerge-ts to clear GHSA-ggr8-5vv4-36mx
+- test: gate the demo vault by clicking every code button
+- fix(screenshots): photograph the palette row the caption names
+- feat(scripts): capture each platform's screenshots on its own
+- chore: teach cspell the advisory wording
+- chore: update libs
+- docs(demo-vault): give the demo vault its code buttons
+- docs: add store screenshots and surface them in the README
+
 ## 1.10.6
 
 - docs(demo-vault): finish the placeholder rename that 1.10.5 missed
