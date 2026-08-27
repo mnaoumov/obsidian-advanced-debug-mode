@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.10.8
+
+- test(advanced-debug-mode): open the in-page console with a trusted click instead of dispatchEvent
+
 ## 1.10.7
 
 - docs(demo-vault): unwrap the notes so Obsidian stops rendering a break per line
