@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.10.9
+
+- chore(deps): sweep caret-ranged dependencies to latest
+- fix(deps): move to obsidian-integration-testing 11 and obsidian-dev-utils 96.5.2
+- fix(deps): drop the brace-expansion file: override that breaks a clean install
+- docs: point plugin-directory links at community.obsidian.md
+
 ## 1.10.8
 
 - test(advanced-debug-mode): open the in-page console with a trusted click instead of dispatchEvent
