@@ -36,7 +36,8 @@ Advanced Debug Mode is an Obsidian plugin that enhances the debugging experience
   - `plugin.ts` — `Plugin extends PluginBase`; `onloadImpl` wires up all child components (settings, settings tab, DevTools, command handler, long-running tasks, error stack-trace limit, long stack traces)
   - `plugin-settings.ts` — `PluginSettings` data class with the plugin's setting defaults
   - `plugin-settings-component.ts` — `PluginSettingsComponentBase` subclass that loads/saves settings
-  - `plugin-settings-tab.ts` — settings UI tab (`displayLegacy`) for debug mode, mobile emulation, debug namespaces, long/async stack traces, stack-trace limit, and task timeouts
+  - `plugin-settings-tab.ts` — settings UI tab (declarative `getSettingDefinitionItems()`, per G101) for debug mode, mobile emulation, debug namespaces, long/async stack traces, stack-trace limit, task timeouts, and the shared-abort button
+  - `abort-shared-operation.ts` — `abortSharedOperation`: fires `obsidian-dev-utils`' app-wide `ResettableAbortController` with a `SilentError` reason and reports that the abort was signalled
   - `debug-mode.ts` — `DebugMode`: read/toggle Obsidian's debug mode via `app.debugMode`
   - `emulate-mobile-mode.ts` — `EmulateMobileMode`: read/toggle desktop mobile-emulation via `app.emulateMobile`
   - `dev-tools-component.ts` — `DevToolsComponent`: initializes `eruda` DevTools (mobile) and toggles its entry button
@@ -45,6 +46,7 @@ Advanced Debug Mode is an Obsidian plugin that enhances the debugging experience
   - `multi-weak-map.ts` — `MultiWeakMap`: multi-key map mixing `Map`/`WeakMap` storage per key type
   - `types.ts` — shared generic-function types (`GenericFunctionWithOriginalFn`, etc.)
   - `command-handlers/toggle-dev-tools-button-command.ts` — `GlobalCommandHandler` to toggle the DevTools button
+  - `command-handlers/abort-shared-operation-command.ts` — `GlobalCommandHandler` firing the app-wide shared abort; the hotkey-bindable form of the console's `__obsidianDevUtils.sharedAbortController.value.abort()`
   - `long-stack-traces/long-stack-traces-component.ts` — cross-platform entry; lazy-loads the desktop component and reloads on settings change
   - `long-stack-traces/long-stack-traces-desktop-component.ts` — desktop core: patches `Error` (and child error classes), timers, microtasks, and `Promise` methods to inject long stack-trace frames
   - `long-stack-traces/async-long-stack-traces-desktop-component.ts` — `async_hooks`-based async stack-trace capture (desktop only)

@@ -7,6 +7,7 @@ import { PluginDataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin';
 import { PluginEventSourceImpl } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
+import { AbortSharedOperationCommandHandler } from './command-handlers/abort-shared-operation-command.ts';
 import { ToggleDevToolsButtonCommandHandler } from './command-handlers/toggle-dev-tools-button-command.ts';
 import { DebugMode } from './debug-mode.ts';
 import { DevToolsComponent } from './dev-tools-component.ts';
@@ -34,6 +35,7 @@ export class Plugin extends PluginBase {
       debugMode: new DebugMode(this.app),
       emulateMobileMode: new EmulateMobileMode(this.app),
       plugin: this,
+      pluginNoticeComponent: this.pluginNoticeComponent,
       pluginSettingsComponent
     });
     this.addChild(
@@ -51,6 +53,7 @@ export class Plugin extends PluginBase {
         settingTab: pluginSettingsTab
       }),
       new ToggleDevToolsButtonCommandHandler(devToolsComponent),
+      new AbortSharedOperationCommandHandler(this.pluginNoticeComponent),
       new OpenDemoVaultCommandHandler({
         app: this.app,
         pluginId: this.manifest.id,

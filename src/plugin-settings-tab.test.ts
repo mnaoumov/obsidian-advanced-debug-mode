@@ -1,5 +1,9 @@
-import type { SettingGroup } from 'obsidian';
+import type {
+  ButtonComponent,
+  SettingGroup
+} from 'obsidian';
 import type { DebugController } from 'obsidian-dev-utils/debug-controller';
+import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
@@ -10,7 +14,9 @@ import {
   TextAreaComponent,
   ToggleComponent
 } from 'obsidian';
+import { getSharedAbortController } from 'obsidian-dev-utils/abort-controller';
 import { waitForAllAsyncOperations } from 'obsidian-dev-utils/async';
+import { SilentError } from 'obsidian-dev-utils/error';
 import { castTo } from 'obsidian-dev-utils/object-utils';
 import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
@@ -38,6 +44,14 @@ beforeAll(() => {
   }
 });
 
+/**
+ * The mock `ButtonComponent`'s test-only click trigger. `onClick` REGISTERS a handler; only
+ * `simulateClick__` fires the one that was registered.
+ */
+interface ClickableButtonComponent {
+  simulateClick__(): void;
+}
+
 interface CreatePluginSettingsTabOverrides {
   readonly debugControllerOverrides?: Partial<DebugController>;
   readonly debugModeOverrides?: Partial<DebugMode>;
@@ -45,6 +59,7 @@ interface CreatePluginSettingsTabOverrides {
 }
 
 interface CreatePluginSettingsTabResult {
+  readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly pluginSettingsComponent: PluginSettingsComponent;
   readonly tab: PluginSettingsTab;
 }
@@ -93,15 +108,20 @@ function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): 
     ...overrides?.debugControllerOverrides
   };
 
+  const pluginNoticeComponent = strictProxy<PluginNoticeComponent>({
+    showNotice: vi.fn()
+  });
+
   const tab = new PluginSettingsTab({
     debugController,
     debugMode,
     emulateMobileMode,
     plugin,
+    pluginNoticeComponent,
     pluginSettingsComponent
   });
 
-  return { pluginSettingsComponent, tab };
+  return { pluginNoticeComponent, pluginSettingsComponent, tab };
 }
 
 /**
@@ -393,5 +413,41 @@ describe('PluginSettingsTab', () => {
     toggle?.onClick();
 
     expect(debugControllerMock.disable).toHaveBeenCalled();
+  });
+
+  it('should abort the shared operation when the abort button is clicked', () => {
+    const capturedButtons: ButtonComponent[] = [];
+    const originalAddButton = Setting.prototype.addButton;
+    const addButtonSpy = vi.spyOn(Setting.prototype, 'addButton').mockImplementation(
+      function mockAddButton(this: Setting, callback: (button: ButtonComponent) => void) {
+        const result = originalAddButton.call(this, (button: ButtonComponent) => {
+          capturedButtons.push(button);
+          callback(button);
+        });
+        return result;
+      }
+    );
+
+    const { pluginNoticeComponent, tab } = createPluginSettingsTab();
+    renderRows(tab);
+
+    addButtonSpy.mockRestore();
+
+    // The abort row is the only one that declares a button.
+    const button = capturedButtons[0];
+    expect(button).toBeDefined();
+
+    // Captured BEFORE the click: `ResettableAbortController` replaces its inner controller on abort, so
+    // Reading the signal afterwards yields the fresh one and would never look aborted.
+    const abortedSignal = getSharedAbortController().signal;
+    expect(abortedSignal.aborted).toBe(false);
+
+    castTo<ClickableButtonComponent>(button).simulateClick__();
+
+    expect(abortedSignal.aborted).toBe(true);
+    expect(abortedSignal.reason).toBeInstanceOf(SilentError);
+    // The replacement signal is fresh, so the next operation does not start already cancelled.
+    expect(getSharedAbortController().signal.aborted).toBe(false);
+    expect(pluginNoticeComponent.showNotice).toHaveBeenCalledOnce();
   });
 });

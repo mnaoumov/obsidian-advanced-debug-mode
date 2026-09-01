@@ -1,5 +1,6 @@
 import type { SettingDefinitionItem } from 'obsidian';
 import type { DebugController } from 'obsidian-dev-utils/debug-controller';
+import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
 import type { PluginSettingsTabBaseConstructorParams } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
 
 import { Platform } from 'obsidian';
@@ -11,10 +12,13 @@ import type { DebugMode } from './debug-mode.ts';
 import type { EmulateMobileMode } from './emulate-mobile-mode.ts';
 import type { PluginSettings } from './plugin-settings.ts';
 
+import { abortSharedOperation } from './abort-shared-operation.ts';
+
 interface PluginSettingsTabConstructorParams extends PluginSettingsTabBaseConstructorParams<PluginSettings> {
   readonly debugController: DebugController;
   readonly debugMode: DebugMode;
   readonly emulateMobileMode: EmulateMobileMode;
+  readonly pluginNoticeComponent: PluginNoticeComponent;
 }
 
 const OBSIDIAN_DEV_UTILS_TIMEOUT_NAMESPACE = '*:obsidian-dev-utils:Async:runWithTimeout:timeout';
@@ -23,12 +27,14 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   private readonly debugController: DebugController;
   private readonly debugMode: DebugMode;
   private readonly emulateMobileMode: EmulateMobileMode;
+  private readonly pluginNoticeComponent: PluginNoticeComponent;
 
   public constructor(params: PluginSettingsTabConstructorParams) {
     super(params);
     this.debugController = params.debugController;
     this.debugMode = params.debugMode;
     this.emulateMobileMode = params.emulateMobileMode;
+    this.pluginNoticeComponent = params.pluginNoticeComponent;
   }
 
   protected override getSettingDefinitionItems(): SettingDefinitionItem[] {
@@ -257,6 +263,30 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
                 // The row's value is derived from the debugger state rather than from the plugin settings,
                 // So the tab has to be re-rendered for it to pick the new value up.
                 this.refresh();
+              });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: createFragment((f) => {
+          f.appendText('Cancels the long-running operation that is currently in flight.');
+          f.createEl('br');
+          f.appendText('⚠️ The abort is app-wide: it stops whichever plugin started the operation, not only this one.');
+          f.createEl('br');
+          f.appendText('Nothing reports back whether anything was listening — the shared signal keeps no registry of its observers.');
+          f.createEl('br');
+          f.appendText('The same is available as the ');
+          appendCodeBlock(f, 'Advanced Debug Mode: Abort the running operation');
+          f.appendText(' command, which can be bound to a hotkey.');
+        }),
+        name: 'Abort the running operation',
+        render: (setting) => {
+          setting.addButton((button) => {
+            button
+              .setButtonText('Abort')
+              .setDestructive()
+              .onClick(() => {
+                abortSharedOperation(this.pluginNoticeComponent);
               });
           });
         }
