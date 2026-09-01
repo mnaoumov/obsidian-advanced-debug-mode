@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.11.0
+
+- feat: surface the shared abort controller as a command and a settings button
+- chore: update libs
+- fix(build): wire build:compile to buildCompile and drop the duplicate leaf script
+
 ## 1.10.9
 
 - chore(deps): sweep caret-ranged dependencies to latest
