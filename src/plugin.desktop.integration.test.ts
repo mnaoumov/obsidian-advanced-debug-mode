@@ -133,5 +133,6 @@ describe('Desktop Integration', () => {
 
     expect(result.commands).toContain('advanced-debug-mode:open-settings');
     expect(result.commands).toContain('advanced-debug-mode:toggle-dev-tools-button');
+    expect(result.commands).toContain('advanced-debug-mode:abort-shared-operation');
   });
 });

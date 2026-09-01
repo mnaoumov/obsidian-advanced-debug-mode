@@ -24,6 +24,7 @@ import {
   vi
 } from 'vitest';
 
+import { AbortSharedOperationCommandHandler } from './command-handlers/abort-shared-operation-command.ts';
 import { DevToolsComponent } from './dev-tools-component.ts';
 import { ErrorStackTraceLimitComponent } from './error-stack-trace-limit-component.ts';
 import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
@@ -59,6 +60,10 @@ vi.mock('obsidian-dev-utils/obsidian/plugin/plugin-event-source', () => ({
 }));
 
 // --- The plugin's OWN sibling modules. ---
+
+vi.mock('./command-handlers/abort-shared-operation-command.ts', () => ({
+  AbortSharedOperationCommandHandler: vi.fn()
+}));
 
 vi.mock('./command-handlers/toggle-dev-tools-button-command.ts', () => ({
   ToggleDevToolsButtonCommandHandler: vi.fn()
@@ -167,6 +172,9 @@ describe('Plugin', () => {
     // Since obsidian-dev-utils 89.0.0 the handlers are built lazily by a factory, so build them here.
     registerCommandHandlers.mock.calls[0]?.[0]();
     expect(OpenDemoVaultCommandHandler).toHaveBeenCalledOnce();
+    // The abort command is the only hotkey-bindable way to reach the shared abort controller, so its
+    // Registration is the thing that makes the feature exist at all.
+    expect(AbortSharedOperationCommandHandler).toHaveBeenCalledOnce();
     expect(LongRunningTasksComponent).toHaveBeenCalledOnce();
     // Constructing it is not enough: it was constructed but never added for a while, so its FileSystemAdapter patches never loaded. Compared by identity, as every component stub is structurally an empty Component.
     expect(addChildSpy.mock.calls.map(([child]) => child)).toContain(vi.mocked(LongRunningTasksComponent).mock.results[0]?.value);

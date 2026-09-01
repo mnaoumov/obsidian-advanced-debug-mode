@@ -59,3 +59,17 @@ export async function changeSettings(app: App, patch: DemoSettingsPatch): Promis
 export function toggleDevToolsButton(app: App): void {
   app.commands.executeCommandById(`${PLUGIN_ID}:toggle-dev-tools-button`);
 }
+
+/**
+ * Fires the app-wide shared abort, cancelling whichever long-running operation is in flight — in any
+ * plugin built on `obsidian-dev-utils`, not just this one.
+ *
+ * Safe to press with nothing running: the abort is signalled, no listener hears it, and the controller
+ * replaces its signal with a fresh one, so the next operation is not born cancelled.
+ *
+ * Manual equivalent: **Advanced Debug Mode: Abort the running operation** in the Command Palette, or the
+ * **Abort** button in the plugin's settings.
+ */
+export function abortSharedOperation(app: App): void {
+  app.commands.executeCommandById(`${PLUGIN_ID}:abort-shared-operation`);
+}

@@ -193,7 +193,7 @@ async function closeConsole(): Promise<void> {
 
         // One trusted click, from which Chromium synthesizes the whole pointerdown -> pointerup -> click
         // Sequence this used to hand-build — and eruda's own handlers see `isTrusted === true`.
-        clickElement({ element: entryButton });
+        await clickElement({ element: entryButton });
 
         await waitUntil({
           message: 'the in-page console to close',
@@ -360,7 +360,7 @@ async function openConsole(): Promise<void> {
 
         // One trusted click, from which Chromium synthesizes the whole pointerdown -> pointerup -> click
         // Sequence this used to hand-build — and eruda's own handlers see `isTrusted === true`.
-        clickElement({ element: entryButton });
+        await clickElement({ element: entryButton });
 
         await waitUntil({
           message: 'the in-page console to open',
