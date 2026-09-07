@@ -167,14 +167,14 @@ interface PaletteState {
 /**
  * Closes the in-page console and takes its floating button away with it.
  *
- * The panel is toggled off through the same entry button that opened it — POINTER
- * events again, for the same reason — and the button is then hidden through the
+ * The panel is toggled off through the same entry button that opened it — a real
+ * tap again, for the same reason — and the button is then hidden through the
  * plugin's own command, which leaves the screen in the state a reader is in
  * BEFORE they run it. That is what the palette shot is a picture of.
  */
 async function closeConsole(): Promise<void> {
   await evalInObsidian({
-    async callback({ app, lib: { waitUntil }, pluginId }) {
+    async callback({ app, lib: { clickElement, waitUntil }, pluginId }) {
       const CLOSE_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
@@ -199,21 +199,7 @@ async function closeConsole(): Promise<void> {
           throw new TypeError('The dev tools button is gone, so the console cannot be closed.');
         }
 
-        // A permanent exception to the trusted-input convention: the trusted `clickElement` its desktop
-        // Twin now uses is built on `window.electron`, which does not exist on the phone.
-        const rect = entryButton.getBoundingClientRect();
-        const eventInit = {
-          bubbles: true,
-          cancelable: true,
-          clientX: rect.left + rect.width / 2,
-          clientY: rect.top + rect.height / 2,
-          composed: true,
-          pointerId: 1,
-          pointerType: 'mouse'
-        };
-        entryButton.dispatchEvent(new PointerEvent('pointerdown', eventInit));
-        entryButton.dispatchEvent(new PointerEvent('pointerup', eventInit));
-        entryButton.dispatchEvent(new MouseEvent('click', eventInit));
+        await clickElement({ element: entryButton });
 
         await waitUntil({
           message: 'the in-page console to close',
@@ -264,14 +250,14 @@ async function closeConsole(): Promise<void> {
  */
 async function evaluateInConsole(expression: string): Promise<string> {
   return await evalInObsidian({
-    async callback({ expression: text, lib: { waitUntil } }) {
+    async callback({ expression: text, lib: { clickElement, waitUntil } }) {
       const RESULT_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
       // Cleared first: the previous shot left an EXPANDED error entry, and the
       // Console's virtualized list drew it straight over its own toolbar in the
       // Frame — a broken-looking panel that had nothing to do with the plugin.
-      clearConsole();
+      await clearConsole();
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
       const shadowRoot = findConsoleRoot();
@@ -290,7 +276,7 @@ async function evaluateInConsole(expression: string): Promise<string> {
         throw new TypeError('The console has no execute button.');
       }
 
-      executeButton.click();
+      await clickElement({ element: executeButton });
 
       await waitUntil({
         message: 'the console to show a result',
@@ -317,10 +303,10 @@ async function evaluateInConsole(expression: string): Promise<string> {
        * only `warn` and `error` console calls and bans disabling that rule.
        * Clicking the button is what a reader would do anyway.
        */
-      function clearConsole(): void {
+      async function clearConsole(): Promise<void> {
         const clearButton = findConsoleRoot()?.querySelector('.eruda-clear-console');
         if (clearButton instanceof HTMLElement) {
-          clearButton.click();
+          await clickElement({ element: clearButton });
         }
       }
     },
@@ -341,7 +327,7 @@ async function evaluateInConsole(expression: string): Promise<string> {
  */
 async function logErrorToConsole(marker: string): Promise<string> {
   return await evalInObsidian({
-    async callback({ lib: { waitUntil }, marker: errorMarker }) {
+    async callback({ lib: { clickElement, waitUntil }, marker: errorMarker }) {
       const TRACE_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
@@ -360,14 +346,14 @@ async function logErrorToConsole(marker: string): Promise<string> {
        * only `warn` and `error` console calls and bans disabling that rule.
        * Clicking the button is what a reader would do anyway.
        */
-      function clearConsole(): void {
+      async function clearConsole(): Promise<void> {
         const clearButton = findConsoleRoot()?.querySelector('.eruda-clear-console');
         if (clearButton instanceof HTMLElement) {
-          clearButton.click();
+          await clickElement({ element: clearButton });
         }
       }
 
-      clearConsole();
+      await clearConsole();
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
       function loadTheThing(): void {
@@ -481,13 +467,14 @@ async function openCommandPalette(query: string): Promise<PaletteState> {
 /**
  * Opens the in-page console the plugin ships.
  *
- * The entry button needs POINTER events: a bare `click()` leaves it shut, because
- * the console's own button listens for `pointerdown`/`pointerup` rather than a
- * synthesized click.
+ * The entry button needs a real tap rather than a synthesized `click()`: the
+ * console's own button listens for `pointerdown`/`pointerup`, which an element's
+ * `click()` never produces. A trusted tap does, which is why `clickElement` drives
+ * it here exactly as it drives the same button on desktop.
  */
 async function openConsole(): Promise<void> {
   await evalInObsidian({
-    async callback({ app, lib: { waitUntil }, pluginId }) {
+    async callback({ app, lib: { clickElement, waitUntil }, pluginId }) {
       const OPEN_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
@@ -510,21 +497,7 @@ async function openConsole(): Promise<void> {
           throw new TypeError('The dev tools button never appeared.');
         }
 
-        // A permanent exception to the trusted-input convention: the trusted `clickElement` its desktop
-        // Twin now uses is built on `window.electron`, which does not exist on the phone.
-        const rect = entryButton.getBoundingClientRect();
-        const eventInit = {
-          bubbles: true,
-          cancelable: true,
-          clientX: rect.left + rect.width / 2,
-          clientY: rect.top + rect.height / 2,
-          composed: true,
-          pointerId: 1,
-          pointerType: 'mouse'
-        };
-        entryButton.dispatchEvent(new PointerEvent('pointerdown', eventInit));
-        entryButton.dispatchEvent(new PointerEvent('pointerup', eventInit));
-        entryButton.dispatchEvent(new MouseEvent('click', eventInit));
+        await clickElement({ element: entryButton });
 
         await waitUntil({
           message: 'the in-page console to open',
@@ -548,7 +521,7 @@ async function openConsole(): Promise<void> {
  */
 async function openConsoleTab(tabName: string): Promise<string[]> {
   return await evalInObsidian({
-    async callback({ tabName: wantedTab }) {
+    async callback({ lib: { clickElement }, tabName: wantedTab }) {
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
       const host = [...document.body.children].find((child) => Boolean(child.shadowRoot));
@@ -557,7 +530,7 @@ async function openConsoleTab(tabName: string): Promise<string[]> {
 
       const wanted = tabs.find((tab) => tab.textContent.trim().toLowerCase() === wantedTab);
       if (wanted instanceof HTMLElement) {
-        wanted.click();
+        await clickElement({ element: wanted });
       }
 
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
