@@ -26,6 +26,7 @@ Advanced Debug Mode is an Obsidian plugin that enhances the debugging experience
 | Store screenshots           | `npm run capture:screenshots`           |
 | Store screenshots (desktop) | `npm run capture:screenshots:desktop`   |
 | Store screenshots (Android) | `npm run capture:screenshots:android`   |
+| Branch gate                 | `npm run gate`                          |
 | Commit (wizard)             | `npm run commit`                        |
 
 ## Architecture
