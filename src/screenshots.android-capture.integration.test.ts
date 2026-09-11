@@ -63,6 +63,13 @@ const HEIGHT_IN_PIXELS = 1600;
 const PLUGIN_ID = 'advanced-debug-mode';
 
 /**
+ * The console's own tab, lower-cased as the tab strip renders it.
+ *
+ * Named because every shot that drives the console has to select it first — see shot 2.
+ */
+const CONSOLE_TAB_NAME = 'console';
+
+/**
  * The command the last shot is about: the one that turns the dev tools on.
  * Typed into the palette verbatim, so the row the picture highlights is the row
  * the caption means.
@@ -120,20 +127,26 @@ beforeAll(async () => {
 describe('mobile store screenshots', () => {
   it('1 - a real error, with its stack', async () => {
     await openConsole();
+    await openConsoleTab(CONSOLE_TAB_NAME);
     const trace = await logErrorToConsole('somethingWentWrong');
     expect(trace).toContain('somethingWentWrong');
     await shoot(1, 'A console on a phone, and the error in it');
   });
 
   it('2 - evaluate against the running app', async () => {
+    // The console tab is SELECTED per shot rather than assumed. eruda remembers its last-active tool
+    // And the device's app data outlives the run, so shot 3's switch to Elements is still in effect
+    // When the next run starts here — which left these shots photographing the wrong panel while
+    // Driving buttons that were laid out at zero size.
+    await openConsoleTab(CONSOLE_TAB_NAME);
     const result = await evaluateInConsole('app.vault.getMarkdownFiles().length');
     expect(result).toMatch(/\d/);
     await shoot(2, 'Ask the running app a question, right here');
   });
 
   it('3 - the panels a phone never had', async () => {
-    const tabNames = await openConsoleTab('elements');
-    expect(tabNames.join(' ').toLowerCase()).toContain('elements');
+    const selectedTab = await openConsoleTab('elements');
+    expect(selectedTab).toBe('elements');
     await shoot(3, 'Elements, network and resources — on a phone');
   });
 
@@ -167,14 +180,14 @@ interface PaletteState {
 /**
  * Closes the in-page console and takes its floating button away with it.
  *
- * The panel is toggled off through the same entry button that opened it — POINTER
- * events again, for the same reason — and the button is then hidden through the
+ * The panel is toggled off through the same entry button that opened it — a real
+ * tap again, for the same reason — and the button is then hidden through the
  * plugin's own command, which leaves the screen in the state a reader is in
  * BEFORE they run it. That is what the palette shot is a picture of.
  */
 async function closeConsole(): Promise<void> {
   await evalInObsidian({
-    async callback({ app, lib: { waitUntil }, pluginId }) {
+    async callback({ app, lib: { clickElement, waitUntil }, pluginId }) {
       const CLOSE_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
@@ -199,21 +212,7 @@ async function closeConsole(): Promise<void> {
           throw new TypeError('The dev tools button is gone, so the console cannot be closed.');
         }
 
-        // A permanent exception to the trusted-input convention: the trusted `clickElement` its desktop
-        // Twin now uses is built on `window.electron`, which does not exist on the phone.
-        const rect = entryButton.getBoundingClientRect();
-        const eventInit = {
-          bubbles: true,
-          cancelable: true,
-          clientX: rect.left + rect.width / 2,
-          clientY: rect.top + rect.height / 2,
-          composed: true,
-          pointerId: 1,
-          pointerType: 'mouse'
-        };
-        entryButton.dispatchEvent(new PointerEvent('pointerdown', eventInit));
-        entryButton.dispatchEvent(new PointerEvent('pointerup', eventInit));
-        entryButton.dispatchEvent(new MouseEvent('click', eventInit));
+        await clickElement({ element: entryButton });
 
         await waitUntil({
           message: 'the in-page console to close',
@@ -264,14 +263,14 @@ async function closeConsole(): Promise<void> {
  */
 async function evaluateInConsole(expression: string): Promise<string> {
   return await evalInObsidian({
-    async callback({ expression: text, lib: { waitUntil } }) {
+    async callback({ expression: text, lib: { clickElement, waitUntil } }) {
       const RESULT_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
       // Cleared first: the previous shot left an EXPANDED error entry, and the
       // Console's virtualized list drew it straight over its own toolbar in the
       // Frame — a broken-looking panel that had nothing to do with the plugin.
-      clearConsole();
+      await clearConsole();
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
       const shadowRoot = findConsoleRoot();
@@ -280,6 +279,18 @@ async function evaluateInConsole(expression: string): Promise<string> {
       if (!(input instanceof HTMLTextAreaElement)) {
         throw new TypeError('The console has no input.');
       }
+
+      // The JS-input bar is COLLAPSED to a single line until it is focused, and Cancel/Execute are laid
+      // Out at ZERO SIZE the whole time it is. A real tap is what expands it — setting `.value` never
+      // Does — and a trusted tap on a zero-size button is hit-tested to whatever is actually at that
+      // Point, which here is the editor behind the console. The untrusted `click()` this replaced fired
+      // On the invisible button regardless, which is why the collapse never mattered before.
+      await clickElement({ element: input });
+      await waitUntil({
+        message: 'the console input to expand, giving Execute a size',
+        predicate: () => (findConsoleRoot()?.querySelector('.eruda-execute')?.getBoundingClientRect().height ?? 0) > 0,
+        timeoutInMilliseconds: RESULT_TIMEOUT_IN_MILLISECONDS
+      });
 
       input.value = text;
       input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -290,7 +301,7 @@ async function evaluateInConsole(expression: string): Promise<string> {
         throw new TypeError('The console has no execute button.');
       }
 
-      executeButton.click();
+      await clickElement({ element: executeButton });
 
       await waitUntil({
         message: 'the console to show a result',
@@ -308,7 +319,11 @@ async function evaluateInConsole(expression: string): Promise<string> {
       }
 
       function readConsoleText(): string {
-        return findConsoleRoot()?.querySelector('.eruda-tools')?.textContent ?? '';
+        // The CONSOLE's own panel, not `.eruda-tools` — that is the container of EVERY tool, so its
+        // `textContent` includes panels that are not on screen. Reading it let an assertion about what
+        // The console shows be satisfied by text inside a hidden console while a different tool was
+        // Displayed, so the shot passed and photographed the wrong panel.
+        return findConsoleRoot()?.querySelector('.eruda-console')?.textContent ?? '';
       }
 
       /**
@@ -317,10 +332,10 @@ async function evaluateInConsole(expression: string): Promise<string> {
        * only `warn` and `error` console calls and bans disabling that rule.
        * Clicking the button is what a reader would do anyway.
        */
-      function clearConsole(): void {
+      async function clearConsole(): Promise<void> {
         const clearButton = findConsoleRoot()?.querySelector('.eruda-clear-console');
         if (clearButton instanceof HTMLElement) {
-          clearButton.click();
+          await clickElement({ element: clearButton });
         }
       }
     },
@@ -341,7 +356,7 @@ async function evaluateInConsole(expression: string): Promise<string> {
  */
 async function logErrorToConsole(marker: string): Promise<string> {
   return await evalInObsidian({
-    async callback({ lib: { waitUntil }, marker: errorMarker }) {
+    async callback({ lib: { clickElement, waitUntil }, marker: errorMarker }) {
       const TRACE_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
@@ -351,7 +366,11 @@ async function logErrorToConsole(marker: string): Promise<string> {
       }
 
       function readConsoleText(): string {
-        return findConsoleRoot()?.querySelector('.eruda-tools')?.textContent ?? '';
+        // The CONSOLE's own panel, not `.eruda-tools` — that is the container of EVERY tool, so its
+        // `textContent` includes panels that are not on screen. Reading it let an assertion about what
+        // The console shows be satisfied by text inside a hidden console while a different tool was
+        // Displayed, so the shot passed and photographed the wrong panel.
+        return findConsoleRoot()?.querySelector('.eruda-console')?.textContent ?? '';
       }
 
       /**
@@ -360,14 +379,14 @@ async function logErrorToConsole(marker: string): Promise<string> {
        * only `warn` and `error` console calls and bans disabling that rule.
        * Clicking the button is what a reader would do anyway.
        */
-      function clearConsole(): void {
+      async function clearConsole(): Promise<void> {
         const clearButton = findConsoleRoot()?.querySelector('.eruda-clear-console');
         if (clearButton instanceof HTMLElement) {
-          clearButton.click();
+          await clickElement({ element: clearButton });
         }
       }
 
-      clearConsole();
+      await clearConsole();
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
       function loadTheThing(): void {
@@ -481,13 +500,14 @@ async function openCommandPalette(query: string): Promise<PaletteState> {
 /**
  * Opens the in-page console the plugin ships.
  *
- * The entry button needs POINTER events: a bare `click()` leaves it shut, because
- * the console's own button listens for `pointerdown`/`pointerup` rather than a
- * synthesized click.
+ * The entry button needs a real tap rather than a synthesized `click()`: the
+ * console's own button listens for `pointerdown`/`pointerup`, which an element's
+ * `click()` never produces. A trusted tap does, which is why `clickElement` drives
+ * it here exactly as it drives the same button on desktop.
  */
 async function openConsole(): Promise<void> {
   await evalInObsidian({
-    async callback({ app, lib: { waitUntil }, pluginId }) {
+    async callback({ app, lib: { clickElement, waitUntil }, pluginId }) {
       const OPEN_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
@@ -510,21 +530,7 @@ async function openConsole(): Promise<void> {
           throw new TypeError('The dev tools button never appeared.');
         }
 
-        // A permanent exception to the trusted-input convention: the trusted `clickElement` its desktop
-        // Twin now uses is built on `window.electron`, which does not exist on the phone.
-        const rect = entryButton.getBoundingClientRect();
-        const eventInit = {
-          bubbles: true,
-          cancelable: true,
-          clientX: rect.left + rect.width / 2,
-          clientY: rect.top + rect.height / 2,
-          composed: true,
-          pointerId: 1,
-          pointerType: 'mouse'
-        };
-        entryButton.dispatchEvent(new PointerEvent('pointerdown', eventInit));
-        entryButton.dispatchEvent(new PointerEvent('pointerup', eventInit));
-        entryButton.dispatchEvent(new MouseEvent('click', eventInit));
+        await clickElement({ element: entryButton });
 
         await waitUntil({
           message: 'the in-page console to open',
@@ -541,28 +547,54 @@ async function openConsole(): Promise<void> {
 }
 
 /**
- * Switches the in-page console to one of its tabs.
+ * Switches the in-page console to one of its tabs, and does not return until that tab is the SELECTED
+ * one.
+ *
+ * The wait is the point of this helper. It used to return the tab INVENTORY, so the only thing a
+ * caller could assert was that the inventory contains the name it just asked for — true whether or not
+ * the tap ever landed. A tab that silently failed to switch therefore read as a pass, which is exactly
+ * how these shots came to photograph the wrong panel.
+ *
+ * A missing tab now throws rather than quietly doing nothing, for the same reason.
  *
  * @param tabName - The tab to switch to, lower-cased.
- * @returns The names of every tab the console offers.
+ * @returns The name of the tab that is selected afterwards.
  */
-async function openConsoleTab(tabName: string): Promise<string[]> {
+async function openConsoleTab(tabName: string): Promise<string> {
   return await evalInObsidian({
-    async callback({ tabName: wantedTab }) {
+    async callback({ lib: { clickElement, waitUntil }, tabName: wantedTab }) {
+      const SELECT_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
-      const host = [...document.body.children].find((child) => Boolean(child.shadowRoot));
-      const shadowRoot = host?.shadowRoot;
-      const tabs = [...(shadowRoot?.querySelectorAll('.luna-tab-item') ?? new Array<Element>())];
-
+      const tabs = [...(findConsoleRoot()?.querySelectorAll('.luna-tab-item') ?? new Array<Element>())];
       const wanted = tabs.find((tab) => tab.textContent.trim().toLowerCase() === wantedTab);
-      if (wanted instanceof HTMLElement) {
-        wanted.click();
+      if (!(wanted instanceof HTMLElement)) {
+        throw new TypeError(`The console has no ${wantedTab} tab.`);
       }
+
+      await clickElement({ element: wanted });
+
+      await waitUntil({
+        message: `the ${wantedTab} tab to be selected`,
+        predicate: () => selectedTabName() === wantedTab,
+        timeoutInMilliseconds: SELECT_TIMEOUT_IN_MILLISECONDS
+      });
 
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
-      return tabs.map((tab) => tab.textContent.trim());
+      return selectedTabName();
+
+      function findConsoleRoot(): null | ShadowRoot {
+        const host = [...document.body.children].find((child) => Boolean(child.shadowRoot));
+        return host?.shadowRoot ?? null;
+      }
+
+      function selectedTabName(): string {
+        // `luna-tab-selected`, NOT `luna-tab-item-selected`: the strip is a luna component and the
+        // Modifier sits on the luna block rather than on the item. The wrong guess matches nothing and
+        // Reads as "no tab is selected", which is indistinguishable from a tab that failed to switch.
+        return findConsoleRoot()?.querySelector('.luna-tab-item.luna-tab-selected')?.textContent.trim().toLowerCase() ?? '';
+      }
     },
     input: { tabName },
     vaultPath: vaultPath()
