@@ -264,7 +264,14 @@ async function closeConsole(): Promise<void> {
 async function evaluateInConsole(expression: string): Promise<string> {
   return await evalInObsidian({
     async callback({ expression: text, lib: { clickElement, waitUntil } }) {
-      const RESULT_TIMEOUT_IN_MILLISECONDS = 15_000;
+      /*
+       * Under the transport's ~30s per-closure cap, not at it.
+       * Two waits and three render settles share this one budget, so at 15_000 apiece it declared 34.5s.
+       * The eval is killed at the cap first and reported as a bare transport timeout.
+       * That names the harness rather than the wait that overran.
+       * What is waited on here lands in well under a second, so the smaller ceiling costs nothing.
+       */
+      const RESULT_TIMEOUT_IN_MILLISECONDS = 8000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
       // Cleared first: the previous shot left an EXPANDED error entry, and the
@@ -438,7 +445,14 @@ async function logErrorToConsole(marker: string): Promise<string> {
 async function openCommandPalette(query: string): Promise<PaletteState> {
   return await evalInObsidian({
     async callback({ app, lib: { waitUntil }, query: text }) {
-      const PALETTE_TIMEOUT_IN_MILLISECONDS = 15_000;
+      /*
+       * Under the transport's ~30s per-closure cap, not at it.
+       * Two waits and a settle share this one budget, so at 15_000 apiece the closure declared 31.2s.
+       * The eval is killed at the cap first and reported as a bare transport timeout.
+       * That names the harness rather than the wait that overran.
+       * A palette opening and filtering lands in well under a second, so the smaller ceiling costs nothing.
+       */
+      const PALETTE_TIMEOUT_IN_MILLISECONDS = 11_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1200;
 
       /**
