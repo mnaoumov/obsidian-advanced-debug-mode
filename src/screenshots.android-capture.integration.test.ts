@@ -28,10 +28,14 @@ import {
 import { join } from 'node:path';
 import process from 'node:process';
 import {
+  captureDeviceScreenshot,
   captureObsidianScreenshot,
   evalInObsidian,
   labelScreenshot,
-  readPngDimensions
+  raiseSoftKeyboard,
+  readPngDimensions,
+  resolveEmulatorDeviceId,
+  withSoftKeyboardEnabled
 } from 'obsidian-integration-testing';
 import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 import {
@@ -84,7 +88,27 @@ const MOBILE_FONT_SIZE_IN_PIXELS = 11;
 
 const IMAGES_DIRECTORY = join(process.cwd(), 'images', 'screenshots');
 
+/**
+ * The AVD the frames are taken on, matched by name.
+ *
+ * Never the first device `adb devices` lists: a physical phone is routinely plugged into the same
+ * machine, and the shared AVD the cross-platform suites drive is a different size.
+ */
+const AVD_NAME = 'obsidian_screenshots';
+
+/**
+ * Obsidian's command palette input, as {@link openCommandPalette} finds it.
+ *
+ * `.prompt input`, which is not the `.prompt-input` a suggester renders — read off the suite rather than
+ * assumed.
+ */
+const PALETTE_INPUT_SELECTOR = '.prompt input';
+
+let deviceId = '';
+
 beforeAll(async () => {
+  deviceId = await resolveEmulatorDeviceId({ avdName: AVD_NAME });
+
   const vault = getTemporaryVault();
 
   vault.populate({
@@ -138,6 +162,13 @@ describe('mobile store screenshots', () => {
     // And the device's app data outlives the run, so shot 3's switch to Elements is still in effect
     // When the next run starts here — which left these shots photographing the wrong panel while
     // Driving buttons that were laid out at zero size.
+    //
+    // This shot keeps the PAGE capture even though it ends on a focused field, which is the one place in
+    // This suite where that is a deliberate decision rather than the default. Raising the soft keyboard
+    // Here was tried and measured: the keyboard came up and covered the console's output panel, the eval
+    // Field and the Execute button — that is, everything the caption promises — leaving a frame of a tab
+    // Strip above an empty white panel. The console is an overlay Obsidian does not lift for the IME the
+    // Way it lifts its own modals, so there is nowhere for the answer to go. Do not switch this one.
     await openConsoleTab(CONSOLE_TAB_NAME);
     const result = await evaluateInConsole('app.vault.getMarkdownFiles().length');
     expect(result).toMatch(/\d/);
@@ -158,7 +189,7 @@ describe('mobile store screenshots', () => {
     const palette = await openCommandPalette(TOGGLE_COMMAND_NAME);
     expect(palette.visible.join('\n')).toContain(TOGGLE_COMMAND_NAME);
     expect(palette.selected).toContain(TOGGLE_COMMAND_NAME);
-    await shoot(4, 'Turn it on from the command palette');
+    await shootWithSoftKeyboard(4, 'Turn it on from the command palette', PALETTE_INPUT_SELECTOR);
   });
 });
 
@@ -616,8 +647,12 @@ async function openConsoleTab(tabName: string): Promise<string> {
 }
 
 /**
- * Captures the device screen, captions it, and writes it as
+ * Captures the PAGE, captions it, and writes it as
  * `images/screenshots/screenshot-mobile-<index>.png`.
+ *
+ * The page capture is byte-reproducible — no status bar, no clock — so a re-capture of an unchanged frame
+ * leaves no diff. Every shot but the palette one keeps it; see shot 2 for why a focused field is not on
+ * its own a reason to switch.
  *
  * @param index - The 1-based listing position.
  * @param caption - The caption drawn across the bottom of the frame.
@@ -625,6 +660,57 @@ async function openConsoleTab(tabName: string): Promise<string> {
 async function shoot(index: number, caption: string): Promise<void> {
   const captured = await captureObsidianScreenshot({ vaultPath: vaultPath() });
 
+  await writeFrame(index, caption, captured);
+}
+
+/**
+ * Raises the soft keyboard over a field the page itself exposes, captures the DEVICE, and writes the frame.
+ *
+ * For a shot whose subject is a focused field. `captureObsidianScreenshot` cannot show a keyboard: it
+ * drives Appium in the WebView context, so it photographs the page, and the IME is a system window that
+ * is not part of the page — which left such a frame as a field over a large empty band.
+ *
+ * Two things are needed and both belong to the harness rather than here: the AVD is built with a hardware
+ * keyboard attached, so Android suppresses the on-screen one until `withSoftKeyboardEnabled` lifts that
+ * and puts the setting back exactly; and a WebView will not ask for an IME on programmatic focus alone,
+ * so `raiseSoftKeyboard` lands a real touch on the field and proves geometrically that it lifted.
+ *
+ * The trade, which applies only to the shots that switch: a device capture is **not** byte-reproducible,
+ * because the status-bar clock and the battery indicator are in it.
+ *
+ * @param index - The 1-based listing position.
+ * @param caption - The caption drawn across the bottom of the frame.
+ * @param inputSelector - The field to touch, as a selector `document.querySelector` can resolve.
+ */
+async function shootWithSoftKeyboard(index: number, caption: string, inputSelector: string): Promise<void> {
+  const captured = await withSoftKeyboardEnabled({
+    async callback() {
+      await raiseSoftKeyboard({
+        deviceId,
+        inputSelector,
+        vaultPath: vaultPath()
+      });
+
+      return await captureDeviceScreenshot({ deviceId });
+    },
+    deviceId
+  });
+
+  await writeFrame(index, caption, captured);
+}
+
+function vaultPath(): string {
+  return getTemporaryVault().path;
+}
+
+/**
+ * Asserts the frame is the store size, captions it, and writes it out.
+ *
+ * @param index - The 1-based listing position.
+ * @param caption - The caption drawn across the bottom of the frame.
+ * @param captured - The raw PNG, from either capture route.
+ */
+async function writeFrame(index: number, caption: string, captured: Uint8Array): Promise<void> {
   // The AVD is 900x1600, so the device frame IS the store's size. Asserting it
   // Here is what keeps that true: run this against any other AVD and it fails
   // Loudly instead of quietly shipping an off-spec image.
@@ -637,8 +723,4 @@ async function shoot(index: number, caption: string): Promise<void> {
 
   mkdirSync(IMAGES_DIRECTORY, { recursive: true });
   writeFileSync(join(IMAGES_DIRECTORY, `screenshot-mobile-${String(index)}.png`), labeled);
-}
-
-function vaultPath(): string {
-  return getTemporaryVault().path;
 }

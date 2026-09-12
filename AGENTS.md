@@ -59,3 +59,42 @@ Advanced Debug Mode is an Obsidian plugin that enhances the debugging experience
   - `patches/file-system-adapter-things-happening-patch-component.ts` — patches `thingsHappening` to disable the long-running-task timeout
   - `styles/` — `main.scss` (plugin styles) and `scss.d.ts` (SCSS module type declaration)
 - **`main` field** points to `src/main.ts` (Obsidian plugin source entry; built artifact is `dist/build/main.js`, not published to npm).
+
+## Testing notes
+
+### The mobile screenshot capture suite
+
+The four mobile frames are captured by **two different routes**, and which route a frame takes is a
+decision about that frame rather than a style choice:
+
+- **Frames 1, 2 and 3 capture the PAGE** (`captureObsidianScreenshot`), which is byte-reproducible apart
+  from frame 1's stack-trace content: no status bar and no clock, so re-capturing an unchanged frame
+  leaves no diff.
+- **Frame 4 captures the DEVICE** (`captureDeviceScreenshot`) with the soft keyboard raised first,
+  because the command palette is a focused field over nothing. A page capture cannot show a keyboard: it
+  drives Appium in the WebView context, so it photographs the page, and the IME is a system window that
+  is not part of the page. **The cost is that frame 4 is no longer byte-reproducible**, since the
+  status-bar clock and the battery indicator are in it. Do not "fix" that churn by putting it back on the
+  page capture.
+- **Frame 2 ends on a focused field and still keeps the page capture. That is measured, not an
+  oversight.** Raising the keyboard over the console was implemented and run: the keyboard came up and
+  covered the console's output panel, the eval field and the Execute button — everything the caption
+  promises — leaving a tab strip above an empty white panel. The console is an overlay Obsidian does not
+  lift for the IME the way it lifts its own modals, so the answer has nowhere to go. A keyboard makes this
+  frame strictly worse, so it does not get one.
+  - Worth knowing if it is ever revisited: the console's field lives in the dev-tools **shadow root**, and
+    `raiseSoftKeyboard` resolves its selector with `document.querySelector`, which does not reach inside
+    one. The recipe is still reachable without a harness change — `resolveSoftKeyboardTapPoints`,
+    `tapDevice` and `checkIsSoftKeyboardUp` are all published, so only the geometry read has to be local
+    and shadow-piercing. It was built that way, and the frame it produced is what settled the question.
+- **Raising the keyboard takes TWO things**, which is why both belong to `obsidian-integration-testing`
+  rather than being copied in here. The AVD is built with a hardware keyboard attached, so Android
+  suppresses the on-screen one entirely — `withSoftKeyboardEnabled` lifts that for the duration of a shot
+  and restores the device exactly, including restoring a setting that had never been written, which takes
+  a delete rather than a write. And a WebView will not ask for an IME on programmatic focus alone:
+  a real touch has to land on the field, and then the lift has to be proved geometrically, because
+  nothing in the page reports the keyboard — `innerHeight`, `visualViewport` and the modal container all
+  keep their full height with it shown.
+- **A passing lift check is not the same as a good frame**, which is what frame 2 cost to learn. The check
+  asks whether the FIELD moved clear of the bottom; it cannot tell you the keyboard covered the thing the
+  shot is evidence for. So a switched frame is looked at, every time, and not merely measured.
