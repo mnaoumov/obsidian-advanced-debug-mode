@@ -37,7 +37,7 @@ Advanced Debug Mode is an Obsidian plugin that enhances the debugging experience
   - `plugin.ts` — `Plugin extends PluginBase`; `onloadImpl` wires up all child components (settings, settings tab, DevTools, command handler, long-running tasks, error stack-trace limit, long stack traces)
   - `plugin-settings.ts` — `PluginSettings` data class with the plugin's setting defaults
   - `plugin-settings-component.ts` — `PluginSettingsComponentBase` subclass that loads/saves settings
-  - `plugin-settings-tab.ts` — settings UI tab (declarative `getSettingDefinitionItems()`, per G101) for debug mode, mobile emulation, debug namespaces, long/async stack traces, stack-trace limit, task timeouts, and the shared-abort button
+  - `plugin-settings-tab.ts` — settings UI tab (declarative `getSettingDefinitionItems()`) for debug mode, mobile emulation, debug namespaces, long/async stack traces, stack-trace limit, task timeouts, and the shared-abort button
   - `abort-shared-operation.ts` — `abortSharedOperation`: fires `obsidian-dev-utils`' app-wide `ResettableAbortController` with a `SilentError` reason and reports that the abort was signalled
   - `debug-mode.ts` — `DebugMode`: read/toggle Obsidian's debug mode via `app.debugMode`
   - `emulate-mobile-mode.ts` — `EmulateMobileMode`: read/toggle desktop mobile-emulation via `app.emulateMobile`
