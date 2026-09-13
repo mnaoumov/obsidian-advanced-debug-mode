@@ -1,8 +1,8 @@
 /**
  * @file
  *
- * Produces the desktop screenshots the community-store listing needs
- * (T461-P21), driving a real Obsidian and writing
+ * Produces the desktop screenshots the community-store listing needs,
+ * driving a real Obsidian and writing
  * `images/screenshots/screenshot-desktop-N.png`.
  *
  * The subject of this plugin is a STACK TRACE, which normally lives in DevTools —
