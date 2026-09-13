@@ -6,7 +6,7 @@ import { registerDemoVaultButtonSuite } from 'obsidian-dev-utils/script-utils/de
 // `lint:md` reads the markdown and the coverage suite checks the authoring conventions, and neither
 // Executes anything.
 //
-// `01 Debug mode.md` is excluded, and it is the one vault-wide exception in the fleet.
+// `01 Debug mode.md` is excluded, and it is the one vault-wide exception among the author's plugins.
 // Its buttons call `app.debugMode()`, which reloads every plugin — that reload IS the feature this
 // Plugin is named for, not a mistake to fix. A button that reloads the app destroys the results panel
 // It would report into, so it can never be observed to have succeeded; and because the suite drives one
