@@ -93,7 +93,7 @@
 - docs: standardize demo-vault README
 - docs: drop per-plugin demo-vault setup notes (bootstrap covered by ODU harness)
 - docs: unnumber demo-vault setup notes
-- Merge branch 'T94': create the Advanced Debug Mode demo vault (S2)
+- docs(demo-vault): create the Advanced Debug Mode demo vault
 - docs: update
 - docs: migrate to AGENTS.md
 
