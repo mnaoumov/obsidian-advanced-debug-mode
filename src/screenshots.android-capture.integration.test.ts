@@ -159,16 +159,16 @@ describe('mobile store screenshots', () => {
 
   it('2 - evaluate against the running app', async () => {
     // The console tab is SELECTED per shot rather than assumed. eruda remembers its last-active tool
-    // And the device's app data outlives the run, so shot 3's switch to Elements is still in effect
-    // When the next run starts here — which left these shots photographing the wrong panel while
-    // Driving buttons that were laid out at zero size.
+    // and the device's app data outlives the run, so shot 3's switch to Elements is still in effect
+    // when the next run starts here — which left these shots photographing the wrong panel while
+    // driving buttons that were laid out at zero size.
     //
     // This shot keeps the PAGE capture even though it ends on a focused field, which is the one place in
-    // This suite where that is a deliberate decision rather than the default. Raising the soft keyboard
-    // Here was tried and measured: the keyboard came up and covered the console's output panel, the eval
-    // Field and the Execute button — that is, everything the caption promises — leaving a frame of a tab
-    // Strip above an empty white panel. The console is an overlay Obsidian does not lift for the IME the
-    // Way it lifts its own modals, so there is nowhere for the answer to go. Do not switch this one.
+    // this suite where that is a deliberate decision rather than the default. Raising the soft keyboard
+    // here was tried and measured: the keyboard came up and covered the console's output panel, the eval
+    // field and the Execute button — that is, everything the caption promises — leaving a frame of a tab
+    // strip above an empty white panel. The console is an overlay Obsidian does not lift for the IME the
+    // way it lifts its own modals, so there is nowhere for the answer to go. Do not switch this one.
     await openConsoleTab(CONSOLE_TAB_NAME);
     const result = await evaluateInConsole('app.vault.getMarkdownFiles().length');
     expect(result).toMatch(/\d/);
@@ -183,8 +183,8 @@ describe('mobile store screenshots', () => {
 
   it('4 - the command that turns it on', async () => {
     // The console from shot 3 fills most of the screen, and a palette
-    // Photographed through it is two half-rows of which the highlighted one is
-    // Not the command the caption means. The subject here is Obsidian itself.
+    // photographed through it is two half-rows of which the highlighted one is
+    // not the command the caption means. The subject here is Obsidian itself.
     await closeConsole();
     const palette = await openCommandPalette(TOGGLE_COMMAND_NAME);
     expect(palette.visible.join('\n')).toContain(TOGGLE_COMMAND_NAME);
@@ -253,19 +253,19 @@ async function closeConsole(): Promise<void> {
       }
 
       // The command toggles the BUTTON, not the panel, so it is only useful once
-      // The panel is already shut — otherwise it would leave a console on screen
-      // With no way back to it.
+      // the panel is already shut — otherwise it would leave a console on screen
+      // with no way back to it.
       if (findEntryButton()?.isShown() ?? false) {
         app.commands.executeCommandById(`${pluginId}:toggle-dev-tools-button`);
       }
 
       // The Elements shot leaves a DOM highlighter behind: a full-screen canvas
-      // Over `body` plus the info tooltip that names it, which in a frame about
-      // The palette reads as a rendering fault. Closing the console does not
-      // Take it with it, because it is mounted on a SECOND shadow host of its
-      // Own (`.__chobitsu-hide__`) rather than inside the console's — hence the
-      // Sweep over every shadow host in the document rather than a look in one
-      // Of them.
+      // over `body` plus the info tooltip that names it, which in a frame about
+      // the palette reads as a rendering fault. Closing the console does not
+      // take it with it, because it is mounted on a SECOND shadow host of its
+      // own (`.__chobitsu-hide__`) rather than inside the console's — hence the
+      // sweep over every shadow host in the document rather than a look in one
+      // of them.
       for (const host of document.querySelectorAll('*')) {
         const hostShadowRoot = host.shadowRoot;
         if (!hostShadowRoot) {
@@ -306,8 +306,8 @@ async function evaluateInConsole(expression: string): Promise<string> {
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
       // Cleared first: the previous shot left an EXPANDED error entry, and the
-      // Console's virtualized list drew it straight over its own toolbar in the
-      // Frame — a broken-looking panel that had nothing to do with the plugin.
+      // console's virtualized list drew it straight over its own toolbar in the
+      // frame — a broken-looking panel that had nothing to do with the plugin.
       await clearConsole();
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
@@ -319,10 +319,10 @@ async function evaluateInConsole(expression: string): Promise<string> {
       }
 
       // The JS-input bar is COLLAPSED to a single line until it is focused, and Cancel/Execute are laid
-      // Out at ZERO SIZE the whole time it is. A real tap is what expands it — setting `.value` never
-      // Does — and a trusted tap on a zero-size button is hit-tested to whatever is actually at that
-      // Point, which here is the editor behind the console. The untrusted `click()` this replaced fired
-      // On the invisible button regardless, which is why the collapse never mattered before.
+      // out at ZERO SIZE the whole time it is. A real tap is what expands it — setting `.value` never
+      // does — and a trusted tap on a zero-size button is hit-tested to whatever is actually at that
+      // point, which here is the editor behind the console. The untrusted `click()` this replaced fired
+      // on the invisible button regardless, which is why the collapse never mattered before.
       await clickElement({ element: input });
       await waitUntil({
         message: 'the console input to expand, giving Execute a size',
@@ -359,8 +359,8 @@ async function evaluateInConsole(expression: string): Promise<string> {
       function readConsoleText(): string {
         // The CONSOLE's own panel, not `.eruda-tools` — that is the container of EVERY tool, so its
         // `textContent` includes panels that are not on screen. Reading it let an assertion about what
-        // The console shows be satisfied by text inside a hidden console while a different tool was
-        // Displayed, so the shot passed and photographed the wrong panel.
+        // the console shows be satisfied by text inside a hidden console while a different tool was
+        // displayed, so the shot passed and photographed the wrong panel.
         return findConsoleRoot()?.querySelector('.eruda-console')?.textContent ?? '';
       }
 
@@ -406,8 +406,8 @@ async function logErrorToConsole(marker: string): Promise<string> {
       function readConsoleText(): string {
         // The CONSOLE's own panel, not `.eruda-tools` — that is the container of EVERY tool, so its
         // `textContent` includes panels that are not on screen. Reading it let an assertion about what
-        // The console shows be satisfied by text inside a hidden console while a different tool was
-        // Displayed, so the shot passed and photographed the wrong panel.
+        // the console shows be satisfied by text inside a hidden console while a different tool was
+        // displayed, so the shot passed and photographed the wrong panel.
         return findConsoleRoot()?.querySelector('.eruda-console')?.textContent ?? '';
       }
 
@@ -439,11 +439,11 @@ async function logErrorToConsole(marker: string): Promise<string> {
         loadTheThing();
       } catch (error) {
         // The STACK, as text, rather than the error object. An error object is
-        // Rendered collapsed and has to be expanded to show its frames, and on a
-        // Phone-sized screen the console's virtualized list then draws the
-        // Expanded entry straight over its own toolbar — a frame that looks
-        // Broken and says nothing about the plugin. The string is the error's
-        // Own `stack`, so nothing is lost but the click.
+        // rendered collapsed and has to be expanded to show its frames, and on a
+        // phone-sized screen the console's virtualized list then draws the
+        // expanded entry straight over its own toolbar — a frame that looks
+        // broken and says nothing about the plugin. The string is the error's
+        // own `stack`, so nothing is lost but the click.
         console.error(error instanceof Error ? error.stack : String(error));
       }
 
@@ -521,7 +521,7 @@ async function openCommandPalette(query: string): Promise<PaletteState> {
 
       input.value = text;
       // The palette filters from its own input handler, so setting the value
-      // Alone would leave every command in the vault on screen.
+      // alone would leave every command in the vault on screen.
       input.dispatchEvent(new Event('input'));
 
       await waitUntil({
@@ -636,8 +636,8 @@ async function openConsoleTab(tabName: string): Promise<string> {
 
       function selectedTabName(): string {
         // `luna-tab-selected`, NOT `luna-tab-item-selected`: the strip is a luna component and the
-        // Modifier sits on the luna block rather than on the item. The wrong guess matches nothing and
-        // Reads as "no tab is selected", which is indistinguishable from a tab that failed to switch.
+        // modifier sits on the luna block rather than on the item. The wrong guess matches nothing and
+        // reads as "no tab is selected", which is indistinguishable from a tab that failed to switch.
         return findConsoleRoot()?.querySelector('.luna-tab-item.luna-tab-selected')?.textContent.trim().toLowerCase() ?? '';
       }
     },
@@ -712,8 +712,8 @@ function vaultPath(): string {
  */
 async function writeFrame(index: number, caption: string, captured: Uint8Array): Promise<void> {
   // The AVD is 900x1600, so the device frame IS the store's size. Asserting it
-  // Here is what keeps that true: run this against any other AVD and it fails
-  // Loudly instead of quietly shipping an off-spec image.
+  // here is what keeps that true: run this against any other AVD and it fails
+  // loudly instead of quietly shipping an off-spec image.
   expect(readPngDimensions(captured)).toStrictEqual({
     heightInPixels: HEIGHT_IN_PIXELS,
     widthInPixels: WIDTH_IN_PIXELS

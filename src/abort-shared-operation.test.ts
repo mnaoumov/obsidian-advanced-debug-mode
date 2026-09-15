@@ -26,7 +26,7 @@ function createMockPluginNoticeComponent(): MockPluginNoticeComponent & PluginNo
 describe('abortSharedOperation', () => {
   it('should abort the shared abort controller', () => {
     // Captured BEFORE the abort: `ResettableAbortController` replaces its inner controller, so reading the
-    // Signal afterwards yields the fresh one and would never look aborted.
+    // signal afterwards yields the fresh one and would never look aborted.
     const abortedSignal = getSharedAbortController().signal;
     expect(abortedSignal.aborted).toBe(false);
 

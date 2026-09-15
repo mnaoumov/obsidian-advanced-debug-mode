@@ -118,7 +118,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
             this.bind({
               onChanged: () => {
                 // Two rows below only read this value through their `disabled` predicate, so Obsidian
-                // Re-evaluates them in place instead of re-rendering the tab.
+                // re-evaluates them in place instead of re-rendering the tab.
                 this.refreshDomState();
               },
               propertyName: 'shouldIncludeLongStackTraces',
@@ -261,7 +261,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
                 }
 
                 // The row's value is derived from the debugger state rather than from the plugin settings,
-                // So the tab has to be re-rendered for it to pick the new value up.
+                // so the tab has to be re-rendered for it to pick the new value up.
                 this.refresh();
               });
           });

@@ -70,7 +70,7 @@ describe('DevToolsComponent', () => {
     component.load();
 
     // IsShown() returns false in jsdom (offsetParent is always null),
-    // So toggle(!false) → toggle(true) → display = ""
+    // so toggle(!false) → toggle(true) → display = ""
     component.toggleDevToolsButton();
     expect(mockButton.style.display).toBe('');
   });

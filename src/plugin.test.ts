@@ -121,7 +121,7 @@ vi.mock('./plugin-settings-tab.ts', () => ({
 import { Plugin } from './plugin.ts';
 
 // Seeded THROUGH the base accessors: since obsidian-dev-utils 93.2 the components live in a bag behind
-// Them, so writing the old `_`-prefixed backing field no longer feeds the getter, which throws when unset.
+// them, so writing the old `_`-prefixed backing field no longer feeds the getter, which throws when unset.
 interface PluginInternals {
   commandHandlerComponent: CommandHandlerComponent;
   onloadImpl(): Promise<void>;
@@ -173,7 +173,7 @@ describe('Plugin', () => {
     registerCommandHandlers.mock.calls[0]?.[0]();
     expect(OpenDemoVaultCommandHandler).toHaveBeenCalledOnce();
     // The abort command is the only hotkey-bindable way to reach the shared abort controller, so its
-    // Registration is the thing that makes the feature exist at all.
+    // registration is the thing that makes the feature exist at all.
     expect(AbortSharedOperationCommandHandler).toHaveBeenCalledOnce();
     expect(LongRunningTasksComponent).toHaveBeenCalledOnce();
     // Constructing it is not enough: it was constructed but never added for a while, so its FileSystemAdapter patches never loaded. Compared by identity, as every component stub is structurally an empty Component.
@@ -184,8 +184,8 @@ describe('Plugin', () => {
 
   it('should not wire the long-running-tasks component when the vault has no desktop adapter', async () => {
     // On mobile the adapter is a CapacitorAdapter, which has none of the `queue`/`thingsHappening`
-    // Methods that component patches. Loading it there leaves the vault broken and Obsidian never
-    // Reaches layout-ready, so the plugin does not finish loading at all.
+    // methods that component patches. Loading it there leaves the vault broken and Obsidian never
+    // reaches layout-ready, so the plugin does not finish loading at all.
     castTo<VaultWithAdapter>(app.vault).adapter = { getName: (): string => 'capacitor' };
 
     const plugin = new Plugin(app, manifest);

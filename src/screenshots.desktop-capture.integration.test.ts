@@ -94,7 +94,7 @@ beforeAll(async () => {
       }
 
       // The console panel is the subject in most frames, and it covers the
-      // Bottom half of the window; the side docks would leave the note a sliver.
+      // bottom half of the window; the side docks would leave the note a sliver.
       app.workspace.leftSplit.collapse();
       app.workspace.rightSplit.collapse();
 
@@ -115,7 +115,7 @@ describe('desktop store screenshots', () => {
     await openConsole();
     const trace = await throwThroughAsyncBoundaries('withoutPlugin');
     // The whole complaint in one assertion: the frames that scheduled the work
-    // Are gone, so almost nothing of the chain is left.
+    // are gone, so almost nothing of the chain is left.
     expect(countKeptFrames(trace)).toBeLessThan(MINIMUM_KEPT_FRAMES);
     await shoot(1, 'Without it: the throw, and no idea who called');
   });
@@ -139,14 +139,14 @@ describe('desktop store screenshots', () => {
   it('4 - a console inside Obsidian', async () => {
     const tabNames = await openConsoleTab('elements');
     // Not a log pane: the tabs are the ones DevTools has, which is the point of
-    // Shipping it to a platform that has no DevTools at all.
+    // shipping it to a platform that has no DevTools at all.
     expect(tabNames.join(' ').toLowerCase()).toContain('elements');
     await shoot(4, 'Real dev tools, inside the app itself');
   });
 
   it('5 - the command that turns it on', async () => {
     // The console from shot 4 covers four fifths of the window, and a palette
-    // Photographed through it is one clipped row of a command nobody asked about.
+    // photographed through it is one clipped row of a command nobody asked about.
     // The subject here is Obsidian itself, so the console goes away first.
     await closeConsole();
     const palette = await openCommandPalette(TOGGLE_COMMAND_NAME);
@@ -192,7 +192,7 @@ async function closeConsole(): Promise<void> {
         }
 
         // One trusted click, from which Chromium synthesizes the whole pointerdown -> pointerup -> click
-        // Sequence this used to hand-build — and eruda's own handlers see `isTrusted === true`.
+        // sequence this used to hand-build — and eruda's own handlers see `isTrusted === true`.
         await clickElement({ element: entryButton });
 
         await waitUntil({
@@ -203,19 +203,19 @@ async function closeConsole(): Promise<void> {
       }
 
       // The command toggles the BUTTON, not the panel, so it is only useful once
-      // The panel is already shut — otherwise it would leave a console on screen
-      // With no way back to it.
+      // the panel is already shut — otherwise it would leave a console on screen
+      // with no way back to it.
       if (findEntryButton()?.isShown() ?? false) {
         app.commands.executeCommandById(`${pluginId}:toggle-dev-tools-button`);
       }
 
       // The Elements shot leaves a DOM highlighter behind: a full-window canvas
-      // Over `body` plus the info tooltip that names it, which in a frame about
-      // The palette reads as a rendering fault. Closing the console does not
-      // Take it with it, because it is mounted on a SECOND shadow host of its
-      // Own (`.__chobitsu-hide__`) rather than inside the console's — hence the
-      // Sweep over every shadow host in the document rather than a look in one
-      // Of them.
+      // over `body` plus the info tooltip that names it, which in a frame about
+      // the palette reads as a rendering fault. Closing the console does not
+      // take it with it, because it is mounted on a SECOND shadow host of its
+      // own (`.__chobitsu-hide__`) rather than inside the console's — hence the
+      // sweep over every shadow host in the document rather than a look in one
+      // of them.
       for (const host of document.querySelectorAll('*')) {
         const hostShadowRoot = host.shadowRoot;
         if (!hostShadowRoot) {
@@ -308,7 +308,7 @@ async function openCommandPalette(query: string): Promise<PaletteState> {
 
       input.value = text;
       // The palette filters from its own input handler, so setting the value
-      // Alone would leave every command in the vault on screen.
+      // alone would leave every command in the vault on screen.
       input.dispatchEvent(new Event('input'));
 
       await waitUntil({
@@ -366,7 +366,7 @@ async function openConsole(): Promise<void> {
         }
 
         // One trusted click, from which Chromium synthesizes the whole pointerdown -> pointerup -> click
-        // Sequence this used to hand-build — and eruda's own handlers see `isTrusted === true`.
+        // sequence this used to hand-build — and eruda's own handlers see `isTrusted === true`.
         await clickElement({ element: entryButton });
 
         await waitUntil({
@@ -568,7 +568,7 @@ async function throwThroughAsyncBoundaries(marker: string): Promise<string> {
       function hopThroughPromise(): void {
         // A real promise boundary, and deliberately not `Promise.resolve()`:
         // This repo's lint rewrites that into `noopAsync()`, which a serialized
-        // Closure cannot see — the rewritten chain dies with a bare
+        // closure cannot see — the rewritten chain dies with a bare
         // ReferenceError inside Obsidian.
         Promise.allSettled([])
           .then(hopThroughInterval)
@@ -581,10 +581,10 @@ async function throwThroughAsyncBoundaries(marker: string): Promise<string> {
         const intervalId = window.setInterval(() => {
           window.clearInterval(intervalId);
           // Caught and logged rather than left uncaught: Obsidian Mobile's webview
-          // Never handed the uncaught error to the console, so half the mobile set
-          // Had nothing to photograph. The stack is the error's own either way —
-          // Catching it in the frame that threw changes nothing about what the
-          // Plugin kept.
+          // never handed the uncaught error to the console, so half the mobile set
+          // had nothing to photograph. The stack is the error's own either way —
+          // catching it in the frame that threw changes nothing about what the
+          // plugin kept.
           try {
             throwIt();
           } catch (error) {
@@ -695,7 +695,7 @@ async function throwThroughAwaits(marker: string): Promise<string> {
       }
 
       // Deliberately not awaited: an unhandled rejection is what reaches the
-      // Console, which is the thing being photographed.
+      // console, which is the thing being photographed.
       awaitFirst().catch((error: unknown) => {
         console.error(error);
       });
