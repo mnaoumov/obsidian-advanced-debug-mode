@@ -438,7 +438,7 @@ describe('PluginSettingsTab', () => {
     expect(button).toBeDefined();
 
     // Captured BEFORE the click: `ResettableAbortController` replaces its inner controller on abort, so
-    // Reading the signal afterwards yields the fresh one and would never look aborted.
+    // reading the signal afterwards yields the fresh one and would never look aborted.
     const abortedSignal = getSharedAbortController().signal;
     expect(abortedSignal.aborted).toBe(false);
 

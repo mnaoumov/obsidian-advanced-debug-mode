@@ -34,20 +34,20 @@ interface ValueWrapperLike<T> {
 }
 
 // The shared abort controller is app-wide state owned by `obsidian-dev-utils`, so the only thing that can
-// Prove this feature works is firing the command inside a real Obsidian and watching a signal captured
-// Beforehand flip. A unit test asserts the same shape against the library, but not that the command is
-// Registered, reachable by id, and wired to the SAME controller instance the library hands every other
-// Plugin — which is the entire point of an app-wide cancel.
+// prove this feature works is firing the command inside a real Obsidian and watching a signal captured
+// beforehand flip. A unit test asserts the same shape against the library, but not that the command is
+// registered, reachable by id, and wired to the SAME controller instance the library hands every other
+// plugin — which is the entire point of an app-wide cancel.
 describe('Abort the running operation', () => {
   it('should abort the shared signal and leave a fresh one behind', async () => {
     const result = await evalInObsidian({
       callback({ app }): AbortResult {
         // Reached through the shared-state global rather than an import: the closure is serialized into the
-        // Renderer, so it cannot import `obsidian-dev-utils/abort-controller`.
+        // renderer, so it cannot import `obsidian-dev-utils/abort-controller`.
         const stateBag = window.__obsidianDevUtils;
 
         // Captured BEFORE the abort: `ResettableAbortController` replaces its inner controller, so a signal
-        // Read afterwards is the fresh one and would never look aborted.
+        // read afterwards is the fresh one and would never look aborted.
         const capturedSignal = stateBag.sharedAbortController.value.signal;
 
         app.commands.executeCommandById('advanced-debug-mode:abort-shared-operation');

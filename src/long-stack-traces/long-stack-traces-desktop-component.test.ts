@@ -57,8 +57,8 @@ function createSettingsComponent(overrides: Partial<PluginSettings> = {}): Plugi
     pluginEventSource: createPluginEventSource()
   });
   // Access the settings via the readonly getter, then apply overrides
-  // We need to do this by creating a patched version
-  // Since defaultSettings are frozen/readonly, we'll spy on the settings getter
+  // we need to do this by creating a patched version
+  // since defaultSettings are frozen/readonly, we'll spy on the settings getter
   const originalSettings = { ...component.defaultSettings, ...overrides };
   vi.spyOn(component, 'settings', 'get').mockReturnValue(originalSettings);
   return component;
@@ -341,7 +341,7 @@ describe('LongStackTracesComponentDesktop', () => {
     component.load();
 
     // `TypeError('x')` without `new` is legal and must still return an error. Called through a
-    // Plain-function view of the constructor, because writing it literally is what the lint rules stop.
+    // plain-function view of the constructor, because writing it literally is what the lint rules stop.
     const callWithoutNew = castTo<(message: string) => TypeError>(window.TypeError);
     const error = callWithoutNew('no new');
     expect(error).toBeInstanceOf(TypeError);
@@ -521,7 +521,7 @@ describe('LongStackTracesComponentDesktop', () => {
     target.addEventListener('test', handler);
 
     // RemoveEventListener with EventListenerObject exercises the
-    // IsEventListenerObject branch in RemoveEventListenerPatchComponent
+    // isEventListenerObject branch in RemoveEventListenerPatchComponent
     expect(() => {
       target.removeEventListener('test', handler);
     }).not.toThrow();
@@ -575,9 +575,9 @@ describe('LongStackTracesComponentDesktop', () => {
     component.load();
 
     // CustomChild's base (CustomBase) is not in the originalPrototypeToPatchedClassMap
-    // Because CustomBase itself is not a direct child of Error — it IS a child of Error
-    // But the iteration processes children of Error. CustomBase will be patched first,
-    // Then CustomChild's base prototype resolves to PatchedCustomBase.
+    // because CustomBase itself is not a direct child of Error — it IS a child of Error
+    // but the iteration processes children of Error. CustomBase will be patched first,
+    // then CustomChild's base prototype resolves to PatchedCustomBase.
     // This exercises the patchErrorClasses iteration.
     expect(window.Error).not.toBe(savedError);
 
@@ -608,7 +608,7 @@ describe('LongStackTracesComponentDesktop', () => {
     const target = new EventTarget();
 
     // Register the same listener twice — the second registration should
-    // Remove the previous wrapped handler via afterPatchAddEventListener
+    // remove the previous wrapped handler via afterPatchAddEventListener
     target.addEventListener('test', listener);
     target.addEventListener('test', listener);
 

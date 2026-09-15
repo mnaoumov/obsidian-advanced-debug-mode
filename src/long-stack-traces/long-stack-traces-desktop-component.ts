@@ -344,7 +344,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     this.patchBaseErrorClass();
 
     // Explicitly typed: the map holds every patched Error class, whose shapes differ, so seeding it
-    // In the constructor must not narrow the value type to the base class alone.
+    // in the constructor must not narrow the value type to the base class alone.
     const originalPrototypeToPatchedClassMap = new Map<unknown, unknown>([[this.OriginalError.prototype, window.Error]]);
 
     const windowWithErrorConstructors = window as WindowWithErrorConstructors;

@@ -124,7 +124,7 @@ describe('AsyncLongStackTracesComponent', () => {
 
     const asyncId = ComponentEx.getAsyncId();
     // ExecutionAsyncId() returns the current async execution context id
-    // Which may be 0 or positive depending on the runtime context
+    // which may be 0 or positive depending on the runtime context
     expect(typeof asyncId).toBe('number');
   });
 
@@ -211,7 +211,7 @@ describe('AsyncLongStackTracesComponent', () => {
     ComponentEx.load();
 
     // Create an async operation to generate an async frame
-    // Wait to trigger the async hook
+    // wait to trigger the async hook
     await sleep(0);
     const result = 'done';
     expect(result).toBe('done');

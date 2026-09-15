@@ -64,9 +64,9 @@ export class Plugin extends PluginBase {
 
     // LongRunningTasksComponent patches `queue` and `thingsHappening`, which only the desktop
     // FileSystemAdapter has, so it is added only where that adapter is the real one. While the component
-    // Was constructed and then dropped the unchecked cast never mattered; now that it is actually added
-    // And loaded, letting it patch Android's CapacitorAdapter leaves the vault broken and Obsidian never
-    // Reaches layout-ready — the plugin does not finish loading at all.
+    // was constructed and then dropped the unchecked cast never mattered; now that it is actually added
+    // and loaded, letting it patch Android's CapacitorAdapter leaves the vault broken and Obsidian never
+    // reaches layout-ready — the plugin does not finish loading at all.
     const { adapter } = this.app.vault;
     if (adapter instanceof FileSystemAdapter) {
       this.addChild(
