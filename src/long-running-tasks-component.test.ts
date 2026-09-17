@@ -84,7 +84,7 @@ describe('LongRunningTasksComponent', () => {
 
     component.load();
 
-    // ThingsHappening is replaced by registerPatch with a debounced version.
+    // thingsHappening is replaced by registerPatch with a debounced version.
     // Just verify load doesn't throw.
     expect(true).toBe(true);
 

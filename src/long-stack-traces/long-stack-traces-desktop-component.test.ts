@@ -390,7 +390,7 @@ describe('LongStackTracesComponentDesktop', () => {
     vi.spyOn(pluginSettingsComponent, 'editAndSave').mockResolvedValue(undefined);
     component.load();
 
-    // StackTraceLimit getter returns the settings value
+    // stackTraceLimit getter returns the settings value
     expect(window.Error.stackTraceLimit).toBe(0);
 
     component.unload();
@@ -520,7 +520,7 @@ describe('LongStackTracesComponentDesktop', () => {
 
     target.addEventListener('test', handler);
 
-    // RemoveEventListener with EventListenerObject exercises the
+    // removeEventListener with EventListenerObject exercises the
     // isEventListenerObject branch in RemoveEventListenerPatchComponent
     expect(() => {
       target.removeEventListener('test', handler);
@@ -542,7 +542,7 @@ describe('LongStackTracesComponentDesktop', () => {
     const NEW_LIMIT = 42;
     window.Error.stackTraceLimit = NEW_LIMIT;
 
-    // EditAndSave should be called because the new limit differs from settings
+    // editAndSave should be called because the new limit differs from settings
     expect(editAndSaveSpy).toHaveBeenCalled();
 
     component.unload();
