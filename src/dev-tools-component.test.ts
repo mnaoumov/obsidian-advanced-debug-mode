@@ -69,7 +69,7 @@ describe('DevToolsComponent', () => {
   it('should toggle eruda button visibility based on isShown state', () => {
     component.load();
 
-    // IsShown() returns false in jsdom (offsetParent is always null),
+    // isShown() returns false in jsdom (offsetParent is always null),
     // so toggle(!false) → toggle(true) → display = ""
     component.toggleDevToolsButton();
     expect(mockButton.style.display).toBe('');

@@ -123,7 +123,7 @@ describe('AsyncLongStackTracesComponent', () => {
     });
 
     const asyncId = ComponentEx.getAsyncId();
-    // ExecutionAsyncId() returns the current async execution context id
+    // executionAsyncId() returns the current async execution context id
     // which may be 0 or positive depending on the runtime context
     expect(typeof asyncId).toBe('number');
   });
