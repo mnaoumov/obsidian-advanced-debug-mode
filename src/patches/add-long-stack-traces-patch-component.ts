@@ -41,7 +41,7 @@ interface AddLongStackTracesPatchComponentPatchWithLongStackTracesParams {
 
 interface AddLongStackTracesPatchComponentWrapWithStackTracesImplParams {
   readonly stackFrame: StackFrame;
-  wrappedFunction(): unknown;
+  readonly wrappedFunction: () => unknown;
 }
 
 interface AddLongStackTracesPatchComponentWrapWithStackTracesParams extends AddLongStackTracesPatchComponentPatchWithLongStackTracesParams {

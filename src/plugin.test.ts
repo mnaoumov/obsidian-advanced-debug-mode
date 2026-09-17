@@ -124,7 +124,7 @@ import { Plugin } from './plugin.ts';
 // them, so writing the old `_`-prefixed backing field no longer feeds the getter, which throws when unset.
 interface PluginInternals {
   commandHandlerComponent: CommandHandlerComponent;
-  onloadImpl(): Promise<void>;
+  onloadImpl: () => Promise<void>;
   pluginNoticeComponent: PluginNoticeComponent;
 }
 
