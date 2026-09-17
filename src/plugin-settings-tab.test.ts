@@ -49,7 +49,7 @@ beforeAll(() => {
  * `simulateClick__` fires the one that was registered.
  */
 interface ClickableButtonComponent {
-  simulateClick__(): void;
+  simulateClick__: () => void;
 }
 
 interface CreatePluginSettingsTabOverrides {
@@ -65,7 +65,7 @@ interface CreatePluginSettingsTabResult {
 }
 
 interface DisabledPredicateRow {
-  disabled(): boolean;
+  disabled: () => boolean;
 }
 
 function createPluginEventSource(): PluginEventSource {
@@ -339,8 +339,8 @@ describe('PluginSettingsTab', () => {
     };
 
     interface MockTextArea {
-      onChanged(): void;
-      setValue(value: string): unknown;
+      onChanged: () => void;
+      setValue: (value: string) => unknown;
     }
 
     const capturedTextAreas: MockTextArea[] = [];

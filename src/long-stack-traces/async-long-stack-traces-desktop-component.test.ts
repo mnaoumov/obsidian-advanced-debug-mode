@@ -17,8 +17,8 @@ import { AsyncLongStackTracesComponent } from './async-long-stack-traces-desktop
 import { LongStackTracesDesktopComponent } from './long-stack-traces-desktop-component.ts';
 
 interface AsyncComponentPrivateHooks {
-  asyncHookDestroy(asyncId: number): void;
-  asyncHookInit(params: AsyncHookInitParams): void;
+  asyncHookDestroy: (asyncId: number) => void;
+  asyncHookInit: (params: AsyncHookInitParams) => void;
   asyncIdParentMap: Map<number, number>;
   asyncIdStackFrameMap: Map<number, unknown>;
 }
