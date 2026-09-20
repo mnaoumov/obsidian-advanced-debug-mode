@@ -5,7 +5,7 @@ import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
 import type {
   LongStackTracesDesktopComponent,
   StackFrame
-} from '../long-stack-traces/long-stack-traces-desktop-component.ts';
+} from '../long-stack-traces/desktop-long-stack-traces-component.ts';
 import type {
   GenericFunctionWithOriginalFunction,
   GenericFunctionWithOriginalFunctionObject

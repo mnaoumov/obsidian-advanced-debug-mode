@@ -17,7 +17,7 @@ import {
 
 import { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import { PluginSettings } from '../plugin-settings.ts';
-import { LongStackTracesDesktopComponent } from './long-stack-traces-desktop-component.ts';
+import { LongStackTracesDesktopComponent } from './desktop-long-stack-traces-component.ts';
 
 interface CreateComponentResult {
   readonly component: LongStackTracesDesktopComponent;

@@ -13,8 +13,8 @@ import {
 } from 'vitest';
 
 import { PluginSettingsComponent } from '../plugin-settings-component.ts';
-import { AsyncLongStackTracesComponent } from './async-long-stack-traces-desktop-component.ts';
-import { LongStackTracesDesktopComponent } from './long-stack-traces-desktop-component.ts';
+import { AsyncLongStackTracesComponent } from './desktop-async-long-stack-traces-component.ts';
+import { LongStackTracesDesktopComponent } from './desktop-long-stack-traces-component.ts';
 
 interface AsyncComponentPrivateHooks {
   asyncHookDestroy: (asyncId: number) => void;
