@@ -21,7 +21,7 @@ import { LongStackTracesComponent } from './long-stack-traces-component.ts';
 
 const MockLongStackTracesDesktopComponent = vi.fn();
 
-vi.mock('./long-stack-traces-desktop-component.ts', () => ({
+vi.mock('./desktop-long-stack-traces-component.ts', () => ({
   LongStackTracesDesktopComponent: MockLongStackTracesDesktopComponent
 }));
 

@@ -1,5 +1,4 @@
 /* eslint-disable n/no-unsupported-features/node-builtins -- createHook/executionAsyncId are stable in Obsidian's desktop Electron runtime where this component runs; the rule flags them as experimental only for the configured Node version range. */
-// eslint-disable-next-line import-x/no-nodejs-modules -- Deliberate, executes only on desktop.
 import {
   createHook,
   executionAsyncId
@@ -12,7 +11,7 @@ import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import type {
   LongStackTracesDesktopComponent,
   StackFrame
-} from './long-stack-traces-desktop-component.ts';
+} from './desktop-long-stack-traces-component.ts';
 
 interface AsyncLongStackTracesComponentAsyncHookInitParams {
   readonly asyncId: number;

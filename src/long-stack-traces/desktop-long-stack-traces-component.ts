@@ -1,6 +1,5 @@
 import type { ConditionalKeys } from 'type-fest';
 
-// eslint-disable-next-line import-x/no-nodejs-modules -- Deliberate, executes only on desktop.
 import process from 'node:process';
 import { App } from 'obsidian';
 import { filterInPlace } from 'obsidian-dev-utils/array';
@@ -26,7 +25,7 @@ import type { GenericFunctionWithOriginalFunction } from '../types.ts';
 
 import { AddLongStackTracesPatchComponent } from '../patches/add-long-stack-traces-patch-component.ts';
 import { EventTargetRemoveEventListenerPatchComponent } from '../patches/event-target-remove-event-listener-patch-component.ts';
-import { AsyncLongStackTracesComponent } from './async-long-stack-traces-desktop-component.ts';
+import { AsyncLongStackTracesComponent } from './desktop-async-long-stack-traces-component.ts';
 import { eventHandlersMap } from './event-handlers-map.ts';
 
 export interface StackFrame {

@@ -49,8 +49,8 @@ Advanced Debug Mode is an Obsidian plugin that enhances the debugging experience
   - `command-handlers/toggle-dev-tools-button-command.ts` — `GlobalCommandHandler` to toggle the DevTools button
   - `command-handlers/abort-shared-operation-command.ts` — `GlobalCommandHandler` firing the app-wide shared abort; the hotkey-bindable form of the console's `__obsidianDevUtils.sharedAbortController.value.abort()`
   - `long-stack-traces/long-stack-traces-component.ts` — cross-platform entry; lazy-loads the desktop component and reloads on settings change
-  - `long-stack-traces/long-stack-traces-desktop-component.ts` — desktop core: patches `Error` (and child error classes), timers, microtasks, and `Promise` methods to inject long stack-trace frames
-  - `long-stack-traces/async-long-stack-traces-desktop-component.ts` — `async_hooks`-based async stack-trace capture (desktop only)
+  - `long-stack-traces/desktop-long-stack-traces-component.ts` — desktop core: patches `Error` (and child error classes), timers, microtasks, and `Promise` methods to inject long stack-trace frames
+  - `long-stack-traces/desktop-async-long-stack-traces-component.ts` — `async_hooks`-based async stack-trace capture (desktop only)
   - `long-stack-traces/event-listener.ts` — `isEventListenerObject` type guard
   - `long-stack-traces/event-handlers-map.ts` — `MultiWeakMap` mapping `(target, type, handler)` to wrapped handlers
   - `patches/add-long-stack-traces-patch-component.ts` — `MonkeyAroundComponent` that wraps handler args so each invocation records a stack frame
@@ -59,6 +59,10 @@ Advanced Debug Mode is an Obsidian plugin that enhances the debugging experience
   - `patches/file-system-adapter-things-happening-patch-component.ts` — patches `thingsHappening` to disable the long-running-task timeout
   - `styles/` — `main.scss` (plugin styles) and `scss.d.ts` (SCSS module type declaration)
 - **`main` field** points to `src/main.ts` (Obsidian plugin source entry; built artifact is `dist/build/main.js`, not published to npm).
+
+### The `desktop-` filename prefix is load-bearing
+
+`obsidian-dev-utils`' shared ESLint config turns `import-x/no-nodejs-modules` and `obsidianmd/no-nodejs-modules` off for `src/**/desktop-*.ts`, and nothing else. A desktop-only module is reached solely through a `Platform.isDesktopApp`-gated dynamic `import()` in its caller, so its static `node:` imports never load on mobile — but neither rule can see that gate, because it sits one file up. The exemption therefore keys off what the file is **named**. Move a `node:`-importing module out from under the prefix and both rules report again; the `obsidianmd` half cannot be waived at all, because the community-directory runner sets `eslint-comments/no-restricted-disable` over `obsidianmd/*`. So do not rename these two files back, and give any new desktop-only module the prefix from the start rather than a disable comment.
 
 ## Testing notes
 
