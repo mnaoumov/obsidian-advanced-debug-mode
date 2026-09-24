@@ -339,7 +339,7 @@ describe('PluginSettingsTab', () => {
     };
 
     interface MockTextArea {
-      onChanged: () => void;
+      inputEl: HTMLTextAreaElement;
       setValue: (value: string) => unknown;
     }
 
@@ -362,8 +362,9 @@ describe('PluginSettingsTab', () => {
     const textArea = capturedTextAreas[0];
     expect(textArea).toBeDefined();
 
-    // Set a new value and trigger onChange
+    // As in Obsidian, `setValue` alone does not fire `onChange`: the user's edit is the `input` event.
     textArea?.setValue('ns1\nns2');
+    textArea?.inputEl.dispatchEvent(new Event('input'));
 
     expect(debugControllerMock.set).toHaveBeenCalledWith(['ns1', 'ns2']);
   });
