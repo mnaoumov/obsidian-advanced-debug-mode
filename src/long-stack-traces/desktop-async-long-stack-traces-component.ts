@@ -44,11 +44,7 @@ export class AsyncLongStackTracesComponent extends ComponentEx {
   }
 
   public adjustStackLines(lines: string[], asyncId: number): void {
-    if (!this.isEnabled()) {
-      return;
-    }
-
-    if (asyncId === 0) {
+    if (!this.isEnabled() || asyncId === 0) {
       return;
     }
 
