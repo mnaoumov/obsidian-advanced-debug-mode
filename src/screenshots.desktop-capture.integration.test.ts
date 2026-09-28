@@ -140,6 +140,7 @@ describe('desktop store screenshots', () => {
   });
 
   it('4 - a console inside Obsidian', async () => {
+    await pinFocusClassPosition();
     const tabNames = await openConsoleTab('elements');
     // Not a log pane: the tabs are the ones DevTools has, which is the point of
     // shipping it to a platform that has no DevTools at all.
@@ -414,6 +415,28 @@ async function openConsoleTab(tabName: string): Promise<string[]> {
       return tabs.map((tab) => tab.textContent.trim());
     },
     input: { tabName },
+    vaultPath: vaultPath()
+  });
+}
+
+/**
+ * Moves `is-focused` to the end of `body`'s class list.
+ *
+ * The Elements shot prints `body`'s class attribute verbatim, in the tree, the
+ * breadcrumb and the Attributes pane. Obsidian adds and removes `is-focused` as
+ * the window gains and loses focus, and each re-add appends it, so where it
+ * lands depends on whether a blur happened after startup: three runs in eight
+ * printed it before `is-floating-nav` instead of before `theme-dark`, and the
+ * frame churned 5247 pixels with nothing changed. Re-adding it here, just before
+ * the tab renders, puts it last on every run. It is added whatever the window's
+ * focus, because a frame that sometimes lacked it would churn the same way.
+ */
+async function pinFocusClassPosition(): Promise<void> {
+  await evalInObsidian({
+    callback() {
+      document.body.classList.remove('is-focused');
+      document.body.classList.add('is-focused');
+    },
     vaultPath: vaultPath()
   });
 }
