@@ -25,6 +25,7 @@ import {
 import { join } from 'node:path';
 import process from 'node:process';
 import {
+  applyObsidianTheme,
   captureObsidianScreenshot,
   evalInObsidian,
   labelScreenshot,
@@ -75,12 +76,14 @@ beforeAll(async () => {
   });
   await vault.syncToDevice();
 
+  // Not a bare `app.changeTheme`: that only schedules the config save, and a
+  // config reload landing first drops the theme and shoots every frame light.
+  await applyObsidianTheme({ theme: 'dark', vaultPath: vaultPath() });
+
   await evalInObsidian({
     async callback({ app, lib: { waitUntil }, notePath }) {
       const SETTLE_TIMEOUT_IN_MILLISECONDS = 20_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1000;
-
-      app.changeTheme('obsidian');
 
       await waitUntil({
         message: 'the staged note to appear in the vault',
