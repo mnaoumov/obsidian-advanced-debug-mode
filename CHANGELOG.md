@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## 1.11.1
+
+- chore(screenshots): merge the reproducible Elements frame
+- chore(deps): merge the applyObsidianTheme move for the desktop capture suite
+- chore(deps): merge the obsidian-integration-testing 17.0.2 float and mobile re-shoot
+- chore(deps): merge the obsidian-integration-testing 17 float
+- chore(deps): merge the obsidian-test-mocks 7 float
+- fix(test): merge the headless demo-vault toolkit install
+- fix(deps): restore the lockfile's missing resolved and integrity fields
+- refactor(lint): move the two desktop long-stack-traces modules onto the desktop- prefix
+- fix(deps): float devalue to 5.9.4, clearing GHSA-9rgm-9g3h-6x36
+- build(markdownlint): forbid hard-wrapped markdown paragraphs
+- style(comments): stop rewriting symbol names that open a comment
+- chore(deps): drop the dead markdown-it override
+- chore(deps): drop the dead js-yaml override
+- style(comments): stop capitalizing the middle of a wrapped comment
+- docs: replace the private rule-id citations with what they assert
+- docs: name the library and the sibling plugins so a reader can resolve them
+- docs: replace the private tracker references with what they pointed at
+- chore(deps): move to obsidian-dev-utils 103
+- test(integration): take the palette frame with the soft keyboard up
+- test: bring the capture suites' wait ceilings under the transport's per-eval cap
+- refactor(screenshots): drive the Android console with trusted taps
+- chore: adopt the npm run gate branch gate
+- docs: name the unversioned demo-vault asset and the folder it unzips into
+- chore: make the LICENSE copyright line checkable by the linter and guard it against the year roll-over
+- fix(deps): move to obsidian-dev-utils 101
+
 ## 1.11.0
 
 - feat: surface the shared abort controller as a command and a settings button
