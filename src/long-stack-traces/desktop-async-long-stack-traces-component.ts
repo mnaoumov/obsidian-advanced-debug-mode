@@ -1,9 +1,3 @@
-/* eslint-disable n/no-unsupported-features/node-builtins -- createHook/executionAsyncId are stable in Obsidian's desktop Electron runtime where this component runs; the rule flags them as experimental only for the configured Node version range. */
-import {
-  createHook,
-  executionAsyncId
-} from 'node:async_hooks';
-/* eslint-enable n/no-unsupported-features/node-builtins -- Re-enable after the deliberate desktop-only async_hooks import. */
 import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
@@ -13,6 +7,12 @@ import type {
   StackFrame
 } from './desktop-long-stack-traces-component.ts';
 
+/**
+ * The part of `node:async_hooks` this component uses. The module is loaded by the desktop-guarded caller and handed in,
+ * so this file never imports a Node.js built-in itself.
+ */
+export type AsyncHooks = Pick<typeof import('node:async_hooks'), 'createHook' | 'executionAsyncId'>;
+
 interface AsyncLongStackTracesComponentAsyncHookInitParams {
   readonly asyncId: number;
   readonly triggerAsyncId: number;
@@ -20,6 +20,7 @@ interface AsyncLongStackTracesComponentAsyncHookInitParams {
 }
 
 interface AsyncLongStackTracesComponentConstructorParams {
+  readonly asyncHooks: AsyncHooks;
   readonly longStackTracesComponent: LongStackTracesDesktopComponent;
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
@@ -30,6 +31,7 @@ interface AsyncStackFrame {
 }
 
 export class AsyncLongStackTracesComponent extends ComponentEx {
+  private readonly asyncHooks: AsyncHooks;
   private readonly asyncIdParentMap = new Map<number, number>();
   private readonly asyncIdStackFrameMap = new Map<number, AsyncStackFrame>();
 
@@ -39,6 +41,7 @@ export class AsyncLongStackTracesComponent extends ComponentEx {
 
   public constructor(params: AsyncLongStackTracesComponentConstructorParams) {
     super();
+    this.asyncHooks = params.asyncHooks;
     this.longStackTracesComponent = params.longStackTracesComponent;
     this.pluginSettingsComponent = params.pluginSettingsComponent;
   }
@@ -66,7 +69,7 @@ export class AsyncLongStackTracesComponent extends ComponentEx {
   }
 
   public getAsyncId(): number {
-    return this.isEnabled() ? executionAsyncId() : 0;
+    return this.isEnabled() ? this.asyncHooks.executionAsyncId() : 0;
   }
 
   public override onload(): void {
@@ -74,7 +77,7 @@ export class AsyncLongStackTracesComponent extends ComponentEx {
       return;
     }
 
-    const asyncHook = createHook({
+    const asyncHook = this.asyncHooks.createHook({
       destroy: this.asyncHookDestroy.bind(this),
       init: (asyncId, type, triggerAsyncId) => {
         this.asyncHookInit({ asyncId, triggerAsyncId, type });

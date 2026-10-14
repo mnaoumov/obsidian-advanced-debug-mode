@@ -1,6 +1,11 @@
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
+import {
+  createHook,
+  executionAsyncId
+} from 'node:async_hooks';
+import process from 'node:process';
 import { App } from 'obsidian';
 import { noopAsync } from 'obsidian-dev-utils/function';
 import { castTo } from 'obsidian-dev-utils/object-utils';
@@ -29,6 +34,8 @@ function createComponent(settingsOverrides?: Partial<PluginSettings>): CreateCom
   const app = new App();
   const component = new LongStackTracesDesktopComponent({
     app,
+    asyncHooks: { createHook, executionAsyncId },
+    nodeProcess: process,
     pluginId: 'test-plugin',
     pluginSettingsComponent
   });

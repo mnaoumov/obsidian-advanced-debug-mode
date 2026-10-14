@@ -27,9 +27,18 @@ export class LongStackTracesComponent extends ComponentEx {
 
   public override async onloadAsync(): Promise<void> {
     if (Platform.isDesktop) {
-      const desktopModule = await import('./desktop-long-stack-traces-component.ts');
+      // The Node.js built-ins are loaded here, behind the desktop guard, and handed down, so that no module reaches them through a static import.
+      const [desktopModule, asyncHooks, processModule] = await Promise.all([
+        import('./desktop-long-stack-traces-component.ts'),
+        /* eslint-disable import-x/no-nodejs-modules -- Guarded by Platform.isDesktop, which this rule cannot see; obsidianmd/no-nodejs-modules does. */
+        import('node:async_hooks'),
+        import('node:process')
+        /* eslint-enable import-x/no-nodejs-modules -- Back on after the two desktop-guarded imports. */
+      ]);
       const longStackTracesComponentDesktop = new desktopModule.LongStackTracesDesktopComponent({
         app: this.app,
+        asyncHooks,
+        nodeProcess: processModule.default,
         pluginId: this.pluginId,
         pluginSettingsComponent: this.pluginSettingsComponent
       });
