@@ -1,6 +1,5 @@
 import type { ConditionalKeys } from 'type-fest';
 
-import process from 'node:process';
 import { App } from 'obsidian';
 import { filterInPlace } from 'obsidian-dev-utils/array';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
@@ -22,6 +21,7 @@ import type {
 } from '../patches/add-long-stack-traces-patch-component.ts';
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import type { GenericFunctionWithOriginalFunction } from '../types.ts';
+import type { AsyncHooks } from './desktop-async-long-stack-traces-component.ts';
 
 import { AddLongStackTracesPatchComponent } from '../patches/add-long-stack-traces-patch-component.ts';
 import { EventTargetRemoveEventListenerPatchComponent } from '../patches/event-target-remove-event-listener-patch-component.ts';
@@ -49,6 +49,8 @@ interface LongStackTracesDesktopComponentAdjustStackLinesParams {
 
 interface LongStackTracesDesktopComponentConstructorParams {
   readonly app: App;
+  readonly asyncHooks: AsyncHooks;
+  readonly nodeProcess: NodeJS.Process;
   readonly pluginId: string;
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
@@ -82,9 +84,13 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   private _OriginalError?: ErrorConstructor;
   private readonly app: App;
 
+  private readonly asyncHooks: AsyncHooks;
+
   private asyncLongStackTracesComponent?: AsyncLongStackTracesComponent;
 
   private internalStackFrameLocations: string[] = [];
+
+  private readonly nodeProcess: NodeJS.Process;
 
   private readonly pluginId: string;
 
@@ -92,6 +98,8 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   public constructor(params: LongStackTracesDesktopComponentConstructorParams) {
     super();
     this.app = params.app;
+    this.asyncHooks = params.asyncHooks;
+    this.nodeProcess = params.nodeProcess;
     this.pluginId = params.pluginId;
     this.pluginSettingsComponent = params.pluginSettingsComponent;
   }
@@ -208,13 +216,14 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     });
 
     this.patchWithLongStackTraces({
-      $object: process,
+      $object: this.nodeProcess,
       handlerArgumentIndex: 0,
       methodName: 'nextTick',
       stackFrameTitle: 'process.nextTick'
     });
 
     this.asyncLongStackTracesComponent = new AsyncLongStackTracesComponent({
+      asyncHooks: this.asyncHooks,
       longStackTracesComponent: this,
       pluginSettingsComponent: this.pluginSettingsComponent
     });

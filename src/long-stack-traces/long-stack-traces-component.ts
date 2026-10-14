@@ -28,8 +28,16 @@ export class LongStackTracesComponent extends ComponentEx {
   public override async onloadAsync(): Promise<void> {
     if (Platform.isDesktop) {
       const desktopModule = await import('./desktop-long-stack-traces-component.ts');
+      // The Node.js built-ins are loaded here, behind the desktop guard, and handed down, so that no module reaches them through a static import.
+      // They take `require()`, not `import()`: esbuild leaves a dynamic `import()` of an external module native, and the renderer cannot resolve a `node:` URL.
+      /* eslint-disable import-x/no-nodejs-modules, @typescript-eslint/no-require-imports -- Guarded by Platform.isDesktop, which import-x cannot see and obsidianmd/no-nodejs-modules does; `require()` is the form that loads in the bundle. */
+      const asyncHooks = require('node:async_hooks') as typeof import('node:async_hooks');
+      const nodeProcess = require('node:process') as NodeJS.Process;
+      /* eslint-enable import-x/no-nodejs-modules, @typescript-eslint/no-require-imports -- Back on after the two desktop-guarded loads. */
       const longStackTracesComponentDesktop = new desktopModule.LongStackTracesDesktopComponent({
         app: this.app,
+        asyncHooks,
+        nodeProcess,
         pluginId: this.pluginId,
         pluginSettingsComponent: this.pluginSettingsComponent
       });
