@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.11.2
+
+- fix: load node:async_hooks and node:process behind Platform.isDesktop
+
 ## 1.11.1
 
 - chore(screenshots): merge the reproducible Elements frame
