@@ -82,6 +82,63 @@ describe('Desktop Integration', () => {
     expect(result.hasLongStackTrace).toBe(true);
   });
 
+  it('should pass CallSite arrays from a caller-installed Error.prepareStackTrace through both stack APIs', async () => {
+    interface StructuredStackProbeResult {
+      readonly firstFrameHasGetFileName: boolean;
+      readonly isArray: boolean;
+      readonly prepareStackTraceCallCount: number;
+    }
+
+    interface StackHolder {
+      stack?: unknown;
+    }
+
+    // The probe `depd` (and so Local REST API) relies on: a formatter that returns the CallSite array.
+    const result = await evalInObsidian({
+      callback(): Record<string, StructuredStackProbeResult> {
+        const hasOwnPrepareStackTrace = Object.hasOwn(Error, 'prepareStackTrace');
+        const previousPrepareStackTrace = Error.prepareStackTrace;
+        let prepareStackTraceCallCount = 0;
+        const results: Record<string, StructuredStackProbeResult> = {};
+        try {
+          Error.prepareStackTrace = (_error, callSites): NodeJS.CallSite[] => {
+            prepareStackTraceCallCount++;
+            return callSites;
+          };
+
+          prepareStackTraceCallCount = 0;
+          results['new Error().stack'] = describeStack(new Error('structured-stack probe').stack);
+
+          prepareStackTraceCallCount = 0;
+          const target: StackHolder = {};
+          Error.captureStackTrace(target);
+          results['Error.captureStackTrace()'] = describeStack(target.stack);
+        } finally {
+          if (hasOwnPrepareStackTrace) {
+            Error.prepareStackTrace = previousPrepareStackTrace;
+          } else {
+            Reflect.deleteProperty(Error, 'prepareStackTrace');
+          }
+        }
+        return results;
+
+        function describeStack(stack: unknown): StructuredStackProbeResult {
+          return {
+            firstFrameHasGetFileName: Array.isArray(stack) && typeof (stack[0] as Partial<NodeJS.CallSite> | undefined)?.getFileName === 'function',
+            isArray: Array.isArray(stack),
+            prepareStackTraceCallCount
+          };
+        }
+      }
+    });
+
+    const expected: StructuredStackProbeResult = { firstFrameHasGetFileName: true, isArray: true, prepareStackTraceCallCount: 1 };
+    expect(result).toEqual({
+      'Error.captureStackTrace()': expected,
+      'new Error().stack': expected
+    });
+  });
+
   it('should have Error.stackTraceLimit set from settings', async () => {
     const result = await evalInObsidian({
       callback() {

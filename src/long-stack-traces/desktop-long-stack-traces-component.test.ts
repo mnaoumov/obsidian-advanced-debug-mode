@@ -29,6 +29,10 @@ interface CreateComponentResult {
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
+interface StackHolder {
+  stack?: unknown;
+}
+
 function createComponent(settingsOverrides?: Partial<PluginSettings>): CreateComponentResult {
   const pluginSettingsComponent = createSettingsComponent(settingsOverrides);
   const app = new App();
@@ -71,15 +75,26 @@ function createSettingsComponent(overrides: Partial<PluginSettings> = {}): Plugi
   return component;
 }
 
+function returnCallSites(_error: Error, callSites: NodeJS.CallSite[]): NodeJS.CallSite[] {
+  return callSites;
+}
+
 describe('LongStackTracesComponentDesktop', () => {
   let savedError: ErrorConstructor;
+  let savedPrepareStackTraceDescriptor: PropertyDescriptor | undefined;
 
   beforeEach(() => {
     savedError = window.Error;
+    savedPrepareStackTraceDescriptor = Object.getOwnPropertyDescriptor(savedError, 'prepareStackTrace');
   });
 
   afterEach(() => {
     window.Error = savedError;
+    if (savedPrepareStackTraceDescriptor) {
+      Object.defineProperty(savedError, 'prepareStackTrace', savedPrepareStackTraceDescriptor);
+    } else {
+      Reflect.deleteProperty(savedError, 'prepareStackTrace');
+    }
   });
 
   it('should construct without errors', () => {
@@ -311,6 +326,107 @@ describe('LongStackTracesComponentDesktop', () => {
     // eslint-disable-next-line unicorn/no-error-property-assignment -- Assigning `stack` IS the behavior under test: the patched Error must preserve a caller-set stack.
     error.stack = customStack;
     expect(error.stack).toBe(customStack);
+
+    component.unload();
+  });
+
+  it('should pass CallSite arrays from a caller-installed Error.prepareStackTrace through new Error().stack', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const prepareStackTrace = vi.fn((_error: Error, callSites: NodeJS.CallSite[]) => callSites);
+    window.Error.prepareStackTrace = prepareStackTrace;
+    const stack: unknown = new window.Error('structured-stack probe').stack;
+    expect(prepareStackTrace).toHaveBeenCalledTimes(1);
+    expect(Array.isArray(stack)).toBe(true);
+    expect(typeof castTo<NodeJS.CallSite[]>(stack)[0]?.getFileName).toBe('function');
+
+    component.unload();
+  });
+
+  it('should pass CallSite arrays from a caller-installed Error.prepareStackTrace through Error.captureStackTrace()', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const prepareStackTrace = vi.fn((_error: Error, callSites: NodeJS.CallSite[]) => callSites);
+    window.Error.prepareStackTrace = prepareStackTrace;
+    const target: StackHolder = {};
+    window.Error.captureStackTrace(target);
+    // V8 formats a captured stack lazily, on the first read.
+    const stack = target.stack;
+    expect(prepareStackTrace).toHaveBeenCalledTimes(1);
+    expect(Array.isArray(stack)).toBe(true);
+    expect(typeof castTo<NodeJS.CallSite[]>(stack)[0]?.getFileName).toBe('function');
+
+    component.unload();
+  });
+
+  it('should forward Error.prepareStackTrace reads and writes to the original Error class', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const prepareStackTrace = vi.fn((_error: Error, callSites: NodeJS.CallSite[]) => callSites);
+    window.Error.prepareStackTrace = prepareStackTrace;
+    expect(component.OriginalError.prepareStackTrace).toBe(prepareStackTrace);
+    expect(window.Error.prepareStackTrace).toBe(prepareStackTrace);
+    expect(Object.hasOwn(window.Error, 'prepareStackTrace')).toBe(false);
+
+    Reflect.set(window.Error, 'prepareStackTrace', undefined);
+    expect(component.OriginalError.prepareStackTrace).toBeUndefined();
+    expect(typeof new window.Error('restored').stack).toBe('string');
+
+    component.unload();
+  });
+
+  it('should forward an Error.prepareStackTrace delete to the original Error class', () => {
+    const { component } = createComponent();
+    component.load();
+
+    window.Error.prepareStackTrace = returnCallSites;
+    Reflect.deleteProperty(window.Error, 'prepareStackTrace');
+    expect(Object.hasOwn(component.OriginalError, 'prepareStackTrace')).toBe(false);
+    expect(window.Error.prepareStackTrace).toBeUndefined();
+    expect(typeof new window.Error('deleted').stack).toBe('string');
+
+    component.unload();
+  });
+
+  it('should forward an Error.prepareStackTrace definition to the original Error class', () => {
+    const { component } = createComponent();
+    component.load();
+
+    Object.defineProperty(window.Error, 'prepareStackTrace', { configurable: true, value: returnCallSites, writable: true });
+    expect(component.OriginalError.prepareStackTrace).toBe(returnCallSites);
+    expect(Array.isArray(new window.Error('defined').stack)).toBe(true);
+
+    component.unload();
+  });
+
+  it('should keep other static properties on the patched Error class', () => {
+    const { component } = createComponent();
+    component.load();
+
+    Object.defineProperty(window.Error, 'customStaticProperty', { configurable: true, value: 'patched-only', writable: true });
+    expect(Reflect.get(window.Error, 'customStaticProperty')).toBe('patched-only');
+    expect(Object.hasOwn(component.OriginalError, 'customStaticProperty')).toBe(false);
+    Reflect.deleteProperty(window.Error, 'customStaticProperty');
+    expect(Object.hasOwn(window.Error, 'customStaticProperty')).toBe(false);
+
+    component.unload();
+  });
+
+  it('should still add long stack frames when a caller-installed Error.prepareStackTrace returns a string', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const parentStackError = new savedError('parent');
+    expect(parentStackError.stack).toBeDefined();
+    component.parentStackFrame = { parentStackError, title: 'parent frame' };
+    window.Error.prepareStackTrace = (error: Error): string => `Formatted ${error.message}`;
+    const stack = new window.Error('child').stack;
+    component.parentStackFrame = undefined;
+    expect(stack?.startsWith('Formatted child\n')).toBe(true);
+    expect(stack).toContain('at --- parent frame ---');
 
     component.unload();
   });
