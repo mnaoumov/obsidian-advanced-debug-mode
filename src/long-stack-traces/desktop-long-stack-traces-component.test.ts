@@ -1,11 +1,8 @@
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
-import {
-  createHook,
-  executionAsyncId
-} from 'node:async_hooks';
 import process from 'node:process';
+import { promiseHooks } from 'node:v8';
 import { App } from 'obsidian';
 import { noopAsync } from 'obsidian-dev-utils/function';
 import { castTo } from 'obsidian-dev-utils/object-utils';
@@ -38,10 +35,10 @@ function createComponent(settingsOverrides?: Partial<PluginSettings>): CreateCom
   const app = new App();
   const component = new LongStackTracesDesktopComponent({
     app,
-    asyncHooks: { createHook, executionAsyncId },
     nodeProcess: process,
     pluginId: 'test-plugin',
-    pluginSettingsComponent
+    pluginSettingsComponent,
+    promiseHooks
   });
   return { component, pluginSettingsComponent };
 }
@@ -192,7 +189,7 @@ describe('LongStackTracesComponentDesktop', () => {
 
     const LINE_COUNT = 20;
     const lines = Array.from({ length: LINE_COUNT }, (_, index) => `    at fn${String(index)} (file.js:${String(index)}:0)`);
-    component.adjustStackLines({ asyncId: 0, lines, parentStackFrame: undefined });
+    component.adjustStackLines({ executingPromise: undefined, lines, parentStackFrame: undefined });
 
     expect(lines.length).toBe(SMALL_LIMIT + 1);
     expect(lines[SMALL_LIMIT]).toContain('STACK TRACE LIMIT REACHED');
@@ -207,7 +204,7 @@ describe('LongStackTracesComponentDesktop', () => {
 
     const LINE_COUNT = 5;
     const lines = Array.from({ length: LINE_COUNT }, (_, index) => `    at fn${String(index)} (file.js:${String(index)}:0)`);
-    component.adjustStackLines({ asyncId: 0, lines, parentStackFrame: undefined });
+    component.adjustStackLines({ executingPromise: undefined, lines, parentStackFrame: undefined });
 
     expect(lines.length).toBe(LINE_COUNT);
 
@@ -257,7 +254,7 @@ describe('LongStackTracesComponentDesktop', () => {
       '    at something (plugin:test-plugin:1:0)'
     ];
 
-    component.adjustStackLines({ asyncId: 0, lines, parentStackFrame: undefined });
+    component.adjustStackLines({ executingPromise: undefined, lines, parentStackFrame: undefined });
 
     expect(lines.some((l) => l.includes('node:internal'))).toBe(false);
     expect(lines.some((l) => l.includes('plugin:test-plugin'))).toBe(false);
@@ -277,7 +274,7 @@ describe('LongStackTracesComponentDesktop', () => {
     ];
     const originalLength = lines.length;
 
-    component.adjustStackLines({ asyncId: 0, lines, parentStackFrame: undefined });
+    component.adjustStackLines({ executingPromise: undefined, lines, parentStackFrame: undefined });
 
     expect(lines.length).toBe(originalLength);
 
@@ -296,7 +293,7 @@ describe('LongStackTracesComponentDesktop', () => {
 
     const lines = ['    at currentFn (current.js:1:0)'];
 
-    component.adjustStackLines({ asyncId: 0, lines, parentStackFrame });
+    component.adjustStackLines({ executingPromise: undefined, lines, parentStackFrame });
 
     expect(lines.length).toBeGreaterThan(1);
 

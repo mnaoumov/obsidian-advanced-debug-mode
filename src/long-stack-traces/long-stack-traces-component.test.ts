@@ -1,11 +1,8 @@
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
-import {
-  createHook,
-  executionAsyncId
-} from 'node:async_hooks';
 import process from 'node:process';
+import { promiseHooks } from 'node:v8';
 import {
   App,
   Component,
@@ -112,8 +109,8 @@ describe('LongStackTracesComponent', () => {
 
     expect(MockLongStackTracesDesktopComponent).toHaveBeenCalledOnce();
     expect(MockLongStackTracesDesktopComponent).toHaveBeenCalledWith(expect.objectContaining({
-      asyncHooks: expect.objectContaining({ createHook, executionAsyncId }) as unknown,
-      nodeProcess: process
+      nodeProcess: process,
+      promiseHooks
     }));
 
     component.unload();

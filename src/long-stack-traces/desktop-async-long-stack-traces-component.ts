@@ -8,50 +8,51 @@ import type {
 } from './desktop-long-stack-traces-component.ts';
 
 /**
- * The part of `node:async_hooks` this component uses. The module is loaded by the desktop-guarded caller and handed in,
+ * The part of `node:v8` this component uses. The module is loaded by the desktop-guarded caller and handed in,
  * so this file never imports a Node.js built-in itself.
  */
-export type AsyncHooks = Pick<typeof import('node:async_hooks'), 'createHook' | 'executionAsyncId'>;
-
-interface AsyncLongStackTracesComponentAsyncHookInitParams {
-  readonly asyncId: number;
-  readonly triggerAsyncId: number;
-  readonly type: string;
-}
+export type PromiseHooks = Pick<typeof import('node:v8').promiseHooks, 'createHook'>;
 
 interface AsyncLongStackTracesComponentConstructorParams {
-  readonly asyncHooks: AsyncHooks;
   readonly longStackTracesComponent: LongStackTracesDesktopComponent;
   readonly pluginSettingsComponent: PluginSettingsComponent;
+  readonly promiseHooks: PromiseHooks;
 }
 
 interface AsyncStackFrame {
-  currentError: Error;
-  parentStackFrame: StackFrame | undefined;
+  readonly currentError: Error;
+  readonly parentPromise: Promise<unknown> | undefined;
+  readonly parentStackFrame: StackFrame | undefined;
 }
 
+/**
+ * A property of the console's command-line API. V8 installs that API on the global object for the duration of each
+ * console evaluation, including the side-effect-free ones DevTools sends for autocomplete and eager previews.
+ */
+const COMMAND_LINE_API_PROPERTY_NAME = '$_';
+
 export class AsyncLongStackTracesComponent extends ComponentEx {
-  private readonly asyncHooks: AsyncHooks;
-  private readonly asyncIdParentMap = new Map<number, number>();
-  private readonly asyncIdStackFrameMap = new Map<number, AsyncStackFrame>();
+  private readonly executingPromises: Promise<unknown>[] = [];
 
   private readonly longStackTracesComponent: LongStackTracesDesktopComponent;
 
   private readonly pluginSettingsComponent: PluginSettingsComponent;
+  private readonly promiseHooks: PromiseHooks;
+  private readonly promiseStackFrameMap = new WeakMap<Promise<unknown>, AsyncStackFrame>();
 
   public constructor(params: AsyncLongStackTracesComponentConstructorParams) {
     super();
-    this.asyncHooks = params.asyncHooks;
     this.longStackTracesComponent = params.longStackTracesComponent;
     this.pluginSettingsComponent = params.pluginSettingsComponent;
+    this.promiseHooks = params.promiseHooks;
   }
 
-  public adjustStackLines(lines: string[], asyncId: number): void {
-    if (!this.isEnabled() || asyncId === 0) {
+  public adjustStackLines(lines: string[], executingPromise: Promise<unknown> | undefined): void {
+    if (!this.isEnabled() || !executingPromise) {
       return;
     }
 
-    const asyncStackFrame = this.asyncIdStackFrameMap.get(asyncId);
+    const asyncStackFrame = this.promiseStackFrameMap.get(executingPromise);
     if (!asyncStackFrame) {
       return;
     }
@@ -60,16 +61,15 @@ export class AsyncLongStackTracesComponent extends ComponentEx {
     this.longStackTracesComponent.addStackFrame({ newLines: currentErrorLines, previousLines: lines, title: 'async' });
 
     if (asyncStackFrame.parentStackFrame) {
-      this.longStackTracesComponent.adjustStackLines({ asyncId: 0, lines, parentStackFrame: asyncStackFrame.parentStackFrame });
+      this.longStackTracesComponent.adjustStackLines({ executingPromise: undefined, lines, parentStackFrame: asyncStackFrame.parentStackFrame });
       return;
     }
 
-    const parentAsyncId = this.asyncIdParentMap.get(asyncId) ?? 0;
-    this.longStackTracesComponent.adjustStackLines({ asyncId: parentAsyncId, lines, parentStackFrame: undefined });
+    this.longStackTracesComponent.adjustStackLines({ executingPromise: asyncStackFrame.parentPromise, lines, parentStackFrame: undefined });
   }
 
-  public getAsyncId(): number {
-    return this.isEnabled() ? this.asyncHooks.executionAsyncId() : 0;
+  public getExecutingPromise(): Promise<unknown> | undefined {
+    return this.isEnabled() ? this.executingPromises.at(-1) : undefined;
   }
 
   public override onload(): void {
@@ -77,38 +77,57 @@ export class AsyncLongStackTracesComponent extends ComponentEx {
       return;
     }
 
-    const asyncHook = this.asyncHooks.createHook({
-      destroy: this.asyncHookDestroy.bind(this),
-      init: (asyncId, type, triggerAsyncId) => {
-        this.asyncHookInit({ asyncId, triggerAsyncId, type });
-      }
-    });
+    // `v8.promiseHooks` rather than `async_hooks`: V8 aborts a side-effect-free evaluation the moment a promise hook
+    // writes anything, and the only promise hooks that run are the installed ones. Node's `async_hooks` installs its own,
+    // which always write, so DevTools' autocomplete came back empty. Ours skip console evaluations instead.
+    const stopPromiseHooks = this.promiseHooks.createHook({
+      after: this.promiseHookAfter.bind(this),
+      before: this.promiseHookBefore.bind(this),
+      init: this.promiseHookInit.bind(this)
+    }) as () => void;
 
-    asyncHook.enable();
-
-    this.register(() => asyncHook.disable());
-  }
-
-  private asyncHookDestroy(asyncId: number): void {
-    this.asyncIdStackFrameMap.delete(asyncId);
-    this.asyncIdParentMap.delete(asyncId);
-  }
-
-  private asyncHookInit(params: AsyncLongStackTracesComponentAsyncHookInitParams): void {
-    const { asyncId, triggerAsyncId, type } = params;
-    if (type !== 'PROMISE') {
-      return;
-    }
-
-    this.asyncIdParentMap.set(asyncId, triggerAsyncId);
-
-    this.asyncIdStackFrameMap.set(asyncId, {
-      currentError: new this.longStackTracesComponent.OriginalError(),
-      parentStackFrame: this.longStackTracesComponent.parentStackFrame
-    });
+    this.register(stopPromiseHooks);
   }
 
   private isEnabled(): boolean {
     return this.pluginSettingsComponent.settings.shouldIncludeAsyncLongStackTraces;
   }
+
+  private promiseHookAfter(promise: Promise<unknown>): void {
+    if (this.executingPromises.at(-1) === promise) {
+      this.executingPromises.length -= 1;
+    }
+  }
+
+  private promiseHookBefore(promise: Promise<unknown>): void {
+    if (isConsoleEvaluating()) {
+      return;
+    }
+
+    this.executingPromises.push(promise);
+  }
+
+  private promiseHookInit(promise: Promise<unknown>, parent: Promise<unknown> | undefined): void {
+    if (isConsoleEvaluating()) {
+      return;
+    }
+
+    this.promiseStackFrameMap.set(promise, {
+      currentError: new this.longStackTracesComponent.OriginalError(),
+      parentPromise: parent ?? this.executingPromises.at(-1),
+      parentStackFrame: this.longStackTracesComponent.parentStackFrame
+    });
+  }
+}
+
+/**
+ * Whether a console evaluation is running. A promise hook must not write while one is, because DevTools sends its
+ * autocomplete and preview requests with `throwOnSideEffect`, and V8 aborts the whole evaluation on the first write.
+ * Typed-in console commands are skipped too, which only loses the async frames of the promises their first synchronous
+ * part creates.
+ *
+ * @returns Whether the console's command-line API is installed on the global object.
+ */
+function isConsoleEvaluating(): boolean {
+  return Object.hasOwn(window, COMMAND_LINE_API_PROPERTY_NAME);
 }

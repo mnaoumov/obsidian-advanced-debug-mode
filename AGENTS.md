@@ -48,9 +48,9 @@ Advanced Debug Mode is an Obsidian plugin that enhances the debugging experience
   - `types.ts` — shared generic-function types (`GenericFunctionWithOriginalFn`, etc.)
   - `command-handlers/toggle-dev-tools-button-command.ts` — `GlobalCommandHandler` to toggle the DevTools button
   - `command-handlers/abort-shared-operation-command.ts` — `GlobalCommandHandler` firing the app-wide shared abort; the hotkey-bindable form of the console's `__obsidianDevUtils.sharedAbortController.value.abort()`
-  - `long-stack-traces/long-stack-traces-component.ts` — cross-platform entry; behind `Platform.isDesktop`, lazy-loads the desktop component, `require()`s `node:async_hooks` and `node:process`, injects them, and reloads on settings change
+  - `long-stack-traces/long-stack-traces-component.ts` — cross-platform entry; behind `Platform.isDesktop`, lazy-loads the desktop component, `require()`s `node:process` and `node:v8`, injects `process` and `v8.promiseHooks`, and reloads on settings change
   - `long-stack-traces/desktop-long-stack-traces-component.ts` — desktop core: patches `Error` (and child error classes), timers, microtasks, and `Promise` methods to inject long stack-trace frames
-  - `long-stack-traces/desktop-async-long-stack-traces-component.ts` — `async_hooks`-based async stack-trace capture (desktop only)
+  - `long-stack-traces/desktop-async-long-stack-traces-component.ts` — `v8.promiseHooks`-based async stack-trace capture (desktop only); see below for why not `async_hooks`
   - `long-stack-traces/event-listener.ts` — `isEventListenerObject` type guard
   - `long-stack-traces/event-handlers-map.ts` — `MultiWeakMap` mapping `(target, type, handler)` to wrapped handlers
   - `patches/add-long-stack-traces-patch-component.ts` — `MonkeyAroundComponent` that wraps handler args so each invocation records a stack frame
@@ -62,15 +62,15 @@ Advanced Debug Mode is an Obsidian plugin that enhances the debugging experience
 
 ### Node.js built-ins are loaded only in the facade, behind `Platform.isDesktop`
 
-No module in `src/` statically imports a `node:` built-in. `long-stack-traces-component.ts` loads `node:async_hooks` and `node:process` with `require()` inside its `if (Platform.isDesktop)` block, next to the dynamic import of the desktop component. It then passes them down as the `asyncHooks` and `nodeProcess` constructor params. The two `desktop-` components only receive them.
+No module in `src/` statically imports a `node:` built-in. `long-stack-traces-component.ts` loads `node:process` and `node:v8` with `require()` inside its `if (Platform.isDesktop)` block, next to the dynamic import of the desktop component. It then passes them down as the `nodeProcess` and `promiseHooks` constructor params. The two `desktop-` components only receive them.
 
-**It is `require()`, not `import()`, because a dynamic `import()` of a `node:` module does not load in the real app.** esbuild leaves a dynamic `import()` of an external module as a native `import()`. The renderer then fails with `Failed to fetch dynamically imported module: node:async_hooks`, and the plugin does not load. The unit tests pass either way, because vitest resolves `node:` URLs. Only the desktop integration suite catches it. A `require()` stays `require("node:…")` in `main.js`, which is how the static imports were bundled before.
+**It is `require()`, not `import()`, because a dynamic `import()` of a `node:` module does not load in the real app.** esbuild leaves a dynamic `import()` of an external module as a native `import()`. The renderer then fails with `Failed to fetch dynamically imported module: node:async_hooks` (the module the facade loaded before it moved to `node:v8`), and the plugin does not load. The unit tests pass either way, because vitest resolves `node:` URLs. Only the desktop integration suite catches it. A `require()` stays `require("node:…")` in `main.js`, which is how the static imports were bundled before.
 
 **The community directory's review does NOT honour the `desktop-` filename exemption.** `obsidian-dev-utils`' shared ESLint config turns `import-x/no-nodejs-modules` and `obsidianmd/no-nodejs-modules` off for `src/**/desktop-*.ts`. The directory's runner has no such carve-out. Until 1.11.1 these two files kept their static `node:` imports under that exemption. The listing reported each one as a medium Security finding, and each cost 5 points. `obsidianmd/no-nodejs-modules` accepts a `require()` or a dynamic `import()` only when it sits lexically inside a `Platform.isDesktop` guard: an `if`, a ternary, a `&&`, or an early `return`/`throw` at the start of the function. It must be exactly `Platform.isDesktop`; `isDesktopApp` does not count. So:
 
 - A new Node.js dependency is `require()`d in the facade's guarded block and injected, never imported where it is used.
 - The facade's `import-x/no-nodejs-modules` and `@typescript-eslint/no-require-imports` disables are deliberate. `import-x` cannot see the guard, but the `obsidianmd` rule can, and the `obsidianmd` rule is the one the directory runs. The `obsidianmd` half cannot be waived at all, because the runner sets `eslint-comments/no-restricted-disable` over `obsidianmd/*`.
-- The type comes from a type query (`typeof import('node:async_hooks')`, `NodeJS.Process`), never from an `import type` declaration. The rule reports a type-only `ImportDeclaration` too.
+- The type comes from a type query (`typeof import('node:v8')`, `NodeJS.Process`), never from an `import type` declaration. The rule reports a type-only `ImportDeclaration` too.
 - Tests may import `node:` modules statically to build the injected values. The directory did not flag the test files' static `node:` imports, so they are evidently outside its scan.
 
 ### The patched `Error` forwards `prepareStackTrace` to the original class
@@ -81,6 +81,15 @@ With long stack traces on, `window.Error` is a `Proxy` over the patched `Error` 
 - **It is a proxy, not an accessor on the patched class.** A caller's `delete Error.prepareStackTrace` would remove an accessor and leave the formatter installed on the original `Error` for good. Reads cannot fall through the prototype chain either, because `assignWithNonEnumerableProperties` replaces the patched class's prototype with a merged copy.
 - **The `stack` getter returns a non-string result unchanged.** Long stack traces only add frames to a formatted string, so a formatter that returns anything else gets its own result back.
 - **Node and the Electron renderer differ here, so the unit tests cannot catch the `captureStackTrace` half.** Node's `prepareStackTrace` callback reads `globalThis.Error.prepareStackTrace`, so the old bug only showed in unit tests for `new Error().stack`. The desktop integration test runs the reporter's probe in the real renderer, and it failed on both APIs before the fix.
+
+### Async long stack traces use `v8.promiseHooks`, and the hooks skip console evaluations
+
+Until 1.11.3 the async capture used `async_hooks.createHook`, and while it was on, DevTools Console autocomplete came back empty.
+
+- **The cause is V8's side-effect check, not a patched global.** DevTools asks for completions with `Runtime.evaluate` and `replMode: true` plus `throwOnSideEffect: true`. REPL mode wraps the expression in an async function, so the evaluation creates a promise, and every installed promise hook runs. V8 aborts the whole evaluation with `EvalError: Possible side-effect in debug-evaluate` on the hook's first write to any object that existed before the evaluation, and the completion list is empty. The abort cannot be caught inside the hook.
+- **`async_hooks` cannot avoid that.** Node's own promise hook always writes its bookkeeping, whatever our callback does. So the component registers its own `init` / `before` / `after` through `v8.promiseHooks.createHook`. It keeps a `WeakMap` from promise to stack frame and a stack of executing promises. The parent of a promise with no V8 parent is the executing one, which is what Node's `triggerAsyncId` did.
+- **The hooks return before writing while `$_` is in `globalThis`.** V8 installs the console's command-line API on the global for the duration of each console evaluation, the side-effect-free ones included, and removes it afterwards. The cost is that the promises created by the synchronous part of a typed-in console command get no async frame.
+- **The unit tests cannot exercise the real hooks.** The unit suite runs in the `vmThreads` pool, and `v8.promiseHooks` see only the main context's promises, so the unit tests drive captured callbacks by hand. The desktop integration test sends DevTools' exact completion request over CDP to the real renderer, with the setting on. Without the guard it fails with the `EvalError`.
 
 ## Testing notes
 
