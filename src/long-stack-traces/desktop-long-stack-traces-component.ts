@@ -21,7 +21,7 @@ import type {
 } from '../patches/add-long-stack-traces-patch-component.ts';
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import type { GenericFunctionWithOriginalFunction } from '../types.ts';
-import type { AsyncHooks } from './desktop-async-long-stack-traces-component.ts';
+import type { PromiseHooks } from './desktop-async-long-stack-traces-component.ts';
 
 import { AddLongStackTracesPatchComponent } from '../patches/add-long-stack-traces-patch-component.ts';
 import { EventTargetRemoveEventListenerPatchComponent } from '../patches/event-target-remove-event-listener-patch-component.ts';
@@ -44,17 +44,17 @@ interface LongStackTracesDesktopComponentAddStackFrameParams {
 }
 
 interface LongStackTracesDesktopComponentAdjustStackLinesParams {
-  readonly asyncId: number;
+  readonly executingPromise: Promise<unknown> | undefined;
   readonly lines: string[];
   readonly parentStackFrame: StackFrame | undefined;
 }
 
 interface LongStackTracesDesktopComponentConstructorParams {
   readonly app: App;
-  readonly asyncHooks: AsyncHooks;
   readonly nodeProcess: NodeJS.Process;
   readonly pluginId: string;
   readonly pluginSettingsComponent: PluginSettingsComponent;
+  readonly promiseHooks: PromiseHooks;
 }
 
 type LongStackTracesDesktopComponentPatchWithLongStackTracesParams<$Object extends object> = PatchParams<$Object>;
@@ -86,8 +86,6 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   private _OriginalError?: ErrorConstructor;
   private readonly app: App;
 
-  private readonly asyncHooks: AsyncHooks;
-
   private asyncLongStackTracesComponent?: AsyncLongStackTracesComponent;
 
   private internalStackFrameLocations: string[] = [];
@@ -97,13 +95,15 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   private readonly pluginId: string;
 
   private readonly pluginSettingsComponent: PluginSettingsComponent;
+
+  private readonly promiseHooks: PromiseHooks;
   public constructor(params: LongStackTracesDesktopComponentConstructorParams) {
     super();
     this.app = params.app;
-    this.asyncHooks = params.asyncHooks;
     this.nodeProcess = params.nodeProcess;
     this.pluginId = params.pluginId;
     this.pluginSettingsComponent = params.pluginSettingsComponent;
+    this.promiseHooks = params.promiseHooks;
   }
 
   public addStackFrame(params: LongStackTracesDesktopComponentAddStackFrameParams): void {
@@ -122,7 +122,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   }
 
   public adjustStackLines(params: LongStackTracesDesktopComponentAdjustStackLinesParams): void {
-    const { asyncId, lines, parentStackFrame } = params;
+    const { executingPromise, lines, parentStackFrame } = params;
     this.filterInternalStackFrames(lines);
 
     if (parentStackFrame) {
@@ -134,7 +134,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     }
 
     this.applyStackTraceLimit(lines);
-    this.asyncLongStackTracesComponent?.adjustStackLines(lines, asyncId);
+    this.asyncLongStackTracesComponent?.adjustStackLines(lines, executingPromise);
   }
 
   public override onload(): void {
@@ -225,9 +225,9 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     });
 
     this.asyncLongStackTracesComponent = new AsyncLongStackTracesComponent({
-      asyncHooks: this.asyncHooks,
       longStackTracesComponent: this,
-      pluginSettingsComponent: this.pluginSettingsComponent
+      pluginSettingsComponent: this.pluginSettingsComponent,
+      promiseHooks: this.promiseHooks
     });
     this.addChild(this.asyncLongStackTracesComponent);
   }
@@ -265,10 +265,6 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     return this.pluginSettingsComponent.settings.shouldIncludeInternalStackFrames ? 0 : MAX_ADDITIONAL_INTERNAL_STACK_FRAMES_COUNT;
   }
 
-  private getAsyncId(): number {
-    return this.asyncLongStackTracesComponent?.getAsyncId() ?? 0;
-  }
-
   private getChildErrorClassNames(): string[] {
     const errorClassNames: string[] = [];
     const windowWithErrorConstructors = window as WindowWithErrorConstructors;
@@ -280,6 +276,10 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     }
 
     return errorClassNames;
+  }
+
+  private getExecutingPromise(): Promise<unknown> | undefined {
+    return this.asyncLongStackTracesComponent?.getExecutingPromise();
   }
 
   private getStackTraceLimit(): number {
@@ -301,7 +301,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
       error.name = 'Error';
 
       const parentStackFrame = thisWrapper.value.parentStackFrame;
-      const asyncId = thisWrapper.value.getAsyncId();
+      const executingPromise = thisWrapper.value.getExecutingPromise();
 
       let cachedStack: unknown;
 
@@ -324,7 +324,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
           }
 
           const lines = originalStack.split('\n');
-          thisWrapper.value.adjustStackLines({ asyncId, lines, parentStackFrame });
+          thisWrapper.value.adjustStackLines({ executingPromise, lines, parentStackFrame });
           cachedStack = lines.join('\n');
           return cachedStack;
         },

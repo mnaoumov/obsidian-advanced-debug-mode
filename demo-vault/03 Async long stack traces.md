@@ -50,9 +50,8 @@ With the setting on, the trace keeps the `--- async ---` hops back through `barA
 >
 > - Async long stack traces are added **only on desktop** - the mobile JavaScript engine cannot support them.
 > - The trace may contain some duplicate frames.
-> - While the setting is on, autocompletion in the DevTools console stops working (an Electron bug).
 
-Turn it off again when you are done to get console autocompletion back:
+Turn it off again when you are done:
 
 ```code-button
 ---

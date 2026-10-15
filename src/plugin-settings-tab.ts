@@ -133,8 +133,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
 
           f.createEl('strong', { text: '(Desktop only)' });
           f.appendText('.');
-          f.createEl('br');
-          f.appendText('⚠️ WARNING: If enabled, the autocomplete in the DevTools Console will stop working.');
         }),
         disabled: () => !this.pluginSettingsComponent.settings.shouldIncludeLongStackTraces || Platform.isMobile,
         name: 'Desktop: Include async long stack traces',

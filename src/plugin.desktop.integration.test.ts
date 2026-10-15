@@ -1,8 +1,12 @@
+// Merges the `ProvidedContext` augmentation, without which `inject('obsidianTransport')` below is a TS2345. The subpath is types-only, so it is a reference rather than an import.
+/// <reference types="obsidian-integration-testing/vitest/typings" />
+import { get } from 'node:http';
 import { evalInObsidian } from 'obsidian-integration-testing';
 import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 import {
   describe,
   expect,
+  inject,
   it
 } from 'vitest';
 
@@ -137,6 +141,109 @@ describe('Desktop Integration', () => {
       'Error.captureStackTrace()': expected,
       'new Error().stack': expected
     });
+  });
+
+  it('should keep DevTools Console autocomplete working with async long stack traces on', async () => {
+    interface CdpRemoteObject {
+      readonly description?: string;
+      readonly subtype?: string;
+    }
+
+    interface CdpResponse {
+      readonly id: number;
+      readonly result?: CdpEvaluateResult;
+    }
+
+    interface CdpEvaluateResult {
+      readonly result: CdpRemoteObject;
+    }
+
+    interface CdpTarget {
+      readonly type: string;
+      readonly webSocketDebuggerUrl: string;
+    }
+
+    const transport = inject('obsidianTransport');
+    if (transport?.type !== 'obsidian-cdp' || transport.port === undefined) {
+      throw new Error('The desktop project must run on the CDP transport');
+    }
+
+    await setAsyncLongStackTraces(true);
+    try {
+      // DevTools' own completion request. REPL mode wraps the expression in an async function, so it runs every promise hook,
+      // and `throwOnSideEffect` aborts the evaluation with an `EvalError` the moment one of them writes anything.
+      const result = await sendCdpCommand(transport.port, 'Runtime.evaluate', {
+        expression: 'app',
+        generatePreview: false,
+        includeCommandLineAPI: true,
+        objectGroup: 'completion',
+        replMode: true,
+        returnByValue: false,
+        silent: true,
+        throwOnSideEffect: true,
+        timeout: 500
+      });
+      expect(result.result?.result.subtype, result.result?.result.description).not.toBe('error');
+    } finally {
+      await setAsyncLongStackTraces(false);
+    }
+
+    async function sendCdpCommand(port: number, method: string, params: Record<string, unknown>): Promise<CdpResponse> {
+      const targets = await readJson<CdpTarget[]>(`http://127.0.0.1:${String(port)}/json`);
+      const page = targets.find((target) => target.type === 'page');
+      if (!page) {
+        throw new Error('No page target to evaluate in');
+      }
+
+      const webSocket = new WebSocket(page.webSocketDebuggerUrl);
+      try {
+        await new Promise((resolve, reject) => {
+          webSocket.addEventListener('open', resolve, { once: true });
+          webSocket.addEventListener('error', reject, { once: true });
+        });
+        return await new Promise<CdpResponse>((resolve) => {
+          webSocket.addEventListener('message', (event) => {
+            const response = JSON.parse(String(event.data)) as CdpResponse;
+            if (response.id === 1) {
+              resolve(response);
+            }
+          });
+          webSocket.send(JSON.stringify({ id: 1, method, params }));
+        });
+      } finally {
+        webSocket.close();
+      }
+    }
+
+    async function readJson<T>(url: string): Promise<T> {
+      // This half runs in Node, outside Obsidian, so it uses `node:http` rather than Obsidian's `requestUrl`.
+      return await new Promise<T>((resolve, reject) => {
+        get(url, (incomingMessage) => {
+          const chunks: Buffer[] = [];
+          incomingMessage.on('data', (chunk: Buffer) => {
+            chunks.push(chunk);
+          });
+          incomingMessage.on('end', () => {
+            resolve(JSON.parse(Buffer.concat(chunks).toString('utf-8')) as T);
+          });
+          incomingMessage.on('error', reject);
+        }).on('error', reject);
+      });
+    }
+    async function setAsyncLongStackTraces(isEnabled: boolean): Promise<void> {
+      await evalInObsidian({
+        async callback({ app, shouldIncludeAsyncLongStackTraces }) {
+          const pluginId = 'advanced-debug-mode';
+          const plugin = app.plugins.getPlugin(pluginId);
+          if (plugin) {
+            await plugin.saveData({ shouldIncludeAsyncLongStackTraces });
+          }
+          await app.plugins.disablePlugin(pluginId);
+          await app.plugins.enablePlugin(pluginId);
+        },
+        input: { shouldIncludeAsyncLongStackTraces: isEnabled }
+      });
+    }
   });
 
   it('should have Error.stackTraceLimit set from settings', async () => {
