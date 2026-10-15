@@ -28,6 +28,8 @@ import { EventTargetRemoveEventListenerPatchComponent } from '../patches/event-t
 import { AsyncLongStackTracesComponent } from './desktop-async-long-stack-traces-component.ts';
 import { eventHandlersMap } from './event-handlers-map.ts';
 
+const PREPARE_STACK_TRACE_PROPERTY_NAME = 'prepareStackTrace';
+
 export interface StackFrame {
   parentStackError: Error;
   title: string;
@@ -301,7 +303,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
       const parentStackFrame = thisWrapper.value.parentStackFrame;
       const asyncId = thisWrapper.value.getAsyncId();
 
-      let cachedStack: string | undefined;
+      let cachedStack: unknown;
 
       const originalStackPropertyDescriptor = ensureNonNullable(Object.getOwnPropertyDescriptor(error, 'stack'));
       Object.defineProperty(error, 'stack', {
@@ -313,13 +315,20 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
           }
 
           // eslint-disable-next-line @typescript-eslint/unbound-method -- Property descriptor getter is not a class method; extracting it is safe.
-          const originalStack = ensureNonNullable(originalStackPropertyDescriptor.get).call(error) as string;
+          const originalStack: unknown = ensureNonNullable(originalStackPropertyDescriptor.get).call(error);
+          if (typeof originalStack !== 'string') {
+            // A caller-installed `Error.prepareStackTrace` returned a non-string (e.g. the `CallSite` array `depd` asks for).
+            // Long stack traces only add frames to a formatted string, so the formatter's result is returned as is.
+            cachedStack = originalStack;
+            return cachedStack;
+          }
+
           const lines = originalStack.split('\n');
           thisWrapper.value.adjustStackLines({ asyncId, lines, parentStackFrame });
           cachedStack = lines.join('\n');
           return cachedStack;
         },
-        set(value: string) {
+        set(value: unknown) {
           originalStackPropertyDescriptor.set?.call(error, value);
           cachedStack = value;
         }
@@ -332,6 +341,28 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     Object.setPrototypeOf(PatchedError, this.OriginalError);
     assignWithNonEnumerableProperties(PatchedError, this.OriginalError);
 
+    // V8 consults `prepareStackTrace` on the realm's original `Error` only, so a formatter assigned to the patched class
+    // must land there, or `new Error().stack` and `Error.captureStackTrace()` never call it. The proxy routes reads,
+    // writes, redefinitions and deletes of that one property to the original class.
+    Reflect.deleteProperty(PatchedError, PREPARE_STACK_TRACE_PROPERTY_NAME);
+    const OriginalError = this.OriginalError;
+    const PatchedErrorProxy = new Proxy(PatchedError, {
+      defineProperty(target, property, attributes): boolean {
+        return Reflect.defineProperty(property === PREPARE_STACK_TRACE_PROPERTY_NAME ? OriginalError : target, property, attributes);
+      },
+      deleteProperty(target, property): boolean {
+        return Reflect.deleteProperty(property === PREPARE_STACK_TRACE_PROPERTY_NAME ? OriginalError : target, property);
+      },
+      get(target, property, receiver): unknown {
+        return property === PREPARE_STACK_TRACE_PROPERTY_NAME ? Reflect.get(OriginalError, property) : Reflect.get(target, property, receiver);
+      },
+      set(target, property, value, receiver): boolean {
+        return property === PREPARE_STACK_TRACE_PROPERTY_NAME
+          ? Reflect.set(OriginalError, property, value)
+          : Reflect.set(target, property, value, receiver);
+      }
+    });
+
     Object.defineProperty(PatchedError, 'stackTraceLimit', {
       configurable: true,
       enumerable: true,
@@ -339,7 +370,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
       set: thisWrapper.value.setStackTraceLimit.bind(thisWrapper.value)
     });
 
-    window.Error = PatchedError as ErrorConstructor;
+    window.Error = PatchedErrorProxy as ErrorConstructor;
     window.Error.stackTraceLimit = this.pluginSettingsComponent.settings.stackTraceLimit || Infinity;
 
     this.register(() => {
