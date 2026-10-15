@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.11.3
+
+- fix: keep a caller's Error.prepareStackTrace working under long stack traces
+
 ## 1.11.2
 
 - fix: load node:async_hooks and node:process behind Platform.isDesktop
