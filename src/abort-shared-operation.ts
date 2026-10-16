@@ -1,13 +1,13 @@
-import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
+import type { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
 
-import { getSharedAbortController } from 'obsidian-dev-utils/abort-controller';
-import { SilentError } from 'obsidian-dev-utils/error';
+import { getSharedAbortController } from '@mnaoumov/typescript-lib/abort-controller';
+import { SilentError } from '@mnaoumov/typescript-lib/error';
 
 const ABORT_REASON_MESSAGE = 'Aborted by Advanced Debug Mode.';
 
 /**
  * Aborts the app-wide shared abort controller, cancelling whichever long-running operation is currently in
- * flight — in any plugin built on `obsidian-dev-utils`, not just this one.
+ * flight — in any plugin built on `@mnaoumov/obsidian-lib` or `obsidian-dev-utils`, not just this one.
  *
  * The reason is a {@link SilentError} rather than the native `AbortError`: a deliberate user-initiated cancel
  * is not a failure, so a listener that rethrows the reason should not print a red stack for something that

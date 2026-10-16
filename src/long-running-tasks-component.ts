@@ -1,6 +1,6 @@
+import { registerAsyncEvent } from '@mnaoumov/obsidian-lib/components/async-events-component';
+import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
 import { FileSystemAdapter } from 'obsidian';
-import { registerAsyncEvent } from 'obsidian-dev-utils/obsidian/components/async-events-component';
-import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
 
 import type { PluginSettingsComponent } from './plugin-settings-component.ts';
 

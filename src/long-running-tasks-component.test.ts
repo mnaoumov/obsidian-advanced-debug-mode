@@ -1,14 +1,14 @@
-import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
-import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
+import type { DataHandler } from '@mnaoumov/obsidian-lib/data-handler';
+import type { PluginEventSource } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
 
-import { FileSystemAdapter } from 'obsidian';
+import { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/plugin-settings-component';
 import {
   noop,
   noopAsync
-} from 'obsidian-dev-utils/function';
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+} from '@mnaoumov/typescript-lib/function';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
+import { FileSystemAdapter } from 'obsidian';
 import {
   afterEach,
   beforeEach,

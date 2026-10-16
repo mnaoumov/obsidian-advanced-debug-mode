@@ -1,5 +1,5 @@
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import eruda from 'eruda';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   afterEach,
   beforeEach,

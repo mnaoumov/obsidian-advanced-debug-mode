@@ -1,7 +1,7 @@
 import type { FileSystemAdapter } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
-import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
+import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 
 import type { RejectFunction } from '../long-running-tasks-component.ts';
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';

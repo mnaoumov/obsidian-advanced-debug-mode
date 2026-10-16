@@ -1,9 +1,9 @@
 import type { Mock } from 'vitest';
 
-import { getSharedAbortController } from 'obsidian-dev-utils/abort-controller';
-import { SilentError } from 'obsidian-dev-utils/error';
-import { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+import { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
+import { getSharedAbortController } from '@mnaoumov/typescript-lib/abort-controller';
+import { SilentError } from '@mnaoumov/typescript-lib/error';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import {
   describe,
   expect,

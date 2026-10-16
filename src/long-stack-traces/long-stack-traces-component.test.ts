@@ -1,6 +1,7 @@
-import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
-import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
+import type { DataHandler } from '@mnaoumov/obsidian-lib/data-handler';
+import type { PluginEventSource } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
 
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import process from 'node:process';
 import { promiseHooks } from 'node:v8';
 import {
@@ -8,7 +9,6 @@ import {
   Component,
   Platform
 } from 'obsidian';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   afterEach,
   beforeEach,

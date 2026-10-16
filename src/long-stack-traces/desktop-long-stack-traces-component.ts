@@ -1,19 +1,19 @@
 import type { ConditionalKeys } from 'type-fest';
 
-import { App } from 'obsidian';
-import { filterInPlace } from 'obsidian-dev-utils/array';
-import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
+import { AllWindowsEventComponent } from '@mnaoumov/obsidian-lib/components/all-windows-event-component';
+import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
+import { filterInPlace } from '@mnaoumov/typescript-lib/array';
+import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
 import {
   assignWithNonEnumerableProperties,
   castTo
-} from 'obsidian-dev-utils/object-utils';
-import { AllWindowsEventComponent } from 'obsidian-dev-utils/obsidian/components/all-windows-event-component';
-import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
+} from '@mnaoumov/typescript-lib/object-utils';
 import {
   assertNonNullable,
   ensureNonNullable
-} from 'obsidian-dev-utils/type-guards';
-import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
+} from '@mnaoumov/typescript-lib/type-guards';
+import { ValueWrapper } from '@mnaoumov/typescript-lib/value-wrapper';
+import { App } from 'obsidian';
 
 import type {
   AfterPatchFunction,
@@ -232,7 +232,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     this.addChild(this.asyncLongStackTracesComponent);
   }
 
-  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Implements the shared AfterPatchFunction callback signature, so it must reuse AfterPatchParams.
+  // eslint-disable-next-line typescript-dev-toolkit/params-options-name-match -- Implements the shared AfterPatchFunction callback signature, so it must reuse AfterPatchParams.
   private afterPatchAddEventListener(params: AfterPatchParams): void {
     const eventTarget = params.originalThis as EventTarget;
     const type = params.originalArguments[0] as string;

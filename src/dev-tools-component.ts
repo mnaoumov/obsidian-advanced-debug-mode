@@ -1,6 +1,6 @@
+import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
+import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 import eruda from 'eruda';
-import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
-import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
 export class DevToolsComponent extends ComponentEx {
   private erudaButton?: HTMLDivElement;
