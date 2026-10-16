@@ -1,7 +1,7 @@
 import type { App } from 'obsidian';
 
 import { Notice } from 'obsidian';
-import { configureCommunityPlugin } from 'obsidian-dev-utils/obsidian/community-plugins';
+import { configureCommunityPlugin } from '@mnaoumov/obsidian-lib/community-plugins';
 
 const PLUGIN_ID = 'advanced-debug-mode';
 
@@ -62,7 +62,7 @@ export function toggleDevToolsButton(app: App): void {
 
 /**
  * Fires the app-wide shared abort, cancelling whichever long-running operation is in flight — in any
- * plugin built on `obsidian-dev-utils`, not just this one.
+ * plugin built on `@mnaoumov/obsidian-lib` or `obsidian-dev-utils`, not just this one.
  *
  * Safe to press with nothing running: the abort is signalled, no listener hears it, and the controller
  * replaces its signal with a fresh one, so the next operation is not born cancelled.
