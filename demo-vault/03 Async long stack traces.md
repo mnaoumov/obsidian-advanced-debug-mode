@@ -8,7 +8,7 @@ async function alpha() {
 }
 ```
 
-Advanced Debug Mode can preserve those `async` frames too, but it is a separate, **opt-in** setting because of the trade-offs below.
+`Advanced Debug Mode` can preserve those `async` frames too, but it is a separate, **opt-in** setting because of the trade-offs below.
 
 ## Turn it on
 

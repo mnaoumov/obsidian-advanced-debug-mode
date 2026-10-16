@@ -2,7 +2,7 @@
 
 This is the headline feature. When an error is thrown after it has passed through an async boundary - `setTimeout`, `setInterval`, `queueMicrotask`, `requestAnimationFrame`, `addEventListener`, or a `Promise` chain - the JavaScript engine throws away every frame that scheduled the work. The console then shows only the last few frames, which rarely tell you where the problem actually started.
 
-Advanced Debug Mode stitches those boundaries back together, so the stack trace spans the whole call chain.
+`Advanced Debug Mode` stitches those boundaries back together, so the stack trace spans the whole call chain.
 
 ![A long stack trace, with the frames that would otherwise be lost](<./_assets/images/long-stack-traces.png>)
 

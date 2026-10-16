@@ -129,7 +129,7 @@
 - docs: standardize demo-vault README
 - docs: drop per-plugin demo-vault setup notes (bootstrap covered by the obsidian-dev-utils harness)
 - docs: unnumber demo-vault setup notes
-- docs(demo-vault): create the Advanced Debug Mode demo vault
+- docs(demo-vault): create the `Advanced Debug Mode` demo vault
 - docs: update
 - docs: migrate to AGENTS.md
 

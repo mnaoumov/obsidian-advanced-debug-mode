@@ -97,7 +97,7 @@ describe('Desktop Integration', () => {
       stack?: unknown;
     }
 
-    // The probe `depd` (and so Local REST API) relies on: a formatter that returns the CallSite array.
+    // The probe `depd` (and so `Local REST API`) relies on: a formatter that returns the CallSite array.
     const result = await evalInObsidian({
       callback(): Record<string, StructuredStackProbeResult> {
         const hasOwnPrepareStackTrace = Object.hasOwn(Error, 'prepareStackTrace');

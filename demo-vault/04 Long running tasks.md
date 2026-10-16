@@ -2,7 +2,7 @@
 
 Obsidian guards some internal operations with timeouts: if a task takes too long, Obsidian assumes it has hung and aborts it. That is sensible in normal use, but it fights you while debugging - the moment you pause on a breakpoint and inspect state for a few seconds, the timeout fires and the task you were tracing is torn down before you can finish.
 
-Advanced Debug Mode lets you relax those timeouts while you debug.
+`Advanced Debug Mode` lets you relax those timeouts while you debug.
 
 ## The settings involved
 
