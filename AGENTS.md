@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Advanced Debug Mode is an Obsidian plugin that enhances the debugging experience: it toggles Obsidian's built-in debug mode (keeping inline source maps), preserves long (and async) stack traces, manages `debug`-library namespaces from the UI, surfaces DevTools (via `eruda`) on mobile, and lets you temporarily disable Obsidian's long-running-task timeouts. It is built on `obsidian-dev-utils`.
+`Advanced Debug Mode` is an Obsidian plugin that enhances the debugging experience: it toggles Obsidian's built-in debug mode (keeping inline source maps), preserves long (and async) stack traces, manages `debug`-library namespaces from the UI, surfaces DevTools (via `eruda`) on mobile, and lets you temporarily disable Obsidian's long-running-task timeouts. It is built on `obsidian-dev-utils`.
 
 ## Commands
 
@@ -77,7 +77,7 @@ No module in `src/` statically imports a `node:` built-in. `long-stack-traces-co
 
 With long stack traces on, `window.Error` is a `Proxy` over the patched `Error` function. The proxy sends every read, write, `defineProperty` and `delete` of `prepareStackTrace` to the original `Error`. Every other property stays on the patched class.
 
-- **V8 consults `prepareStackTrace` on the realm's original `Error` only.** Before 1.11.3, a caller's `Error.prepareStackTrace = fn` landed on the patched class, and V8 never called it. `new Error().stack` and `Error.captureStackTrace()` returned the default string instead of what the formatter returned. `depd`'s `callSiteLocation` asks for the `CallSite` array, so Local REST API failed to load with `callSite.getFileName is not a function` (#4).
+- **V8 consults `prepareStackTrace` on the realm's original `Error` only.** Before 1.11.3, a caller's `Error.prepareStackTrace = fn` landed on the patched class, and V8 never called it. `new Error().stack` and `Error.captureStackTrace()` returned the default string instead of what the formatter returned. `depd`'s `callSiteLocation` asks for the `CallSite` array, so `Local REST API` failed to load with `callSite.getFileName is not a function` (#4).
 - **It is a proxy, not an accessor on the patched class.** A caller's `delete Error.prepareStackTrace` would remove an accessor and leave the formatter installed on the original `Error` for good. Reads cannot fall through the prototype chain either, because `assignWithNonEnumerableProperties` replaces the patched class's prototype with a merged copy.
 - **The `stack` getter returns a non-string result unchanged.** Long stack traces only add frames to a formatted string, so a formatter that returns anything else gets its own result back.
 - **Node and the Electron renderer differ here, so the unit tests cannot catch the `captureStackTrace` half.** Node's `prepareStackTrace` callback reads `globalThis.Error.prepareStackTrace`, so the old bug only showed in unit tests for `new Error().stack`. The desktop integration test runs the reporter's probe in the real renderer, and it failed on both APIs before the fix.

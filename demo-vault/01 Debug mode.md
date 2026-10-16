@@ -2,7 +2,7 @@
 
 Obsidian has a built-in **debug mode**. When it is off (the default), Obsidian strips the inline source maps from the plugins it loads, so any error you see in DevTools points at minified, bundled code that is almost impossible to read. Turning debug mode on keeps those source maps, so stack traces point back at the plugin's real source files.
 
-Advanced Debug Mode gives you a one-click switch for it.
+`Advanced Debug Mode` gives you a one-click switch for it.
 
 ## How to turn it on
 
