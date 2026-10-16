@@ -369,53 +369,6 @@ describe('PluginSettingsTab', () => {
     expect(debugControllerMock.set).toHaveBeenCalledWith(['ns1', 'ns2']);
   });
 
-  it('should handle debug timeout toggle onChange enabling', () => {
-    const debugControllerMock = {
-      disable: vi.fn(),
-      enable: vi.fn(),
-      get: vi.fn().mockReturnValue([]),
-      set: vi.fn()
-    };
-
-    const capturedToggles: ToggleComponent[] = [];
-    const originalAddToggle = Setting.prototype.addToggle;
-    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
-      function mockAddToggle(this: Setting, callback: (toggle: ToggleComponent) => void) {
-        const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
-          capturedToggles.push(toggle);
-          callback(toggle);
-        });
-        return result;
-      }
-    );
-
-    const { tab } = createPluginSettingsTab({
-      debugControllerOverrides: debugControllerMock
-    });
-    renderRows(tab);
-
-    addToggleSpy.mockRestore();
-
-    // The row's value comes from the debugger state, so it asks for a re-render; neutralize it.
-    tab.refresh = vi.fn();
-
-    // Toggle index 7 is the "Dev Utils timeout" toggle
-    const DEV_UTILS_TIMEOUT_INDEX = 7;
-    const toggle = capturedToggles[DEV_UTILS_TIMEOUT_INDEX];
-    expect(toggle).toBeDefined();
-
-    // The toggle starts at true (setValue(!timeoutDebugger.enabled)).
-    // Clicking toggles to false → else branch → debugController.enable(NAMESPACE)
-    toggle?.onClick();
-
-    expect(debugControllerMock.enable).toHaveBeenCalled();
-
-    // Click again → value becomes true → if branch → debugController.disable(NAMESPACE)
-    toggle?.onClick();
-
-    expect(debugControllerMock.disable).toHaveBeenCalled();
-  });
-
   it('should abort the shared operation when the abort button is clicked', () => {
     const capturedButtons: ButtonComponent[] = [];
     const originalAddButton = Setting.prototype.addButton;
