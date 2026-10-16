@@ -5,7 +5,6 @@ import type { SettingDefinitionItem } from 'obsidian';
 
 import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
 import { PluginSettingsTabBase } from '@mnaoumov/obsidian-lib/plugin/plugin-settings-tab';
-import { getDebugger } from '@mnaoumov/typescript-lib/debug';
 import { Platform } from 'obsidian';
 
 import type { DebugMode } from './debug-mode.ts';
@@ -20,8 +19,6 @@ interface PluginSettingsTabConstructorParams extends PluginSettingsTabBaseConstr
   readonly emulateMobileMode: EmulateMobileMode;
   readonly pluginNoticeComponent: PluginNoticeComponent;
 }
-
-const OBSIDIAN_DEV_UTILS_TIMEOUT_NAMESPACE = '*:obsidian-dev-utils:Async:runWithTimeout:timeout';
 
 export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   private readonly debugController: DebugController;
@@ -221,47 +218,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
               propertyName: 'shouldIncludeTimedOutTasksDetails',
               valueComponent: toggle
             });
-          });
-        }
-      }),
-      this.settingEx({
-        desc: createFragment((f) => {
-          f.appendText('Whether to timeout long running tasks within ');
-          f.createEl('a', {
-            href: 'https://github.com/mnaoumov/obsidian-dev-utils',
-            text: createFragment((f2) => {
-              appendCodeBlock(f2, 'Obsidian Dev Utils');
-            })
-          });
-          f.appendText(' library.');
-          f.createEl('br');
-          f.appendText('Some plugins use functionality from that library that have some default timeouts.');
-          f.createEl('br');
-          f.appendText('If enabled, long running tasks will be killed after predefined timeouts (default ');
-          appendCodeBlock(f, 'Obsidian Dev Utils');
-          f.appendText('library behavior).');
-          f.createEl('br');
-          f.appendText(
-            'If disabled, long running tasks will not be killed. It is useful when some tasks fail due to timeout while you are staying on the breakpoint.'
-          );
-        }),
-        name: 'Obsidian Dev Utils: Timeout long running tasks',
-        render: (setting) => {
-          setting.addToggle((toggle) => {
-            const timeoutDebugger = getDebugger(OBSIDIAN_DEV_UTILS_TIMEOUT_NAMESPACE);
-            toggle
-              .setValue(!timeoutDebugger.enabled)
-              .onChange((value) => {
-                if (value) {
-                  this.debugController.disable(OBSIDIAN_DEV_UTILS_TIMEOUT_NAMESPACE);
-                } else {
-                  this.debugController.enable(OBSIDIAN_DEV_UTILS_TIMEOUT_NAMESPACE);
-                }
-
-                // The row's value is derived from the debugger state rather than from the plugin settings,
-                // so the tab has to be re-rendered for it to pick the new value up.
-                this.refresh();
-              });
           });
         }
       }),
