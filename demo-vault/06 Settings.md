@@ -19,6 +19,8 @@ Open **Settings -> Community plugins -> Advanced Debug Mode** to configure the p
   - keep Obsidian's safety timeouts on for normal use, or turn it off before a debugging session so tasks are not aborted while you sit on a breakpoint. See [04 Long running tasks](<./04 Long running tasks.md>).
 - `shouldIncludeTimedOutTasksDetails`
   - when a task does time out, print extra diagnostic details about it to the console.
+- **typescript-lib: Timeout long running tasks** (no key: it is not saved)
+  - whether `runWithTimeout` in the `@mnaoumov/typescript-lib` library terminates an operation that times out. Turn it off while debugging a plugin built on that library. It is app-wide, reaches only plugins built against version 1.2.0 or later, and is back on after the app reloads. See [04 Long running tasks](<./04 Long running tasks.md>).
 
 Change any of these and reproduce the matching scenario to watch the behavior update.
 

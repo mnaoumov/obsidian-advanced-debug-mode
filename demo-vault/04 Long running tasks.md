@@ -41,3 +41,17 @@ Both live in **Settings -> Community plugins -> Advanced Debug Mode** and are do
 This is the one pair worth binding to muscle memory - the warning below is about forgetting step 3.
 
 Leaving timeouts disabled outside a debugging session is not recommended - a genuinely stuck task would then hang instead of recovering.
+
+## Timeouts inside other plugins
+
+Obsidian's own timeouts are not the only ones. Plugins built on the `@mnaoumov/typescript-lib` library run some of their operations through its `runWithTimeout`, which terminates an operation that takes too long - the same trap while you sit on a breakpoint.
+
+The **typescript-lib: Timeout long running tasks** row switches that off for every such plugin at once:
+
+- **On** (the default): a timed out operation is terminated.
+- **Off**: the timeout is only logged, and the operation keeps running, so you can step through it.
+
+Two things to know:
+
+- It only reaches plugins built against `@mnaoumov/typescript-lib` 1.2.0 or later. A plugin that bundles an older copy keeps terminating its operations.
+- It is not saved in `data.json`: it is back on after the app reloads, so you cannot forget it off.
