@@ -5,6 +5,10 @@ import type { SettingDefinitionItem } from 'obsidian';
 
 import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
 import { PluginSettingsTabBase } from '@mnaoumov/obsidian-lib/plugin/plugin-settings-tab';
+import {
+  isTerminationOnTimeoutEnabled,
+  setTerminationOnTimeoutEnabled
+} from '@mnaoumov/typescript-lib/async';
 import { Platform } from 'obsidian';
 
 import type { DebugMode } from './debug-mode.ts';
@@ -218,6 +222,38 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
               propertyName: 'shouldIncludeTimedOutTasksDetails',
               valueComponent: toggle
             });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: createFragment((f) => {
+          f.appendText('Whether to terminate long running tasks that time out within ');
+          f.createEl('a', {
+            href: 'https://github.com/mnaoumov/typescript-lib',
+            text: createFragment((f2) => {
+              appendCodeBlock(f2, '@mnaoumov/typescript-lib');
+            })
+          });
+          f.appendText(' library.');
+          f.createEl('br');
+          f.appendText('If enabled, a timed out task is terminated (default library behavior).');
+          f.createEl('br');
+          f.appendText(
+            'If disabled, a timed out task is only logged and keeps running. It is useful when some tasks fail due to timeout while you are staying on the breakpoint.'
+          );
+          f.createEl('br');
+          f.appendText('The switch is app-wide, but it only reaches plugins built against a library version that has it (1.2.0 or later).');
+          f.createEl('br');
+          f.appendText('It is not saved: it is back on after the app reloads.');
+        }),
+        name: 'typescript-lib: Timeout long running tasks',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            toggle
+              .setValue(isTerminationOnTimeoutEnabled())
+              .onChange((value) => {
+                setTerminationOnTimeoutEnabled(value);
+              });
           });
         }
       }),

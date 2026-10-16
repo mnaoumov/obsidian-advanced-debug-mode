@@ -45,7 +45,7 @@ A copy of the vault ships with every release. You can access it via any of the f
 - **Obsidian's own debug mode**, toggled from a command instead of the console. [01 Debug mode](<./demo-vault/01 Debug mode.md>)
 - **Long stack traces** — the frames behind a callback boundary, kept rather than discarded. [02 Long stack traces](<./demo-vault/02 Long stack traces.md>)
 - **Async long stack traces** — the same across `await`, opt-in because it is desktop-only. [03 Async long stack traces](<./demo-vault/03 Async long stack traces.md>)
-- **Timeouts that do not fire while you are on a breakpoint**, so a slow debugging session does not trip Obsidian's own long-running-task limits. [04 Long running tasks](<./demo-vault/04 Long running tasks.md>)
+- **Timeouts that do not fire while you are on a breakpoint**, so a slow debugging session does not trip Obsidian's own long-running-task limits, or the `runWithTimeout` limits inside plugins built on `@mnaoumov/typescript-lib`. [04 Long running tasks](<./demo-vault/04 Long running tasks.md>)
 - **DevTools on mobile**, where the app has none, plus a UI for the `debug` library's namespaces. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
 - **A panic button for a runaway operation** — the app-wide shared abort, as a hotkey-bindable command and a settings button instead of a line typed into the console. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
 - **Every setting**, by the key it is stored under. [06 Settings](<./demo-vault/06 Settings.md>)

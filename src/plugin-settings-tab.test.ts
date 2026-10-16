@@ -9,6 +9,12 @@ import type {
 
 import { SettingEx } from '@mnaoumov/obsidian-lib/setting-ex';
 import { getSharedAbortController } from '@mnaoumov/typescript-lib/abort-controller';
+import {
+  isTerminationOnTimeoutEnabled,
+  runWithTimeout,
+  setTerminationOnTimeoutEnabled,
+  sleep
+} from '@mnaoumov/typescript-lib/async';
 import { SilentError } from '@mnaoumov/typescript-lib/error';
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { ensureGenericObject } from '@mnaoumov/typescript-lib/type-guards';
@@ -367,6 +373,62 @@ describe('PluginSettingsTab', () => {
     textArea?.inputEl.dispatchEvent(new Event('input'));
 
     expect(debugControllerMock.set).toHaveBeenCalledWith(['ns1', 'ns2']);
+  });
+
+  it('should switch whether runWithTimeout terminates a timed out operation', async () => {
+    const capturedToggles: ToggleComponent[] = [];
+    const originalAddToggle = Setting.prototype.addToggle;
+    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
+      function mockAddToggle(this: Setting, callback: (toggle: ToggleComponent) => void) {
+        const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
+          capturedToggles.push(toggle);
+          callback(toggle);
+        });
+        return result;
+      }
+    );
+
+    const { tab } = createPluginSettingsTab();
+    renderRows(tab);
+
+    addToggleSpy.mockRestore();
+
+    const SLOW_OPERATION_IN_MILLISECONDS = 50;
+    const TIMEOUT_IN_MILLISECONDS = 10;
+
+    function runSlowOperation(): Promise<string> {
+      return runWithTimeout({
+        operationFunction: async () => {
+          await sleep({ milliseconds: SLOW_OPERATION_IN_MILLISECONDS });
+          return 'completed';
+        },
+        timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
+      });
+    }
+
+    // Toggle index 7 is "typescript-lib: Timeout long running tasks"
+    const TYPESCRIPT_LIB_TIMEOUT_INDEX = 7;
+    const toggle = capturedToggles[TYPESCRIPT_LIB_TIMEOUT_INDEX];
+    expect(toggle).toBeDefined();
+
+    try {
+      // The row reads the library's app-wide switch, which is on by default.
+      expect(toggle?.getValue()).toBe(true);
+      await expect(runSlowOperation()).rejects.toThrow();
+
+      toggle?.onClick();
+
+      expect(isTerminationOnTimeoutEnabled()).toBe(false);
+      await expect(runSlowOperation()).resolves.toBe('completed');
+
+      toggle?.onClick();
+
+      expect(isTerminationOnTimeoutEnabled()).toBe(true);
+      await expect(runSlowOperation()).rejects.toThrow();
+    } finally {
+      // The switch is app-wide shared state, so leave it as every other test expects it.
+      setTerminationOnTimeoutEnabled(true);
+    }
   });
 
   it('should abort the shared operation when the abort button is clicked', () => {
