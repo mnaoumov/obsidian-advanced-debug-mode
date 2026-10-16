@@ -1,20 +1,20 @@
+import type { CommandHandlerComponent } from '@mnaoumov/obsidian-lib/command-handlers/command-handler-component';
+import type { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
 import type {
   App as AppOriginal,
   PluginManifest
 } from 'obsidian';
-import type { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
-import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
 
-import { Component } from 'obsidian';
+import { OpenDemoVaultCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/open-demo-vault-command-handler';
+import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
+import { PluginSettingsTabComponent } from '@mnaoumov/obsidian-lib/components/plugin-settings-tab-component';
 import {
   noop,
   noopAsync
-} from 'obsidian-dev-utils/function';
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
-import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
-import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+} from '@mnaoumov/typescript-lib/function';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
+import { Component } from 'obsidian';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
@@ -34,11 +34,11 @@ import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
 // --- Collaborator dev-utils components added as children: stub as constructor spies that return a real Component so the real addChild lifecycle can load them while capturing constructor args. ---
 
-vi.mock('obsidian-dev-utils/obsidian/data-handler', () => ({
+vi.mock('@mnaoumov/obsidian-lib/data-handler', () => ({
   PluginDataHandler: vi.fn()
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', () => ({
+vi.mock('@mnaoumov/obsidian-lib/components/plugin-settings-tab-component', () => ({
   // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
   PluginSettingsTabComponent: vi.fn(function pluginSettingsTabComponentStub() {
     return new Component();
@@ -47,15 +47,15 @@ vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', 
 
 // --- Collaborator dev-utils components NOT added as children: bare constructor spies. ---
 
-vi.mock('obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler', () => ({
+vi.mock('@mnaoumov/obsidian-lib/command-handlers/open-demo-vault-command-handler', () => ({
   OpenDemoVaultCommandHandler: vi.fn()
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/command-handlers/open-settings-command-handler', () => ({
+vi.mock('@mnaoumov/obsidian-lib/command-handlers/open-settings-command-handler', () => ({
   OpenSettingsCommandHandler: vi.fn()
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/plugin/plugin-event-source', () => ({
+vi.mock('@mnaoumov/obsidian-lib/plugin/plugin-event-source', () => ({
   PluginEventSourceImpl: vi.fn()
 }));
 

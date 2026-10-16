@@ -1,12 +1,12 @@
+import type { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
+import type { PluginSettingsTabBaseConstructorParams } from '@mnaoumov/obsidian-lib/plugin/plugin-settings-tab';
+import type { DebugController } from '@mnaoumov/typescript-lib/debug-controller';
 import type { SettingDefinitionItem } from 'obsidian';
-import type { DebugController } from 'obsidian-dev-utils/debug-controller';
-import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
-import type { PluginSettingsTabBaseConstructorParams } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
 
+import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
+import { PluginSettingsTabBase } from '@mnaoumov/obsidian-lib/plugin/plugin-settings-tab';
+import { getDebugger } from '@mnaoumov/typescript-lib/debug';
 import { Platform } from 'obsidian';
-import { getDebugger } from 'obsidian-dev-utils/debug';
-import { appendCodeBlock } from 'obsidian-dev-utils/obsidian/html-element';
-import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
 
 import type { DebugMode } from './debug-mode.ts';
 import type { EmulateMobileMode } from './emulate-mobile-mode.ts';

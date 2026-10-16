@@ -1,6 +1,6 @@
-import { createFunction } from 'obsidian-dev-utils/function';
-import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
-import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
+import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
+import { createFunction } from '@mnaoumov/typescript-lib/function';
+import { ValueWrapper } from '@mnaoumov/typescript-lib/value-wrapper';
 
 import type {
   LongStackTracesDesktopComponent,

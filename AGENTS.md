@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-`Advanced Debug Mode` is an Obsidian plugin that enhances the debugging experience: it toggles Obsidian's built-in debug mode (keeping inline source maps), preserves long (and async) stack traces, manages `debug`-library namespaces from the UI, surfaces DevTools (via `eruda`) on mobile, and lets you temporarily disable Obsidian's long-running-task timeouts. It is built on `obsidian-dev-utils`.
+`Advanced Debug Mode` is an Obsidian plugin that enhances the debugging experience: it toggles Obsidian's built-in debug mode (keeping inline source maps), preserves long (and async) stack traces, manages `debug`-library namespaces from the UI, surfaces DevTools (via `eruda`) on mobile, and lets you temporarily disable Obsidian's long-running-task timeouts. It is built on `@mnaoumov/obsidian-lib` and `@mnaoumov/typescript-lib`.
 
 ## Commands
 
@@ -38,7 +38,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `plugin-settings.ts` — `PluginSettings` data class with the plugin's setting defaults
   - `plugin-settings-component.ts` — `PluginSettingsComponentBase` subclass that loads/saves settings
   - `plugin-settings-tab.ts` — settings UI tab (declarative `getSettingDefinitionItems()`) for debug mode, mobile emulation, debug namespaces, long/async stack traces, stack-trace limit, task timeouts, and the shared-abort button
-  - `abort-shared-operation.ts` — `abortSharedOperation`: fires `obsidian-dev-utils`' app-wide `ResettableAbortController` with a `SilentError` reason and reports that the abort was signalled
+  - `abort-shared-operation.ts` — `abortSharedOperation`: fires `@mnaoumov/typescript-lib`'s app-wide `ResettableAbortController` with a `SilentError` reason and reports that the abort was signalled
   - `debug-mode.ts` — `DebugMode`: read/toggle Obsidian's debug mode via `app.debugMode`
   - `emulate-mobile-mode.ts` — `EmulateMobileMode`: read/toggle desktop mobile-emulation via `app.emulateMobile`
   - `dev-tools-component.ts` — `DevToolsComponent`: initializes `eruda` DevTools (mobile) and toggles its entry button
@@ -66,7 +66,7 @@ No module in `src/` statically imports a `node:` built-in. `long-stack-traces-co
 
 **It is `require()`, not `import()`, because a dynamic `import()` of a `node:` module does not load in the real app.** esbuild leaves a dynamic `import()` of an external module as a native `import()`. The renderer then fails with `Failed to fetch dynamically imported module: node:async_hooks` (the module the facade loaded before it moved to `node:v8`), and the plugin does not load. The unit tests pass either way, because vitest resolves `node:` URLs. Only the desktop integration suite catches it. A `require()` stays `require("node:…")` in `main.js`, which is how the static imports were bundled before.
 
-**The community directory's review does NOT honour the `desktop-` filename exemption.** `obsidian-dev-utils`' shared ESLint config turns `import-x/no-nodejs-modules` and `obsidianmd/no-nodejs-modules` off for `src/**/desktop-*.ts`. The directory's runner has no such carve-out. Until 1.11.1 these two files kept their static `node:` imports under that exemption. The listing reported each one as a medium Security finding, and each cost 5 points. `obsidianmd/no-nodejs-modules` accepts a `require()` or a dynamic `import()` only when it sits lexically inside a `Platform.isDesktop` guard: an `if`, a ternary, a `&&`, or an early `return`/`throw` at the start of the function. It must be exactly `Platform.isDesktop`; `isDesktopApp` does not count. So:
+**The community directory's review does NOT honour the `desktop-` filename exemption.** `@mnaoumov/obsidian-dev-toolkit`'s shared ESLint config turns `import-x/no-nodejs-modules` and `obsidianmd/no-nodejs-modules` off for `src/**/desktop-*.ts`. The directory's runner has no such carve-out. Until 1.11.1 these two files kept their static `node:` imports under that exemption. The listing reported each one as a medium Security finding, and each cost 5 points. `obsidianmd/no-nodejs-modules` accepts a `require()` or a dynamic `import()` only when it sits lexically inside a `Platform.isDesktop` guard: an `if`, a ternary, a `&&`, or an early `return`/`throw` at the start of the function. It must be exactly `Platform.isDesktop`; `isDesktopApp` does not count. So:
 
 - A new Node.js dependency is `require()`d in the facade's guarded block and injected, never imported where it is used.
 - The facade's `import-x/no-nodejs-modules` and `@typescript-eslint/no-require-imports` disables are deliberate. `import-x` cannot see the guard, but the `obsidianmd` rule can, and the `obsidianmd` rule is the one the directory runs. The `obsidianmd` half cannot be waived at all, because the runner sets `eslint-comments/no-restricted-disable` over `obsidianmd/*`.

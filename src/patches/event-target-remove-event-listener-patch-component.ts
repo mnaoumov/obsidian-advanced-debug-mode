@@ -1,4 +1,4 @@
-import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
+import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 
 import type { GenericFunctionWithOriginalFunction } from '../types.ts';
 

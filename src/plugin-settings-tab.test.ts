@@ -1,12 +1,19 @@
+import type { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
+import type { DataHandler } from '@mnaoumov/obsidian-lib/data-handler';
+import type { PluginEventSource } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
+import type { DebugController } from '@mnaoumov/typescript-lib/debug-controller';
 import type {
   ButtonComponent,
   SettingGroup
 } from 'obsidian';
-import type { DebugController } from 'obsidian-dev-utils/debug-controller';
-import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
-import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
-import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
+import { SettingEx } from '@mnaoumov/obsidian-lib/setting-ex';
+import { getSharedAbortController } from '@mnaoumov/typescript-lib/abort-controller';
+import { SilentError } from '@mnaoumov/typescript-lib/error';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { ensureGenericObject } from '@mnaoumov/typescript-lib/type-guards';
+import { waitForAllAsyncOperations } from '@mnaoumov/typescript-test-toolkit/async-operation-tracking';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import {
   App,
   Plugin,
@@ -14,13 +21,6 @@ import {
   TextAreaComponent,
   ToggleComponent
 } from 'obsidian';
-import { getSharedAbortController } from 'obsidian-dev-utils/abort-controller';
-import { waitForAllAsyncOperations } from 'obsidian-dev-utils/async';
-import { SilentError } from 'obsidian-dev-utils/error';
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
-import { ensureGenericObject } from 'obsidian-dev-utils/type-guards';
 import {
   beforeAll,
   describe,

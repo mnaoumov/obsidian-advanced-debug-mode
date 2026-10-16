@@ -1,13 +1,13 @@
-import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
-import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
+import type { DataHandler } from '@mnaoumov/obsidian-lib/data-handler';
+import type { PluginEventSource } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
 
+import { noopAsync } from '@mnaoumov/typescript-lib/function';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { ensureGenericObject } from '@mnaoumov/typescript-lib/type-guards';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import process from 'node:process';
 import { promiseHooks } from 'node:v8';
 import { App } from 'obsidian';
-import { noopAsync } from 'obsidian-dev-utils/function';
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
-import { ensureGenericObject } from 'obsidian-dev-utils/type-guards';
 import {
   afterEach,
   beforeEach,

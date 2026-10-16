@@ -1,8 +1,8 @@
+import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 import {
   debounce,
   FileSystemAdapter
 } from 'obsidian';
-import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
 
 import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
 

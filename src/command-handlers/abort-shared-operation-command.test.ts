@@ -1,8 +1,8 @@
 import type { Mock } from 'vitest';
 
-import { getSharedAbortController } from 'obsidian-dev-utils/abort-controller';
-import { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+import { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
+import { getSharedAbortController } from '@mnaoumov/typescript-lib/abort-controller';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import {
   describe,
   expect,
