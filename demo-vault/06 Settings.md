@@ -19,8 +19,11 @@ Open **Settings -> Community plugins -> Advanced Debug Mode** to configure the p
   - keep Obsidian's safety timeouts on for normal use, or turn it off before a debugging session so tasks are not aborted while you sit on a breakpoint. See [04 Long running tasks](<./04 Long running tasks.md>).
 - `shouldIncludeTimedOutTasksDetails`
   - when a task does time out, print extra diagnostic details about it to the console.
-- **typescript-lib: Timeout long running tasks** (no key: it is not saved)
-  - whether `runWithTimeout` in the `@mnaoumov/typescript-lib` library terminates an operation that times out. Turn it off while debugging a plugin built on that library. It is app-wide, reaches only plugins built against version 1.2.0 or later, and is back on after the app reloads. See [04 Long running tasks](<./04 Long running tasks.md>).
+
+## Debug switches
+
+- `debugSwitches`
+  - the debug switches described in [04 Long running tasks](<./04 Long running tasks.md>) that are not at their default, keyed by switch id, such as `{ "typescript-lib:terminate-on-timeout": false }`. The **Debug switches** section lists every switch registered by any library or plugin as a toggle; turning one back to its default removes its entry. A notice names every switch away from its default when the plugin loads, and disabling the plugin puts them all back to their defaults.
 
 Change any of these and reproduce the matching scenario to watch the behavior update.
 
@@ -60,7 +63,7 @@ await require('/demoSetup.ts').changeSettings(app, { stackTraceLimit: 20 });
 ---
 caption: Restore every default on this page
 ---
-await require('/demoSetup.ts').changeSettings(app, { shouldIncludeAsyncLongStackTraces: false, shouldIncludeInternalStackFrames: false, shouldIncludeLongStackTraces: true, shouldIncludeTimedOutTasksDetails: true, shouldTimeoutLongRunningTasks: true, stackTraceLimit: 100 });
+await require('/demoSetup.ts').changeSettings(app, { shouldIncludeAsyncLongStackTraces: false, shouldIncludeInternalStackFrames: false, shouldIncludeLongStackTraces: true, shouldIncludeTimedOutTasksDetails: true, shouldTimeoutLongRunningTasks: true, stackTraceLimit: 100, debugSwitches: {} });
 ```
 
 Manual equivalent for all of them: change the matching control in **Settings -> Community plugins -> Advanced Debug Mode**.

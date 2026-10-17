@@ -1,14 +1,14 @@
 import type { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
 import type { PluginSettingsTabBaseConstructorParams } from '@mnaoumov/obsidian-lib/plugin/plugin-settings-tab';
 import type { DebugController } from '@mnaoumov/typescript-lib/debug-controller';
-import type { SettingDefinitionItem } from 'obsidian';
+import type {
+  SettingDefinitionGroup,
+  SettingDefinitionItem
+} from 'obsidian';
 
 import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
 import { PluginSettingsTabBase } from '@mnaoumov/obsidian-lib/plugin/plugin-settings-tab';
-import {
-  isTerminationOnTimeoutEnabled,
-  setTerminationOnTimeoutEnabled
-} from '@mnaoumov/typescript-lib/async';
+import { getDebugSwitches } from '@mnaoumov/typescript-lib/debug-switches';
 import { Platform } from 'obsidian';
 
 import type { DebugMode } from './debug-mode.ts';
@@ -28,6 +28,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   private readonly debugController: DebugController;
   private readonly debugMode: DebugMode;
   private readonly emulateMobileMode: EmulateMobileMode;
+  private isDebugSwitchesUpdateScheduled = false;
   private readonly pluginNoticeComponent: PluginNoticeComponent;
 
   public constructor(params: PluginSettingsTabConstructorParams) {
@@ -227,38 +228,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       }),
       this.settingEx({
         desc: createFragment((f) => {
-          f.appendText('Whether to terminate long running tasks that time out within ');
-          f.createEl('a', {
-            href: 'https://github.com/mnaoumov/typescript-lib',
-            text: createFragment((f2) => {
-              appendCodeBlock(f2, '@mnaoumov/typescript-lib');
-            })
-          });
-          f.appendText(' library.');
-          f.createEl('br');
-          f.appendText('If enabled, a timed out task is terminated (default library behavior).');
-          f.createEl('br');
-          f.appendText(
-            'If disabled, a timed out task is only logged and keeps running. It is useful when some tasks fail due to timeout while you are staying on the breakpoint.'
-          );
-          f.createEl('br');
-          f.appendText('The switch is app-wide, but it only reaches plugins built against a library version that has it (1.2.0 or later).');
-          f.createEl('br');
-          f.appendText('It is not saved: it is back on after the app reloads.');
-        }),
-        name: 'typescript-lib: Timeout long running tasks',
-        render: (setting) => {
-          setting.addToggle((toggle) => {
-            toggle
-              .setValue(isTerminationOnTimeoutEnabled())
-              .onChange((value) => {
-                setTerminationOnTimeoutEnabled(value);
-              });
-          });
-        }
-      }),
-      this.settingEx({
-        desc: createFragment((f) => {
           f.appendText('Cancels the long-running operation that is currently in flight.');
           f.createEl('br');
           f.appendText('⚠️ The abort is app-wide: it stops whichever plugin started the operation, not only this one.');
@@ -280,7 +249,56 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
               });
           });
         }
-      })
+      }),
+      this.getDebugSwitchesGroup()
     ];
   }
+
+  private getDebugSwitchesGroup(): SettingDefinitionGroup {
+    const debugSwitches = getDebugSwitches();
+    const debugSwitchIds = getDebugSwitchIds();
+    return this.settingGroupEx({
+      heading: 'Debug switches',
+      items: debugSwitches.map((debugSwitch) =>
+        this.settingEx({
+          desc: createFragment((f) => {
+            f.appendText(debugSwitch.description);
+            f.createEl('br');
+            f.appendText('Id: ');
+            appendCodeBlock(f, debugSwitch.id);
+            f.appendText(`, ${debugSwitch.isEnabledByDefault ? 'on' : 'off'} by default.`);
+          }),
+          name: debugSwitch.name,
+          render: (setting) => {
+            this.updateIfDebugSwitchesChanged(debugSwitchIds);
+            setting.addToggle((toggle) => {
+              toggle
+                .setValue(debugSwitch.isEnabled())
+                .onChange((value) => {
+                  debugSwitch.setEnabled(value);
+                });
+            });
+          }
+        })
+      )
+    });
+  }
+
+  private updateIfDebugSwitchesChanged(renderedDebugSwitchIds: string): void {
+    if (this.isDebugSwitchesUpdateScheduled || getDebugSwitchIds() === renderedDebugSwitchIds) {
+      return;
+    }
+
+    // Obsidian renders the definitions it stored when the tab was added, so a switch a plugin registered since then has no
+    // row yet. Rebuilding them from inside a render would re-enter it, so the rebuild runs right after.
+    this.isDebugSwitchesUpdateScheduled = true;
+    window.setTimeout(() => {
+      this.isDebugSwitchesUpdateScheduled = false;
+      this.refresh();
+    }, 0);
+  }
+}
+
+function getDebugSwitchIds(): string {
+  return getDebugSwitches().map((debugSwitch) => debugSwitch.id).join('\n');
 }

@@ -37,7 +37,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `plugin.ts` — `Plugin extends PluginBase`; `onloadImpl` wires up all child components (settings, settings tab, DevTools, command handler, long-running tasks, error stack-trace limit, long stack traces)
   - `plugin-settings.ts` — `PluginSettings` data class with the plugin's setting defaults
   - `plugin-settings-component.ts` — `PluginSettingsComponentBase` subclass that loads/saves settings
-  - `plugin-settings-tab.ts` — settings UI tab (declarative `getSettingDefinitionItems()`) for debug mode, mobile emulation, debug namespaces, long/async stack traces, stack-trace limit, task timeouts, the unsaved `@mnaoumov/typescript-lib` `runWithTimeout` termination switch (`setTerminationOnTimeoutEnabled`, app-wide), and the shared-abort button
+  - `plugin-settings-tab.ts` — settings UI tab (declarative `getSettingDefinitionItems()`) for debug mode, mobile emulation, debug namespaces, long/async stack traces, stack-trace limit, task timeouts, the shared-abort button, and a "Debug switches" group with one toggle per switch in `@mnaoumov/typescript-lib`'s registry (`getDebugSwitches()`)
+  - `debug-switches-component.ts` — `DebugSwitchesComponent`: persists the debug switches in `debugSwitches` (only values away from their default), applies them on load, names them in a notice, and puts them back to their defaults on unload
   - `abort-shared-operation.ts` — `abortSharedOperation`: fires `@mnaoumov/typescript-lib`'s app-wide `ResettableAbortController` with a `SilentError` reason and reports that the abort was signalled
   - `debug-mode.ts` — `DebugMode`: read/toggle Obsidian's debug mode via `app.debugMode`
   - `emulate-mobile-mode.ts` — `EmulateMobileMode`: read/toggle desktop mobile-emulation via `app.emulateMobile`
@@ -90,6 +91,12 @@ Until 1.11.3 the async capture used `async_hooks.createHook`, and while it was o
 - **`async_hooks` cannot avoid that.** Node's own promise hook always writes its bookkeeping, whatever our callback does. So the component registers its own `init` / `before` / `after` through `v8.promiseHooks.createHook`. It keeps a `WeakMap` from promise to stack frame and a stack of executing promises. The parent of a promise with no V8 parent is the executing one, which is what Node's `triggerAsyncId` did.
 - **The hooks return before writing while `$_` is in `globalThis`.** V8 installs the console's command-line API on the global for the duration of each console evaluation, the side-effect-free ones included, and removes it afterwards. The cost is that the promises created by the synchronous part of a typed-in console command get no async frame.
 - **The unit tests cannot exercise the real hooks.** The unit suite runs in the `vmThreads` pool, and `v8.promiseHooks` see only the main context's promises, so the unit tests drive captured callbacks by hand. The desktop integration test sends DevTools' exact completion request over CDP to the real renderer, with the setting on. Without the guard it fails with the `EvalError`.
+
+### The "Debug switches" group rebuilds itself when the registry grows
+
+- **Obsidian renders the definitions it stored at `addSettingTab`.** `openTab` calls `renderTab()`, which renders the cached `settingItems`. `getSettingDefinitions()` runs again only on `update()`. So a switch a plugin registers after this plugin loaded would never get a row.
+- **typescript-lib has no registration event**, only `onDebugSwitchChanged`. So each switch row's `render` compares the registry's ids with the ids the definitions were built from, and on a mismatch schedules one `refresh()` (= `update()`) right after the render. The desktop integration test registers a switch through the shared state slot, as another plugin's copy of the library does, and failed before this.
+- **The component skips its own saves by context.** `DebugSwitchesComponent` saves with its own `editAndSave` context and ignores `saveSettings` events carrying it. A save from anywhere else, such as the demo vault's `configureCommunityPlugin`, applies only the entries it changed. Re-applying on its own saves would race its async listener and could flip a switch back.
 
 ## Testing notes
 

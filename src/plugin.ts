@@ -10,6 +10,7 @@ import { FileSystemAdapter } from 'obsidian';
 import { AbortSharedOperationCommandHandler } from './command-handlers/abort-shared-operation-command.ts';
 import { ToggleDevToolsButtonCommandHandler } from './command-handlers/toggle-dev-tools-button-command.ts';
 import { DebugMode } from './debug-mode.ts';
+import { DebugSwitchesComponent } from './debug-switches-component.ts';
 import { DevToolsComponent } from './dev-tools-component.ts';
 import { EmulateMobileMode } from './emulate-mobile-mode.ts';
 import { ErrorStackTraceLimitComponent } from './error-stack-trace-limit-component.ts';
@@ -29,6 +30,13 @@ export class Plugin extends PluginBase {
     this.pluginSettingsComponent = pluginSettingsComponent;
     // Since obsidian-dev-utils 90 a child is loaded as it is added, so the settings' async load tail runs in parallel with the components added below instead of before them. Those components read the settings in their synchronous `onload` and only re-read them on a later `loadSettings`/`saveSettings` event, never on the initial load, so without this wait they wire themselves up from the defaults for the whole session — a stored `shouldIncludeAsyncLongStackTraces: true` would be read as its default `false`.
     await pluginSettingsComponent.loadWithPromises();
+
+    this.addChild(
+      new DebugSwitchesComponent({
+        pluginNoticeComponent: this.pluginNoticeComponent,
+        pluginSettingsComponent
+      })
+    );
 
     const pluginSettingsTab = new PluginSettingsTab({
       debugController: getDebugController(),
