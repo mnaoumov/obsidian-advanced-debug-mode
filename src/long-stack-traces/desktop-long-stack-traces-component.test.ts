@@ -301,9 +301,7 @@ describe('LongStackTracesComponentDesktop', () => {
   });
 
   it('should set stack trace limit via property', () => {
-    const { component, pluginSettingsComponent } = createComponent();
-    // Stub the fire-and-forget persist so the synchronous setter does not reject on the unloaded settings component.
-    vi.spyOn(pluginSettingsComponent, 'editAndSave').mockResolvedValue(undefined);
+    const { component } = createComponent();
     component.load();
 
     const NEW_LIMIT = 50;
@@ -504,14 +502,12 @@ describe('LongStackTracesComponentDesktop', () => {
   });
 
   it('should handle stackTraceLimit of 0', () => {
-    const { component, pluginSettingsComponent } = createComponent({ stackTraceLimit: 0 });
+    const { component } = createComponent({ stackTraceLimit: 0 });
 
-    // Stub the fire-and-forget persist so the synchronous setter does not reject on the unloaded settings component.
-    vi.spyOn(pluginSettingsComponent, 'editAndSave').mockResolvedValue(undefined);
     component.load();
 
-    // stackTraceLimit getter returns the settings value
-    expect(window.Error.stackTraceLimit).toBe(0);
+    // A setting of 0 disables the limit, so the patched class reports no limit.
+    expect(window.Error.stackTraceLimit).toBe(Infinity);
 
     component.unload();
   });
@@ -649,23 +645,61 @@ describe('LongStackTracesComponentDesktop', () => {
     component.unload();
   });
 
-  it('should save settings when stackTraceLimit is changed via setter', async () => {
+  it('should not save settings when stackTraceLimit is changed via setter', () => {
     const { component, pluginSettingsComponent } = createComponent();
-    // Load the settings component so the real editAndSave runs.
-    // 70.0.0's editAndSave calls ensureLoaded() first and throws on an unloaded component.
-    // The spy calls through to the real implementation, which invokes the editor callback.
-    await pluginSettingsComponent.loadWithPromises();
     component.load();
 
-    const editAndSaveSpy = vi.spyOn(pluginSettingsComponent, 'editAndSave');
+    const editAndSaveSpy = vi.spyOn(pluginSettingsComponent, 'editAndSave').mockResolvedValue(undefined);
 
     const NEW_LIMIT = 42;
     window.Error.stackTraceLimit = NEW_LIMIT;
 
-    // editAndSave should be called because the new limit differs from settings
-    expect(editAndSaveSpy).toHaveBeenCalled();
+    // A runtime write is the caller's own business; only the settings tab changes the saved value.
+    expect(editAndSaveSpy).not.toHaveBeenCalled();
+    expect(window.Error.stackTraceLimit).toBe(NEW_LIMIT);
 
     component.unload();
+  });
+
+  it('should read back a temporary bump of stackTraceLimit at once, without drifting', () => {
+    const LIMIT = 100;
+    const BUMP = 6;
+    const ROUNDS = 3;
+    const { component, pluginSettingsComponent } = createComponent({ stackTraceLimit: LIMIT });
+    component.load();
+
+    const editAndSaveSpy = vi.spyOn(pluginSettingsComponent, 'editAndSave').mockResolvedValue(undefined);
+
+    for (let round = 0; round < ROUNDS; round++) {
+      window.Error.stackTraceLimit += BUMP;
+      expect(window.Error.stackTraceLimit).toBe(LIMIT + BUMP);
+      window.Error.stackTraceLimit -= BUMP;
+    }
+
+    expect(window.Error.stackTraceLimit).toBe(LIMIT);
+    expect(pluginSettingsComponent.settings.stackTraceLimit).toBe(LIMIT);
+    expect(editAndSaveSpy).not.toHaveBeenCalled();
+
+    component.unload();
+  });
+
+  it('should restore the original Error.stackTraceLimit on unload', () => {
+    const ORIGINAL_LIMIT = 17;
+    const RUNTIME_LIMIT = 3;
+    const previousLimit = savedError.stackTraceLimit;
+    savedError.stackTraceLimit = ORIGINAL_LIMIT;
+    try {
+      const { component } = createComponent({ stackTraceLimit: 0 });
+      component.load();
+
+      window.Error.stackTraceLimit = RUNTIME_LIMIT;
+      component.unload();
+
+      expect(window.Error).toBe(savedError);
+      expect(window.Error.stackTraceLimit).toBe(ORIGINAL_LIMIT);
+    } finally {
+      savedError.stackTraceLimit = previousLimit;
+    }
   });
 
   it('should not save settings when stackTraceLimit matches current setting', () => {
@@ -740,9 +774,7 @@ describe('LongStackTracesComponentDesktop', () => {
   });
 
   it('should use Infinity for stackTraceLimit when setting value is 0', () => {
-    const { component, pluginSettingsComponent } = createComponent({ stackTraceLimit: 0 });
-    // Stub the fire-and-forget persist so the synchronous setter does not reject on the unloaded settings component.
-    vi.spyOn(pluginSettingsComponent, 'editAndSave').mockResolvedValue(undefined);
+    const { component } = createComponent({ stackTraceLimit: 0 });
     component.load();
 
     // When stackTraceLimit is 0 (falsy), the code uses Infinity

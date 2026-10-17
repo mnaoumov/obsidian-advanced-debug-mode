@@ -3,7 +3,6 @@ import type { ConditionalKeys } from 'type-fest';
 import { AllWindowsEventComponent } from '@mnaoumov/obsidian-lib/components/all-windows-event-component';
 import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
 import { filterInPlace } from '@mnaoumov/typescript-lib/array';
-import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
 import {
   assignWithNonEnumerableProperties,
   castTo
@@ -97,6 +96,12 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   private readonly pluginSettingsComponent: PluginSettingsComponent;
 
   private readonly promiseHooks: PromiseHooks;
+
+  // The value `Error.stackTraceLimit` reads while the patch is on. Code that bumps the limit for a moment and puts it
+  // back (`Error.stackTraceLimit += k; ...; Error.stackTraceLimit -= k`) must read its own write straight away, so this
+  // lives in memory and never goes to the settings. Only the settings tab changes the saved value.
+  private stackTraceLimit = Infinity;
+
   public constructor(params: LongStackTracesDesktopComponentConstructorParams) {
     super();
     this.app = params.app;
@@ -246,11 +251,11 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   }
 
   private applyStackTraceLimit(lines: string[]): void {
-    if (!(lines.length > this.pluginSettingsComponent.settings.stackTraceLimit)) {
+    if (!(lines.length > this.stackTraceLimit)) {
       return;
     }
 
-    lines.splice(this.pluginSettingsComponent.settings.stackTraceLimit);
+    lines.splice(this.stackTraceLimit);
     lines.push(generateStackTraceLine('STACK TRACE LIMIT REACHED'));
   }
 
@@ -283,7 +288,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   }
 
   private getStackTraceLimit(): number {
-    return this.pluginSettingsComponent.settings.stackTraceLimit;
+    return this.stackTraceLimit;
   }
 
   private isEnabled(): boolean {
@@ -370,12 +375,13 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
       set: thisWrapper.value.setStackTraceLimit.bind(thisWrapper.value)
     });
 
+    const originalStackTraceLimit = this.OriginalError.stackTraceLimit;
     window.Error = PatchedErrorProxy as ErrorConstructor;
     window.Error.stackTraceLimit = this.pluginSettingsComponent.settings.stackTraceLimit || Infinity;
 
     this.register(() => {
       window.Error = this.OriginalError;
-      window.Error.stackTraceLimit = this.pluginSettingsComponent.settings.stackTraceLimit;
+      window.Error.stackTraceLimit = originalStackTraceLimit;
     });
   }
 
@@ -443,14 +449,8 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   }
 
   private setStackTraceLimit(value: number): void {
+    this.stackTraceLimit = value;
     this.OriginalError.stackTraceLimit = value + this.getAdditionalStackFramesCount();
-    if (this.pluginSettingsComponent.settings.stackTraceLimit !== value) {
-      invokeAsyncSafely(() =>
-        this.pluginSettingsComponent.editAndSave((x) => {
-          x.stackTraceLimit = value;
-        })
-      );
-    }
   }
 }
 

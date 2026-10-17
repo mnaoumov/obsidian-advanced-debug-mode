@@ -83,6 +83,14 @@ With long stack traces on, `window.Error` is a `Proxy` over the patched `Error` 
 - **The `stack` getter returns a non-string result unchanged.** Long stack traces only add frames to a formatted string, so a formatter that returns anything else gets its own result back.
 - **Node and the Electron renderer differ here, so the unit tests cannot catch the `captureStackTrace` half.** Node's `prepareStackTrace` callback reads `globalThis.Error.prepareStackTrace`, so the old bug only showed in unit tests for `new Error().stack`. The desktop integration test runs the reporter's probe in the real renderer, and it failed on both APIs before the fix.
 
+### The patched `Error.stackTraceLimit` is runtime-only and never saved
+
+With long stack traces on, `Error.stackTraceLimit` reads and writes a field on the desktop component, not the setting. The setting is only where that field starts on load, with `0` meaning `Infinity`. Only the settings tab changes the saved value.
+
+- **Up to 1.11.3 the setter saved every write through an async `editAndSave`, and the getter returned the setting.** Code that bumps the limit for a moment (`Error.stackTraceLimit += k; ...; -= k`) read the old value back before the save landed, so each round moved the setting down by `k`. In a real vault it reached `-33482`, a negative `splice` cut stack traces from the wrong end, and `data.json` was rewritten every few minutes.
+- **A validator on `stackTraceLimit` repairs such a value.** Anything that is not a whole number of 0 or more makes the effective value the default (100).
+- **Unload puts back the `stackTraceLimit` the original `Error` had at load**, not the setting.
+
 ### Async long stack traces use `v8.promiseHooks`, and the hooks skip console evaluations
 
 Until 1.11.3 the async capture used `async_hooks.createHook`, and while it was on, DevTools Console autocomplete came back empty.
