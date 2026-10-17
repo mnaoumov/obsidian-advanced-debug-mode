@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 1.12.0
+
+- fix: stop the saved stack trace limit drifting below zero
+- feat: list every registered debug switch in settings and keep them across reloads
+- chore(github): point questions to Discussions from the new-issue page
+- ci: merge attesting release assets through the toolkit's reusable workflow
+- build(demo-vault): require CodeScript Toolkit 13.8.0 for the obsidian-lib demo script
+- feat(settings): add a working typescript-lib timeout row
+- fix(settings): remove the dead Obsidian Dev Utils timeout row
+- build(demo-vault): import configureCommunityPlugin from @mnaoumov/obsidian-lib
+- build: move off obsidian-dev-utils onto the @mnaoumov packages
+- docs: mark plugin names as code across markdown and comments
+- test: merge using the obsidian-typings declarations of Obsidian internals
+- fix: keep DevTools Console autocomplete working with async long stack traces
+
 ## 1.11.3
 
 - fix: keep a caller's Error.prepareStackTrace working under long stack traces
