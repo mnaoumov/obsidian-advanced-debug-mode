@@ -1,7 +1,6 @@
 import type { DataHandler } from '@mnaoumov/obsidian-lib/data-handler';
 import type { PluginEventSource } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
 
-import { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/plugin-settings-component';
 import {
   noop,
   noopAsync
@@ -19,7 +18,7 @@ import {
 } from 'vitest';
 
 import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
-import { PluginSettings } from './plugin-settings.ts';
+import { PluginSettingsComponent } from './plugin-settings-component.ts';
 
 function createDataHandler(): DataHandler {
   return {
@@ -44,17 +43,14 @@ function createMockPluginEventSource(): PluginEventSource {
 }
 
 describe('LongRunningTasksComponent', () => {
-  let pluginSettingsComponent: PluginSettingsComponentBase<PluginSettings>;
+  let pluginSettingsComponent: PluginSettingsComponent;
   let fileSystemAdapter: FileSystemAdapter;
 
   beforeEach(() => {
-    pluginSettingsComponent = new PluginSettingsComponentBase<PluginSettings>(
-      {
-        dataHandler: createDataHandler(),
-        pluginEventSource: createMockPluginEventSource(),
-        pluginSettingsClass: PluginSettings
-      }
-    );
+    pluginSettingsComponent = new PluginSettingsComponent({
+      dataHandler: createDataHandler(),
+      pluginEventSource: createMockPluginEventSource()
+    });
     fileSystemAdapter = createMockFileSystemAdapter();
   });
 

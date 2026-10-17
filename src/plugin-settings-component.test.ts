@@ -1,6 +1,7 @@
 import type { DataHandler } from '@mnaoumov/obsidian-lib/data-handler';
 import type { PluginEventSource } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
 
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import {
   describe,
@@ -12,8 +13,29 @@ import {
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettings } from './plugin-settings.ts';
 
+function createListeningPluginEventSource(): PluginEventSource {
+  return strictProxy<PluginEventSource>({
+    off: vi.fn(),
+    offref: vi.fn(),
+    on: vi.fn(() => castTo<ReturnType<PluginEventSource['on']>>({})),
+    once: vi.fn(() => castTo<ReturnType<PluginEventSource['on']>>({}))
+  });
+}
+
 function createPluginEventSource(): PluginEventSource {
   return strictProxy<PluginEventSource>({});
+}
+
+async function loadStackTraceLimit(savedValue: unknown): Promise<number> {
+  const component = new PluginSettingsComponent({
+    dataHandler: {
+      loadData: vi.fn().mockResolvedValue({ stackTraceLimit: savedValue }),
+      saveData: vi.fn().mockResolvedValue(undefined)
+    },
+    pluginEventSource: createListeningPluginEventSource()
+  });
+  await component.loadWithPromises();
+  return component.settings.stackTraceLimit;
 }
 
 describe('PluginSettingsComponent', () => {
@@ -46,5 +68,21 @@ describe('PluginSettingsComponent', () => {
     expect(settings.shouldIncludeTimedOutTasksDetails).toBe(true);
     expect(settings.shouldTimeoutLongRunningTasks).toBe(true);
     expect(settings.stackTraceLimit).toBe(100);
+  });
+
+  it('should keep a saved stack trace limit of 0 or more', async () => {
+    const SAVED_LIMIT = 250;
+    expect(await loadStackTraceLimit(SAVED_LIMIT)).toBe(SAVED_LIMIT);
+    expect(await loadStackTraceLimit(0)).toBe(0);
+  });
+
+  it('should repair a negative saved stack trace limit to the default', async () => {
+    const DRIFTED_LIMIT = -33_482;
+    expect(await loadStackTraceLimit(DRIFTED_LIMIT)).toBe(new PluginSettings().stackTraceLimit);
+  });
+
+  it('should repair a fractional saved stack trace limit to the default', async () => {
+    const FRACTIONAL_LIMIT = 12.5;
+    expect(await loadStackTraceLimit(FRACTIONAL_LIMIT)).toBe(new PluginSettings().stackTraceLimit);
   });
 });
