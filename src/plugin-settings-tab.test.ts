@@ -4,18 +4,24 @@ import type { PluginEventSource } from '@mnaoumov/obsidian-lib/plugin/plugin-eve
 import type { DebugController } from '@mnaoumov/typescript-lib/debug-controller';
 import type {
   ButtonComponent,
+  SettingDefinitionGroup,
   SettingGroup
 } from 'obsidian';
 
 import { SettingEx } from '@mnaoumov/obsidian-lib/setting-ex';
 import { getSharedAbortController } from '@mnaoumov/typescript-lib/abort-controller';
 import {
-  isTerminationOnTimeoutEnabled,
   runWithTimeout,
-  setTerminationOnTimeoutEnabled,
   sleep
 } from '@mnaoumov/typescript-lib/async';
+import {
+  getDebugSwitch,
+  getTerminateOnTimeoutDebugSwitch,
+  registerDebugSwitch,
+  setDebugSwitch
+} from '@mnaoumov/typescript-lib/debug-switches';
 import { SilentError } from '@mnaoumov/typescript-lib/error';
+import { noop } from '@mnaoumov/typescript-lib/function';
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { ensureGenericObject } from '@mnaoumov/typescript-lib/type-guards';
 import { waitForAllAsyncOperations } from '@mnaoumov/typescript-test-toolkit/async-operation-tracking';
@@ -68,6 +74,10 @@ interface CreatePluginSettingsTabResult {
   readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly pluginSettingsComponent: PluginSettingsComponent;
   readonly tab: PluginSettingsTab;
+}
+
+interface DescribedRow {
+  desc: DocumentFragment;
 }
 
 interface DisabledPredicateRow {
@@ -131,6 +141,17 @@ function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): 
 }
 
 /**
+ * Finds the declared "Debug switches" group.
+ *
+ * @param tab - The settings tab.
+ * @returns The group.
+ */
+function getDebugSwitchesGroup(tab: PluginSettingsTab): Required<Pick<SettingDefinitionGroup, 'heading' | 'items'>> {
+  const group = tab.getSettingDefinitions().find((definition) => 'heading' in definition && definition.heading === 'Debug switches');
+  return castTo<Required<Pick<SettingDefinitionGroup, 'heading' | 'items'>>>(group);
+}
+
+/**
  * Evaluates a declared row's `disabled` predicate.
  *
  * @param tab - The settings tab.
@@ -143,13 +164,52 @@ function isRowDisabled(tab: PluginSettingsTab, name: string): boolean {
 }
 
 /**
+ * Renders the rows of the "Debug switches" group and captures each row's toggle.
+ *
+ * @param tab - The settings tab.
+ * @param group - The group to render, built from the tab's current definitions when omitted.
+ * @returns The toggles, keyed by the switch name.
+ */
+function renderDebugSwitchToggles(
+  tab: PluginSettingsTab,
+  group: Required<Pick<SettingDefinitionGroup, 'heading' | 'items'>> = getDebugSwitchesGroup(tab)
+): Map<string, ToggleComponent> {
+  const toggles = new Map<string, ToggleComponent>();
+  let currentName = '';
+  const originalAddToggle = Setting.prototype.addToggle;
+  const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
+    function mockAddToggle(this: Setting, callback: (toggle: ToggleComponent) => void) {
+      return originalAddToggle.call(this, (toggle: ToggleComponent) => {
+        toggles.set(currentName, toggle);
+        callback(toggle);
+      });
+    }
+  );
+
+  try {
+    for (const item of group.items) {
+      if (!('render' in item)) {
+        continue;
+      }
+
+      currentName = item.name;
+      item.render(new SettingEx(tab.containerEl), castTo<SettingGroup>(null));
+    }
+  } finally {
+    addToggleSpy.mockRestore();
+  }
+  return toggles;
+}
+
+/**
  * Invokes every declared row's `render` callback the way Obsidian does when the tab is opened, so the
  * bindings are still exercised now that the rows are declarative.
  *
  * @param tab - The settings tab.
  */
 function renderRows(tab: PluginSettingsTab): void {
-  for (const definition of tab.getSettingDefinitions()) {
+  const definitions = tab.getSettingDefinitions().flatMap((definition) => 'items' in definition ? definition.items ?? [] : [definition]);
+  for (const definition of definitions) {
     if ('render' in definition) {
       definition.render(new SettingEx(tab.containerEl), castTo<SettingGroup>(null));
     }
@@ -375,23 +435,66 @@ describe('PluginSettingsTab', () => {
     expect(debugControllerMock.set).toHaveBeenCalledWith(['ns1', 'ns2']);
   });
 
-  it('should switch whether runWithTimeout terminates a timed out operation', async () => {
-    const capturedToggles: ToggleComponent[] = [];
-    const originalAddToggle = Setting.prototype.addToggle;
-    const addToggleSpy = vi.spyOn(Setting.prototype, 'addToggle').mockImplementation(
-      function mockAddToggle(this: Setting, callback: (toggle: ToggleComponent) => void) {
-        const result = originalAddToggle.call(this, (toggle: ToggleComponent) => {
-          capturedToggles.push(toggle);
-          callback(toggle);
-        });
-        return result;
-      }
-    );
-
+  it('should render a row for every registered debug switch, including one registered after the tab was created', () => {
     const { tab } = createPluginSettingsTab();
-    renderRows(tab);
+    const LATE_SWITCH_ID = 'advanced-debug-mode-test:late-switch';
+    expect(getDebugSwitchesGroup(tab).items.map((item) => 'name' in item ? item.name : '')).toEqual(['Terminate operations on timeout']);
 
-    addToggleSpy.mockRestore();
+    registerDebugSwitch({
+      description: 'A switch registered after the tab was created.',
+      id: LATE_SWITCH_ID,
+      isEnabledByDefault: false,
+      name: 'Late switch'
+    });
+
+    try {
+      const group = getDebugSwitchesGroup(tab);
+      expect(group.heading).toBe('Debug switches');
+      // Sorted by id.
+      expect(group.items.map((item) => 'name' in item ? item.name : '')).toEqual(['Late switch', 'Terminate operations on timeout']);
+
+      const toggles = renderDebugSwitchToggles(tab);
+      expect(toggles.get('Late switch')?.getValue()).toBe(false);
+      expect(toggles.get('Terminate operations on timeout')?.getValue()).toBe(true);
+      const lateRow = group.items.find((item) => 'name' in item && item.name === 'Late switch');
+      const lateRowDescription = castTo<DescribedRow | undefined>(lateRow)?.desc;
+      expect(lateRowDescription?.textContent).toBe(`A switch registered after the tab was created.Id: ${LATE_SWITCH_ID}, off by default.`);
+
+      toggles.get('Late switch')?.onClick();
+      expect(getDebugSwitch(LATE_SWITCH_ID)?.isEnabled()).toBe(true);
+    } finally {
+      setDebugSwitch(LATE_SWITCH_ID, false);
+    }
+  });
+
+  it('should rebuild the rows once when a switch registered after the definitions were built', async () => {
+    const { tab } = createPluginSettingsTab();
+    const refreshSpy = vi.spyOn(tab, 'refresh').mockImplementation(noop);
+    const group = getDebugSwitchesGroup(tab);
+
+    // Unchanged registry: nothing to rebuild.
+    renderDebugSwitchToggles(tab, group);
+    await sleep({ milliseconds: 0 });
+    expect(refreshSpy).not.toHaveBeenCalled();
+
+    registerDebugSwitch({
+      description: 'Registered after the definitions were built.',
+      id: 'advanced-debug-mode-test:after-build',
+      isEnabledByDefault: false,
+      name: 'After build'
+    });
+
+    // Obsidian renders the stored definitions, which have no row for the new switch.
+    renderDebugSwitchToggles(tab, group);
+    renderDebugSwitchToggles(tab, group);
+    expect(refreshSpy).not.toHaveBeenCalled();
+    await sleep({ milliseconds: 0 });
+    expect(refreshSpy).toHaveBeenCalledOnce();
+  });
+
+  it('should switch whether runWithTimeout terminates a timed out operation', async () => {
+    const { tab } = createPluginSettingsTab();
+    const capturedToggles = renderDebugSwitchToggles(tab);
 
     const SLOW_OPERATION_IN_MILLISECONDS = 50;
     const TIMEOUT_IN_MILLISECONDS = 10;
@@ -406,9 +509,7 @@ describe('PluginSettingsTab', () => {
       });
     }
 
-    // Toggle index 7 is "typescript-lib: Timeout long running tasks"
-    const TYPESCRIPT_LIB_TIMEOUT_INDEX = 7;
-    const toggle = capturedToggles[TYPESCRIPT_LIB_TIMEOUT_INDEX];
+    const toggle = capturedToggles.get('Terminate operations on timeout');
     expect(toggle).toBeDefined();
 
     try {
@@ -418,16 +519,16 @@ describe('PluginSettingsTab', () => {
 
       toggle?.onClick();
 
-      expect(isTerminationOnTimeoutEnabled()).toBe(false);
+      expect(getTerminateOnTimeoutDebugSwitch().isEnabled()).toBe(false);
       await expect(runSlowOperation()).resolves.toBe('completed');
 
       toggle?.onClick();
 
-      expect(isTerminationOnTimeoutEnabled()).toBe(true);
+      expect(getTerminateOnTimeoutDebugSwitch().isEnabled()).toBe(true);
       await expect(runSlowOperation()).rejects.toThrow();
     } finally {
       // The switch is app-wide shared state, so leave it as every other test expects it.
-      setTerminationOnTimeoutEnabled(true);
+      getTerminateOnTimeoutDebugSwitch().setEnabled(true);
     }
   });
 

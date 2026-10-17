@@ -6,6 +6,7 @@ import { configureCommunityPlugin } from '@mnaoumov/obsidian-lib/community-plugi
 const PLUGIN_ID = 'advanced-debug-mode';
 
 interface DemoSettingsPatch {
+  debugSwitches?: Record<string, boolean>;
   shouldIncludeAsyncLongStackTraces?: boolean;
   shouldIncludeInternalStackFrames?: boolean;
   shouldIncludeLongStackTraces?: boolean;

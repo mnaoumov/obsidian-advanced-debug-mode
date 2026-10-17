@@ -25,6 +25,7 @@ import {
 } from 'vitest';
 
 import { AbortSharedOperationCommandHandler } from './command-handlers/abort-shared-operation-command.ts';
+import { DebugSwitchesComponent } from './debug-switches-component.ts';
 import { DevToolsComponent } from './dev-tools-component.ts';
 import { ErrorStackTraceLimitComponent } from './error-stack-trace-limit-component.ts';
 import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
@@ -82,6 +83,13 @@ vi.mock('./dev-tools-component.ts', () => ({
 
 vi.mock('./emulate-mobile-mode.ts', () => ({
   EmulateMobileMode: vi.fn()
+}));
+
+vi.mock('./debug-switches-component.ts', () => ({
+  // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
+  DebugSwitchesComponent: vi.fn(function debugSwitchesComponentStub() {
+    return new Component();
+  })
 }));
 
 vi.mock('./error-stack-trace-limit-component.ts', () => ({
@@ -180,6 +188,7 @@ describe('Plugin', () => {
     expect(addChildSpy.mock.calls.map(([child]) => child)).toContain(vi.mocked(LongRunningTasksComponent).mock.results[0]?.value);
     expect(ErrorStackTraceLimitComponent).toHaveBeenCalledOnce();
     expect(LongStackTracesComponent).toHaveBeenCalledOnce();
+    expect(addChildSpy.mock.calls.map(([child]) => child)).toContain(vi.mocked(DebugSwitchesComponent).mock.results[0]?.value);
   });
 
   it('should not wire the long-running-tasks component when the vault has no desktop adapter', async () => {

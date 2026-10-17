@@ -42,16 +42,41 @@ This is the one pair worth binding to muscle memory - the warning below is about
 
 Leaving timeouts disabled outside a debugging session is not recommended - a genuinely stuck task would then hang instead of recovering.
 
-## Timeouts inside other plugins
+## Timeouts inside other plugins: debug switches
 
 Obsidian's own timeouts are not the only ones. Plugins built on the `@mnaoumov/typescript-lib` library run some of their operations through its `runWithTimeout`, which terminates an operation that takes too long - the same trap while you sit on a breakpoint.
 
-The **typescript-lib: Timeout long running tasks** row switches that off for every such plugin at once:
+That library keeps an app-wide registry of **debug switches**: named on/off values that change how code behaves while you debug. Any library or plugin can register one, and the **Debug switches** section at the bottom of the settings tab lists every registered switch, with its name, description and id, as a toggle. A switch registered after `Advanced Debug Mode` loaded appears the next time you open the tab.
+
+The timeout one is **Terminate operations on timeout** (`typescript-lib:terminate-on-timeout`):
 
 - **On** (the default): a timed out operation is terminated.
 - **Off**: the timeout is only logged, and the operation keeps running, so you can step through it.
 
-Two things to know:
+Turn it off before debugging a plugin built on that library:
 
-- It only reaches plugins built against `@mnaoumov/typescript-lib` 1.2.0 or later. A plugin that bundles an older copy keeps terminating its operations.
-- It is not saved in `data.json`: it is back on after the app reloads, so you cannot forget it off.
+```code-button
+---
+caption: Keep timed out operations running (start debugging)
+---
+await require('/demoSetup.ts').changeSettings(app, { debugSwitches: { 'typescript-lib:terminate-on-timeout': false } });
+```
+
+Manual equivalent: open **Settings -> Community plugins -> Advanced Debug Mode** and turn **Terminate operations on timeout** off under **Debug switches**.
+
+And back on when you are done:
+
+```code-button
+---
+caption: Terminate timed out operations again (stop debugging)
+---
+await require('/demoSetup.ts').changeSettings(app, { debugSwitches: {} });
+```
+
+Manual equivalent: turn **Terminate operations on timeout** back on.
+
+Three things to know:
+
+- The values are saved in `data.json` under `debugSwitches`, so a switch you turned off stays off across reloads. Each time the plugin loads with a switch away from its default, a notice names it, so you cannot forget one.
+- Disabling `Advanced Debug Mode` puts every switch back to its default. Enabling it again re-applies the saved values.
+- A switch only reaches plugins built against a version of the library that has it. **Terminate operations on timeout** reaches plugins built against `@mnaoumov/typescript-lib` 1.2.0 or later; a plugin that bundles an older copy keeps terminating its operations.
