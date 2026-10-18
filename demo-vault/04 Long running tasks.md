@@ -11,7 +11,7 @@ Obsidian guards some internal operations with timeouts: if a task takes too long
 - `shouldIncludeTimedOutTasksDetails`
   - when a task does time out, include extra details about it in the console so you can see which task was aborted and why.
 
-Both live in **Settings -> Community plugins -> Advanced Debug Mode** and are documented in [06 Settings](<./06 Settings.md>).
+Both live in **Settings -> Community plugins -> `Advanced Debug Mode`** and are documented in [06 Settings](<./06 Settings.md>).
 
 ## Typical workflow
 
@@ -24,7 +24,7 @@ Both live in **Settings -> Community plugins -> Advanced Debug Mode** and are do
    await require('/demoSetup.ts').changeSettings(app, { shouldTimeoutLongRunningTasks: false });
    ```
 
-   Manual equivalent: open **Settings -> Community plugins -> Advanced Debug Mode** and turn **Timeout long running tasks** off.
+   Manual equivalent: open **Settings -> Community plugins -> `Advanced Debug Mode`** and turn **Timeout long running tasks** off.
 
 2. Set your breakpoints in DevTools and reproduce the slow operation - it will now wait on your breakpoints instead of being aborted.
 3. When you are done, turn the setting back on so Obsidian's normal safety timeouts are restored:
@@ -62,7 +62,7 @@ caption: Keep timed out operations running (start debugging)
 await require('/demoSetup.ts').changeSettings(app, { debugSwitches: { 'typescript-lib:terminate-on-timeout': false } });
 ```
 
-Manual equivalent: open **Settings -> Community plugins -> Advanced Debug Mode** and turn **Terminate operations on timeout** off under **Debug switches**.
+Manual equivalent: open **Settings -> Community plugins -> `Advanced Debug Mode`** and turn **Terminate operations on timeout** off under **Debug switches**.
 
 And back on when you are done:
 

@@ -6,7 +6,7 @@
 - feat: list every registered debug switch in settings and keep them across reloads
 - chore(github): point questions to Discussions from the new-issue page
 - ci: merge attesting release assets through the toolkit's reusable workflow
-- build(demo-vault): require CodeScript Toolkit 13.8.0 for the obsidian-lib demo script
+- build(demo-vault): require `CodeScript Toolkit` 13.8.0 for the obsidian-lib demo script
 - feat(settings): add a working typescript-lib timeout row
 - fix(settings): remove the dead Obsidian Dev Utils timeout row
 - build(demo-vault): import configureCommunityPlugin from @mnaoumov/obsidian-lib

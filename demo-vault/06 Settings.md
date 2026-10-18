@@ -1,6 +1,6 @@
 # Settings
 
-Open **Settings -> Community plugins -> Advanced Debug Mode** to configure the plugin. Each option below lists the setting key stored in the plugin's `data.json`.
+Open **Settings -> Community plugins -> `Advanced Debug Mode`** to configure the plugin. Each option below lists the setting key stored in the plugin's `data.json`.
 
 ## Long stack traces
 
@@ -66,4 +66,4 @@ caption: Restore every default on this page
 await require('/demoSetup.ts').changeSettings(app, { shouldIncludeAsyncLongStackTraces: false, shouldIncludeInternalStackFrames: false, shouldIncludeLongStackTraces: true, shouldIncludeTimedOutTasksDetails: true, shouldTimeoutLongRunningTasks: true, stackTraceLimit: 100, debugSwitches: {} });
 ```
 
-Manual equivalent for all of them: change the matching control in **Settings -> Community plugins -> Advanced Debug Mode**.
+Manual equivalent for all of them: change the matching control in **Settings -> Community plugins -> `Advanced Debug Mode`**.

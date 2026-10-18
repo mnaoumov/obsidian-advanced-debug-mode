@@ -13,7 +13,7 @@ caption: Turn debug mode on
 require('/demoSetup.ts').setDebugMode(app, true);
 ```
 
-Manual equivalent: run **Advanced Debug Mode: Open settings** (or open **Settings -> Community plugins -> Advanced Debug Mode**) and toggle **Debug mode** on.
+Manual equivalent: run **`Advanced Debug Mode`: Open settings** (or open **Settings -> Community plugins -> `Advanced Debug Mode`**) and toggle **Debug mode** on.
 
 Obsidian reloads the plugins so the source maps take effect.
 

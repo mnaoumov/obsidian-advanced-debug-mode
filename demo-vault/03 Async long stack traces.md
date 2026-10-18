@@ -19,7 +19,7 @@ caption: Include async long stack traces
 await require('/demoSetup.ts').changeSettings(app, { shouldIncludeAsyncLongStackTraces: true });
 ```
 
-Manual equivalent: open **Settings -> Community plugins -> Advanced Debug Mode** and toggle **Include async long stack traces** on. This flips the `shouldIncludeAsyncLongStackTraces` setting.
+Manual equivalent: open **Settings -> Community plugins -> `Advanced Debug Mode`** and toggle **Include async long stack traces** on. This flips the `shouldIncludeAsyncLongStackTraces` setting.
 
 ![An async stack trace keeping its `--- async ---` hops](<./_assets/images/async-long-stack-traces.png>)
 
