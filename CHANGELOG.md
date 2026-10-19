@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.13.0
+
+- feat: toggle any plugin's debug messages from a command or a settings row
+- docs: mark plugin names as code
+
 ## 1.12.0
 
 - fix: stop the saved stack trace limit drifting below zero
