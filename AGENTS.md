@@ -85,6 +85,14 @@ With long stack traces on, `window.Error` is a `Proxy` over the patched `Error` 
 - **The `stack` getter returns a non-string result unchanged.** Long stack traces only add frames to a formatted string, so a formatter that returns anything else gets its own result back.
 - **Node and the Electron renderer differ here, so the unit tests cannot catch the `captureStackTrace` half.** Node's `prepareStackTrace` callback reads `globalThis.Error.prepareStackTrace`, so the old bug only showed in unit tests for `new Error().stack`. The desktop integration test runs the reporter's probe in the real renderer, and it failed on both APIs before the fix.
 
+### Patched child error classes construct through their own native constructor
+
+With long stack traces on, every `window` error class whose prototype descends from `Error.prototype` is replaced by a `PatchedChildError`. It builds the error with `Reflect.construct(OriginalChildError, arguments, new.target)` and then installs the same `stack` getter the base patch uses (`wrapErrorStack`).
+
+- **Up to 1.13.0 it passed the child's arguments to the patched base `Error`.** That only fits `(message, options)` signatures. `AggregateError(errors, message)` became `Error(errors, message)`: `errors` was `undefined`, the array was stringified into `message`, and the real message was lost. `SuppressedError(error, suppressed, message)` lost `error` and `suppressed` the same way.
+- **Only the constructor call changed; the prototype chain still runs through the patched base class**, so `error instanceof AggregateError` (the patched class) and `error instanceof Error` both hold.
+- The desktop integration test checks a real `AggregateError` in the renderer, and fails on the old construction.
+
 ### The patched `Error.stackTraceLimit` is runtime-only and never saved
 
 With long stack traces on, `Error.stackTraceLimit` reads and writes a field on the desktop component, not the setting. The setting is only where that field starts on load, with `0` meaning `Infinity`. Only the settings tab changes the saved value.

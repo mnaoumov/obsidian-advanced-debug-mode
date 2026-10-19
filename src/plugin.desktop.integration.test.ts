@@ -86,6 +86,30 @@ describe('Desktop Integration', () => {
     expect(result.hasLongStackTrace).toBe(true);
   });
 
+  it('should keep AggregateError errors and message with long stack traces on', async () => {
+    const result = await evalInObsidian({
+      callback() {
+        const error = new AggregateError([new Error('first child'), new TypeError('second child')], 'aggregate message');
+        return {
+          childMessages: Array.isArray(error.errors) ? error.errors.map((child: unknown) => (child as Error).message) : null,
+          isAggregateError: error instanceof AggregateError,
+          // A native `AggregateError` inherits from the native `Error`; the patched one inherits from the native `AggregateError`.
+          isPatched: Object.getPrototypeOf(AggregateError) !== Error,
+          message: error.message,
+          stackHeader: error.stack?.split('\n', 1)[0]
+        };
+      }
+    });
+
+    expect(result).toEqual({
+      childMessages: ['first child', 'second child'],
+      isAggregateError: true,
+      isPatched: true,
+      message: 'aggregate message',
+      stackHeader: 'AggregateError: aggregate message'
+    });
+  });
+
   it('should pass CallSite arrays from a caller-installed Error.prepareStackTrace through both stack APIs', async () => {
     interface StructuredStackProbeResult {
       readonly firstFrameHasGetFileName: boolean;

@@ -7,10 +7,7 @@ import {
   assignWithNonEnumerableProperties,
   castTo
 } from '@mnaoumov/typescript-lib/object-utils';
-import {
-  assertNonNullable,
-  ensureNonNullable
-} from '@mnaoumov/typescript-lib/type-guards';
+import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 import { ValueWrapper } from '@mnaoumov/typescript-lib/value-wrapper';
 import { App } from 'obsidian';
 
@@ -304,41 +301,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
 
       const error = Reflect.construct(thisWrapper.value.OriginalError, [message, errorOptions], castTo<GenericConstructor>(ensureNonNullable(new.target as unknown)));
       error.name = 'Error';
-
-      const parentStackFrame = thisWrapper.value.parentStackFrame;
-      const executingPromise = thisWrapper.value.getExecutingPromise();
-
-      let cachedStack: unknown;
-
-      const originalStackPropertyDescriptor = ensureNonNullable(Object.getOwnPropertyDescriptor(error, 'stack'));
-      Object.defineProperty(error, 'stack', {
-        configurable: true,
-        enumerable: false,
-        get() {
-          if (cachedStack !== undefined) {
-            return cachedStack;
-          }
-
-          // eslint-disable-next-line @typescript-eslint/unbound-method -- Property descriptor getter is not a class method; extracting it is safe.
-          const originalStack: unknown = ensureNonNullable(originalStackPropertyDescriptor.get).call(error);
-          if (typeof originalStack !== 'string') {
-            // A caller-installed `Error.prepareStackTrace` returned a non-string (e.g. the `CallSite` array `depd` asks for).
-            // Long stack traces only add frames to a formatted string, so the formatter's result is returned as is.
-            cachedStack = originalStack;
-            return cachedStack;
-          }
-
-          const lines = originalStack.split('\n');
-          thisWrapper.value.adjustStackLines({ executingPromise, lines, parentStackFrame });
-          cachedStack = lines.join('\n');
-          return cachedStack;
-        },
-        set(value: unknown) {
-          originalStackPropertyDescriptor.set?.call(error, value);
-          cachedStack = value;
-        }
-      });
-
+      thisWrapper.value.wrapErrorStack(error);
       return error;
     }
 
@@ -387,6 +350,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
 
   private patchErrorClasses(): void {
     this.patchBaseErrorClass();
+    const thisWrapper = ValueWrapper.of(this);
 
     // Explicitly typed: the map holds every patched Error class, whose shapes differ, so seeding it
     // in the constructor must not narrow the value type to the base class alone.
@@ -411,10 +375,13 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
           return new (castTo<GenericConstructor>(PatchedChildErrorWrapper))(...$arguments);
         }
 
-        assertNonNullable(PatchedBaseError);
-
-        const error = Reflect.construct(PatchedBaseError, $arguments, castTo<GenericConstructor>(ensureNonNullable(new.target as unknown))) as Error;
+        // The ORIGINAL child constructor builds the error, so each class keeps its own argument handling:
+        // `AggregateError(errors, message, options)` sets `errors`, `SuppressedError(error, suppressed, message)` sets
+        // `error` and `suppressed`. Passing the arguments to the patched base `Error` instead stringified `errors` into
+        // `message` and left `errors` undefined.
+        const error = Reflect.construct(OriginalChildError, $arguments, castTo<GenericConstructor>(ensureNonNullable(new.target as unknown))) as Error;
         error.name = childErrorClassName;
+        thisWrapper.value.wrapErrorStack(error);
         return error;
       }
 
@@ -451,6 +418,43 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   private setStackTraceLimit(value: number): void {
     this.stackTraceLimit = value;
     this.OriginalError.stackTraceLimit = value + this.getAdditionalStackFramesCount();
+  }
+
+  private wrapErrorStack(error: Error): void {
+    const parentStackFrame = this.parentStackFrame;
+    const executingPromise = this.getExecutingPromise();
+
+    let cachedStack: unknown;
+
+    const originalStackPropertyDescriptor = ensureNonNullable(Object.getOwnPropertyDescriptor(error, 'stack'));
+    const adjustStackLines = this.adjustStackLines.bind(this);
+    Object.defineProperty(error, 'stack', {
+      configurable: true,
+      enumerable: false,
+      get() {
+        if (cachedStack !== undefined) {
+          return cachedStack;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/unbound-method -- Property descriptor getter is not a class method; extracting it is safe.
+        const originalStack: unknown = ensureNonNullable(originalStackPropertyDescriptor.get).call(error);
+        if (typeof originalStack !== 'string') {
+          // A caller-installed `Error.prepareStackTrace` returned a non-string (e.g. the `CallSite` array `depd` asks for).
+          // Long stack traces only add frames to a formatted string, so the formatter's result is returned as is.
+          cachedStack = originalStack;
+          return cachedStack;
+        }
+
+        const lines = originalStack.split('\n');
+        adjustStackLines({ executingPromise, lines, parentStackFrame });
+        cachedStack = lines.join('\n');
+        return cachedStack;
+      },
+      set(value: unknown) {
+        originalStackPropertyDescriptor.set?.call(error, value);
+        cachedStack = value;
+      }
+    });
   }
 }
 
