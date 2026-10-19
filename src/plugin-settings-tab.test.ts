@@ -4,6 +4,7 @@ import type { PluginEventSource } from '@mnaoumov/obsidian-lib/plugin/plugin-eve
 import type { DebugController } from '@mnaoumov/typescript-lib/debug-controller';
 import type {
   ButtonComponent,
+  PluginManifest,
   SettingDefinitionGroup,
   SettingGroup
 } from 'obsidian';
@@ -44,6 +45,7 @@ import {
 import type { DebugMode } from './debug-mode.ts';
 import type { EmulateMobileMode } from './emulate-mobile-mode.ts';
 
+import { PluginDebugMessages } from './plugin-debug-messages.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
@@ -68,6 +70,7 @@ interface CreatePluginSettingsTabOverrides {
   readonly debugControllerOverrides?: Partial<DebugController>;
   readonly debugModeOverrides?: Partial<DebugMode>;
   readonly emulateMobileModeOverrides?: Partial<EmulateMobileMode>;
+  readonly pluginManifests?: Record<string, PluginManifest>;
 }
 
 interface CreatePluginSettingsTabResult {
@@ -82,6 +85,35 @@ interface DescribedRow {
 
 interface DisabledPredicateRow {
   disabled: () => boolean;
+}
+
+/**
+ * Builds a debug controller that keeps its namespaces in memory, as window.DEBUG does.
+ *
+ * @param initialNamespaces - The namespaces it starts with.
+ * @returns The controller.
+ */
+function createInMemoryDebugController(initialNamespaces: string[] = []): DebugController {
+  let namespaces = initialNamespaces;
+  return {
+    disable: vi.fn(),
+    enable: vi.fn(),
+    get: vi.fn(() => [...namespaces]),
+    set: vi.fn((value: string | string[]) => {
+      namespaces = typeof value === 'string' ? value.split(',') : [...value];
+    })
+  };
+}
+
+/**
+ * Builds a plugin manifest.
+ *
+ * @param id - The plugin id.
+ * @param name - The plugin name.
+ * @returns The manifest.
+ */
+function createManifest(id: string, name: string): PluginManifest {
+  return { author: 'test', description: '', id, minAppVersion: '0.0.0', name, version: '1.0.0' };
 }
 
 function createPluginEventSource(): PluginEventSource {
@@ -128,11 +160,17 @@ function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): 
     showNotice: vi.fn()
   });
 
+  const pluginDebugMessages = new PluginDebugMessages({
+    app: strictProxy<App>({ plugins: castTo<App['plugins']>({ manifests: overrides?.pluginManifests ?? {} }) }),
+    debugController
+  });
+
   const tab = new PluginSettingsTab({
     debugController,
     debugMode,
     emulateMobileMode,
     plugin,
+    pluginDebugMessages,
     pluginNoticeComponent,
     pluginSettingsComponent
   });
@@ -147,7 +185,18 @@ function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): 
  * @returns The group.
  */
 function getDebugSwitchesGroup(tab: PluginSettingsTab): Required<Pick<SettingDefinitionGroup, 'heading' | 'items'>> {
-  const group = tab.getSettingDefinitions().find((definition) => 'heading' in definition && definition.heading === 'Debug switches');
+  return getGroup(tab, 'Debug switches');
+}
+
+/**
+ * Finds a declared group by its heading.
+ *
+ * @param tab - The settings tab.
+ * @param heading - The group heading.
+ * @returns The group.
+ */
+function getGroup(tab: PluginSettingsTab, heading: string): Required<Pick<SettingDefinitionGroup, 'heading' | 'items'>> {
+  const group = tab.getSettingDefinitions().find((definition) => 'heading' in definition && definition.heading === heading);
   return castTo<Required<Pick<SettingDefinitionGroup, 'heading' | 'items'>>>(group);
 }
 
@@ -173,6 +222,20 @@ function isRowDisabled(tab: PluginSettingsTab, name: string): boolean {
 function renderDebugSwitchToggles(
   tab: PluginSettingsTab,
   group: Required<Pick<SettingDefinitionGroup, 'heading' | 'items'>> = getDebugSwitchesGroup(tab)
+): Map<string, ToggleComponent> {
+  return renderGroupToggles(tab, group);
+}
+
+/**
+ * Renders the rows of a group and captures each row's toggle.
+ *
+ * @param tab - The settings tab.
+ * @param group - The group to render.
+ * @returns The toggles, keyed by the row name.
+ */
+function renderGroupToggles(
+  tab: PluginSettingsTab,
+  group: Required<Pick<SettingDefinitionGroup, 'heading' | 'items'>>
 ): Map<string, ToggleComponent> {
   const toggles = new Map<string, ToggleComponent>();
   let currentName = '';
@@ -566,5 +629,80 @@ describe('PluginSettingsTab', () => {
     // The replacement signal is fresh, so the next operation does not start already cancelled.
     expect(getSharedAbortController().signal.aborted).toBe(false);
     expect(pluginNoticeComponent.showNotice).toHaveBeenCalledOnce();
+  });
+
+  describe('Plugin debug messages', () => {
+    const pluginManifests = {
+      'plugin-a': createManifest('plugin-a', 'Alpha'),
+      'plugin-b': createManifest('plugin-b', 'Beta')
+    };
+
+    it('should render a row per installed plugin, sorted by name, that turns its namespaces on and off', () => {
+      const debugController = createInMemoryDebugController(['other']);
+      const { tab } = createPluginSettingsTab({ debugControllerOverrides: debugController, pluginManifests });
+      renderRows(tab);
+
+      const group = getGroup(tab, 'Plugin debug messages');
+      expect(group.items.map((item) => 'name' in item ? item.name : '')).toEqual(['Alpha', 'Beta']);
+      const alphaRowDescription = castTo<DescribedRow | undefined>(group.items[0])?.desc;
+      expect(alphaRowDescription?.textContent).toBe('Show the debug messages of Alpha: turns on the plugin-a and plugin-a:* debug namespaces.');
+
+      const toggles = renderGroupToggles(tab, group);
+      expect(toggles.get('Alpha')?.getValue()).toBe(false);
+
+      toggles.get('Alpha')?.onClick();
+      expect(debugController.get()).toEqual(['other', 'plugin-a', 'plugin-a:*']);
+
+      toggles.get('Alpha')?.onClick();
+      expect(debugController.get()).toEqual(['other']);
+    });
+
+    it('should show a toggle change in the namespaces text area and an edit of it in the toggles', () => {
+      const capturedTextAreas: TextAreaComponent[] = [];
+      const originalAddTextArea = Setting.prototype.addTextArea;
+      const addTextAreaSpy = vi.spyOn(Setting.prototype, 'addTextArea').mockImplementation(function mockAddTextArea(this: Setting, callback) {
+        return originalAddTextArea.call(this, (textArea: TextAreaComponent) => {
+          capturedTextAreas.push(textArea);
+          callback(textArea);
+        });
+      });
+
+      const debugController = createInMemoryDebugController();
+      const { tab } = createPluginSettingsTab({ debugControllerOverrides: debugController, pluginManifests });
+      renderRows(tab);
+      addTextAreaSpy.mockRestore();
+      const toggles = renderGroupToggles(tab, getGroup(tab, 'Plugin debug messages'));
+      const textArea = capturedTextAreas[0];
+
+      toggles.get('Beta')?.onClick();
+      expect(textArea?.getValue()).toBe('plugin-b\nplugin-b:*');
+
+      vi.mocked(debugController.set).mockClear();
+      textArea?.setValue('plugin-a');
+      textArea?.inputEl.dispatchEvent(new Event('input'));
+
+      expect(toggles.get('Alpha')?.getValue()).toBe(true);
+      expect(toggles.get('Beta')?.getValue()).toBe(false);
+      // Syncing the toggles must not write the namespaces back over what the user typed.
+      expect(debugController.set).toHaveBeenCalledOnce();
+      expect(debugController.get()).toEqual(['plugin-a']);
+    });
+
+    it('should rebuild the rows once when a plugin is installed after the definitions were built', async () => {
+      const manifests: Record<string, PluginManifest> = { ...pluginManifests };
+      const { tab } = createPluginSettingsTab({ pluginManifests: manifests });
+      const refreshSpy = vi.spyOn(tab, 'refresh').mockImplementation(noop);
+      const group = getGroup(tab, 'Plugin debug messages');
+
+      renderGroupToggles(tab, group);
+      await sleep({ milliseconds: 0 });
+      expect(refreshSpy).not.toHaveBeenCalled();
+
+      manifests['plugin-c'] = createManifest('plugin-c', 'Gamma');
+      renderGroupToggles(tab, group);
+      renderGroupToggles(tab, group);
+      await sleep({ milliseconds: 0 });
+      expect(refreshSpy).toHaveBeenCalledOnce();
+    });
   });
 });

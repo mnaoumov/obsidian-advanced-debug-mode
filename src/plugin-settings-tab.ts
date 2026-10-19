@@ -3,7 +3,9 @@ import type { PluginSettingsTabBaseConstructorParams } from '@mnaoumov/obsidian-
 import type { DebugController } from '@mnaoumov/typescript-lib/debug-controller';
 import type {
   SettingDefinitionGroup,
-  SettingDefinitionItem
+  SettingDefinitionItem,
+  TextAreaComponent,
+  ToggleComponent
 } from 'obsidian';
 
 import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
@@ -13,6 +15,7 @@ import { Platform } from 'obsidian';
 
 import type { DebugMode } from './debug-mode.ts';
 import type { EmulateMobileMode } from './emulate-mobile-mode.ts';
+import type { PluginDebugMessages } from './plugin-debug-messages.ts';
 import type { PluginSettings } from './plugin-settings.ts';
 
 import { abortSharedOperation } from './abort-shared-operation.ts';
@@ -21,14 +24,19 @@ interface PluginSettingsTabConstructorParams extends PluginSettingsTabBaseConstr
   readonly debugController: DebugController;
   readonly debugMode: DebugMode;
   readonly emulateMobileMode: EmulateMobileMode;
+  readonly pluginDebugMessages: PluginDebugMessages;
   readonly pluginNoticeComponent: PluginNoticeComponent;
 }
 
 export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   private readonly debugController: DebugController;
   private readonly debugMode: DebugMode;
+  private debugNamespacesTextArea: null | TextAreaComponent = null;
   private readonly emulateMobileMode: EmulateMobileMode;
-  private isDebugSwitchesUpdateScheduled = false;
+  private isRefreshScheduled = false;
+  private isSyncingPluginDebugMessageToggles = false;
+  private readonly pluginDebugMessages: PluginDebugMessages;
+  private readonly pluginDebugMessageToggles = new Map<string, ToggleComponent>();
   private readonly pluginNoticeComponent: PluginNoticeComponent;
 
   public constructor(params: PluginSettingsTabConstructorParams) {
@@ -36,6 +44,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
     this.debugController = params.debugController;
     this.debugMode = params.debugMode;
     this.emulateMobileMode = params.emulateMobileMode;
+    this.pluginDebugMessages = params.pluginDebugMessages;
     this.pluginNoticeComponent = params.pluginNoticeComponent;
   }
 
@@ -106,9 +115,11 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
               .onChange((value) => {
                 const namespaces = value.split('\n');
                 this.debugController.set(namespaces);
+                this.syncPluginDebugMessageToggles();
               });
 
             textArea.inputEl.addClass('debug-namespaces-setting-control');
+            this.debugNamespacesTextArea = textArea;
           });
         }
       }),
@@ -250,6 +261,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           });
         }
       }),
+      this.getPluginDebugMessagesGroup(),
       this.getDebugSwitchesGroup()
     ];
   }
@@ -270,7 +282,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           }),
           name: debugSwitch.name,
           render: (setting) => {
-            this.updateIfDebugSwitchesChanged(debugSwitchIds);
+            this.refreshIfChanged(debugSwitchIds, getDebugSwitchIds());
             setting.addToggle((toggle) => {
               toggle
                 .setValue(debugSwitch.isEnabled())
@@ -284,18 +296,74 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
     });
   }
 
-  private updateIfDebugSwitchesChanged(renderedDebugSwitchIds: string): void {
-    if (this.isDebugSwitchesUpdateScheduled || getDebugSwitchIds() === renderedDebugSwitchIds) {
+  private getPluginDebugMessagesGroup(): SettingDefinitionGroup {
+    const manifests = this.pluginDebugMessages.getPluginManifests();
+    const pluginIds = this.getPluginIds();
+    this.pluginDebugMessageToggles.clear();
+    return this.settingGroupEx({
+      heading: 'Plugin debug messages',
+      items: manifests.map((manifest) =>
+        this.settingEx({
+          desc: createFragment((f) => {
+            f.appendText('Show the debug messages of ');
+            f.createEl('code', { text: manifest.name });
+            f.appendText(': turns on the ');
+            appendCodeBlock(f, manifest.id);
+            f.appendText(' and ');
+            appendCodeBlock(f, `${manifest.id}:*`);
+            f.appendText(' debug namespaces.');
+          }),
+          name: manifest.name,
+          render: (setting) => {
+            this.refreshIfChanged(pluginIds, this.getPluginIds());
+            setting.addToggle((toggle) => {
+              toggle
+                .setValue(this.pluginDebugMessages.isEnabled(manifest.id))
+                .onChange((value) => {
+                  if (this.isSyncingPluginDebugMessageToggles) {
+                    return;
+                  }
+
+                  this.pluginDebugMessages.setEnabled(manifest.id, value);
+                  this.debugNamespacesTextArea?.setValue(this.debugController.get().join('\n'));
+                });
+              this.pluginDebugMessageToggles.set(manifest.id, toggle);
+            });
+          }
+        })
+      )
+    });
+  }
+
+  private getPluginIds(): string {
+    return this.pluginDebugMessages.getPluginManifests().map((manifest) => manifest.id).join('\n');
+  }
+
+  private refreshIfChanged(renderedIds: string, currentIds: string): void {
+    if (this.isRefreshScheduled || currentIds === renderedIds) {
       return;
     }
 
-    // Obsidian renders the definitions it stored when the tab was added, so a switch a plugin registered since then has no
-    // row yet. Rebuilding them from inside a render would re-enter it, so the rebuild runs right after.
-    this.isDebugSwitchesUpdateScheduled = true;
+    // Obsidian renders the definitions it stored when the tab was added, so a debug switch registered or a plugin
+    // installed since then has no row yet. Rebuilding them from inside a render would re-enter it, so the rebuild runs
+    // right after.
+    this.isRefreshScheduled = true;
     window.setTimeout(() => {
-      this.isDebugSwitchesUpdateScheduled = false;
+      this.isRefreshScheduled = false;
       this.refresh();
     }, 0);
+  }
+
+  private syncPluginDebugMessageToggles(): void {
+    // A toggle's `setValue` fires its own change handler, which must not write the namespaces the user is typing back.
+    this.isSyncingPluginDebugMessageToggles = true;
+    try {
+      for (const [pluginId, toggle] of this.pluginDebugMessageToggles) {
+        toggle.setValue(this.pluginDebugMessages.isEnabled(pluginId));
+      }
+    } finally {
+      this.isSyncingPluginDebugMessageToggles = false;
+    }
   }
 }
 

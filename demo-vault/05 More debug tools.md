@@ -24,8 +24,14 @@ Manual equivalent: run **`Advanced Debug Mode`: Toggle DevTools button** from th
 
 Many plugins - and `obsidian-dev-utils` itself - use the [`debug`](https://github.com/debug-js/debug) library to emit `console.debug` messages that are hidden unless their namespace is enabled. `Advanced Debug Mode` adds a UI for managing those namespaces so you can switch specific channels of debug output on and off without editing `localStorage` by hand.
 
-- Open **Settings -> Community plugins -> `Advanced Debug Mode`** and find the debug-namespaces section.
-- Enable a namespace, reproduce the behavior, and watch the matching `console.debug` output appear in DevTools.
+Plugins built on `@mnaoumov/obsidian-lib` or `obsidian-dev-utils` log under their own id: the plugin's messages under `<plugin-id>`, its submodules under `<plugin-id>:*`. Their READMEs tell you to type `window.DEBUG.enable('<plugin-id>');` into the console. You do not have to:
+
+- Run **`Advanced Debug Mode`: Toggle debug messages for a plugin...** from the command palette. It lists every installed plugin, marked `On` or `Off`, and choosing one flips it.
+- Or open **Settings -> Community plugins -> `Advanced Debug Mode`** and use the **Plugin debug messages** group, which has a toggle per installed plugin.
+
+Either way, turning a plugin on adds `<plugin-id>` and `<plugin-id>:*` to the namespaces, and turning it off removes them. When a wildcard such as `*` would still show its messages, turning it off adds `-<plugin-id>` and `-<plugin-id>:*` instead, so off really is off. Some plugins read the namespaces only once, at load, and need the app reloaded to pick a change up.
+
+For anything finer, the **Debug namespaces** box in the same settings tab takes one namespace per line, and a leading `-` disables one. Enable a namespace, reproduce the behavior, and watch the matching `console.debug` output appear in DevTools.
 
 For the full explanation of debug namespaces, see the [obsidian-dev-utils debugging guide](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/).
 
