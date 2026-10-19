@@ -25,11 +25,13 @@ import {
 } from 'vitest';
 
 import { AbortSharedOperationCommandHandler } from './command-handlers/abort-shared-operation-command.ts';
+import { TogglePluginDebugMessagesCommandHandler } from './command-handlers/toggle-plugin-debug-messages-command.ts';
 import { DebugSwitchesComponent } from './debug-switches-component.ts';
 import { DevToolsComponent } from './dev-tools-component.ts';
 import { ErrorStackTraceLimitComponent } from './error-stack-trace-limit-component.ts';
 import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
 import { LongStackTracesComponent } from './long-stack-traces/long-stack-traces-component.ts';
+import { PluginDebugMessages } from './plugin-debug-messages.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
@@ -68,6 +70,10 @@ vi.mock('./command-handlers/abort-shared-operation-command.ts', () => ({
 
 vi.mock('./command-handlers/toggle-dev-tools-button-command.ts', () => ({
   ToggleDevToolsButtonCommandHandler: vi.fn()
+}));
+
+vi.mock('./command-handlers/toggle-plugin-debug-messages-command.ts', () => ({
+  TogglePluginDebugMessagesCommandHandler: vi.fn()
 }));
 
 vi.mock('./debug-mode.ts', () => ({
@@ -111,6 +117,10 @@ vi.mock('./long-stack-traces/long-stack-traces-component.ts', () => ({
   LongStackTracesComponent: vi.fn(function longStackTracesComponentStub() {
     return new Component();
   })
+}));
+
+vi.mock('./plugin-debug-messages.ts', () => ({
+  PluginDebugMessages: vi.fn()
 }));
 
 vi.mock('./plugin-settings-component.ts', () => ({
@@ -183,6 +193,14 @@ describe('Plugin', () => {
     // The abort command is the only hotkey-bindable way to reach the shared abort controller, so its
     // registration is the thing that makes the feature exist at all.
     expect(AbortSharedOperationCommandHandler).toHaveBeenCalledOnce();
+    // The command and the settings rows share one instance, so both read and write the same namespaces.
+    expect(PluginDebugMessages).toHaveBeenCalledOnce();
+    expect(TogglePluginDebugMessagesCommandHandler).toHaveBeenCalledWith(expect.objectContaining({
+      pluginDebugMessages: vi.mocked(PluginDebugMessages).mock.instances[0]
+    }));
+    expect(PluginSettingsTab).toHaveBeenCalledWith(expect.objectContaining({
+      pluginDebugMessages: vi.mocked(PluginDebugMessages).mock.instances[0]
+    }));
     expect(LongRunningTasksComponent).toHaveBeenCalledOnce();
     // Constructing it is not enough: it was constructed but never added for a while, so its FileSystemAdapter patches never loaded. Compared by identity, as every component stub is structurally an empty Component.
     expect(addChildSpy.mock.calls.map(([child]) => child)).toContain(vi.mocked(LongRunningTasksComponent).mock.results[0]?.value);

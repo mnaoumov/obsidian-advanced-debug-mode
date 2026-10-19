@@ -37,8 +37,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `plugin.ts` — `Plugin extends PluginBase`; `onloadImpl` wires up all child components (settings, settings tab, DevTools, command handler, long-running tasks, error stack-trace limit, long stack traces)
   - `plugin-settings.ts` — `PluginSettings` data class with the plugin's setting defaults
   - `plugin-settings-component.ts` — `PluginSettingsComponentBase` subclass that loads/saves settings
-  - `plugin-settings-tab.ts` — settings UI tab (declarative `getSettingDefinitionItems()`) for debug mode, mobile emulation, debug namespaces, long/async stack traces, stack-trace limit, task timeouts, the shared-abort button, and a "Debug switches" group with one toggle per switch in `@mnaoumov/typescript-lib`'s registry (`getDebugSwitches()`)
+  - `plugin-settings-tab.ts` — settings UI tab (declarative `getSettingDefinitionItems()`) for debug mode, mobile emulation, debug namespaces, long/async stack traces, stack-trace limit, task timeouts, the shared-abort button, a "Plugin debug messages" group with one toggle per installed plugin (kept in step with the namespaces text area both ways), and a "Debug switches" group with one toggle per switch in `@mnaoumov/typescript-lib`'s registry (`getDebugSwitches()`)
   - `debug-switches-component.ts` — `DebugSwitchesComponent`: persists the debug switches in `debugSwitches` (only values away from their default), applies them on load, names them in a notice, and puts them back to their defaults on unload
+  - `plugin-debug-messages.ts` — `PluginDebugMessages`: lists the installed plugins and turns one plugin's `<id>` + `<id>:*` debug namespaces on or off, adding `-<id>` / `-<id>:*` only when a wildcard would otherwise keep it on; `isNamespaceEnabled` applies the `debug` library's rule (a matching `-` entry wins)
   - `abort-shared-operation.ts` — `abortSharedOperation`: fires `@mnaoumov/typescript-lib`'s app-wide `ResettableAbortController` with a `SilentError` reason and reports that the abort was signalled
   - `debug-mode.ts` — `DebugMode`: read/toggle Obsidian's debug mode via `app.debugMode`
   - `emulate-mobile-mode.ts` — `EmulateMobileMode`: read/toggle desktop mobile-emulation via `app.emulateMobile`
@@ -48,6 +49,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `multi-weak-map.ts` — `MultiWeakMap`: multi-key map mixing `Map`/`WeakMap` storage per key type
   - `types.ts` — shared generic-function types (`GenericFunctionWithOriginalFn`, etc.)
   - `command-handlers/toggle-dev-tools-button-command.ts` — `GlobalCommandHandler` to toggle the DevTools button
+  - `command-handlers/toggle-plugin-debug-messages-command.ts` — `GlobalCommandHandler` `Toggle debug messages for a plugin...`: a fuzzy picker of installed plugins, each labelled `On` / `Off`, that flips the chosen one; the one-step form of a README's `window.DEBUG.enable('<plugin-id>')`
   - `command-handlers/abort-shared-operation-command.ts` — `GlobalCommandHandler` firing the app-wide shared abort; the hotkey-bindable form of the console's `__obsidianDevUtils.sharedAbortController.value.abort()`
   - `long-stack-traces/long-stack-traces-component.ts` — cross-platform entry; behind `Platform.isDesktop`, lazy-loads the desktop component, `require()`s `node:process` and `node:v8`, injects `process` and `v8.promiseHooks`, and reloads on settings change
   - `long-stack-traces/desktop-long-stack-traces-component.ts` — desktop core: patches `Error` (and child error classes), timers, microtasks, and `Promise` methods to inject long stack-trace frames
@@ -100,10 +102,10 @@ Until 1.11.3 the async capture used `async_hooks.createHook`, and while it was o
 - **The hooks return before writing while `$_` is in `globalThis`.** V8 installs the console's command-line API on the global for the duration of each console evaluation, the side-effect-free ones included, and removes it afterwards. The cost is that the promises created by the synchronous part of a typed-in console command get no async frame.
 - **The unit tests cannot exercise the real hooks.** The unit suite runs in the `vmThreads` pool, and `v8.promiseHooks` see only the main context's promises, so the unit tests drive captured callbacks by hand. The desktop integration test sends DevTools' exact completion request over CDP to the real renderer, with the setting on. Without the guard it fails with the `EvalError`.
 
-### The "Debug switches" group rebuilds itself when the registry grows
+### The "Debug switches" and "Plugin debug messages" groups rebuild themselves when their lists change
 
-- **Obsidian renders the definitions it stored at `addSettingTab`.** `openTab` calls `renderTab()`, which renders the cached `settingItems`. `getSettingDefinitions()` runs again only on `update()`. So a switch a plugin registers after this plugin loaded would never get a row.
-- **typescript-lib has no registration event**, only `onDebugSwitchChanged`. So each switch row's `render` compares the registry's ids with the ids the definitions were built from, and on a mismatch schedules one `refresh()` (= `update()`) right after the render. The desktop integration test registers a switch through the shared state slot, as another plugin's copy of the library does, and failed before this.
+- **Obsidian renders the definitions it stored at `addSettingTab`.** `openTab` calls `renderTab()`, which renders the cached `settingItems`. `getSettingDefinitions()` runs again only on `update()`. So a switch a plugin registers, or a plugin installed, after this plugin loaded would never get a row.
+- **typescript-lib has no registration event**, only `onDebugSwitchChanged`. So each switch row's `render` compares the registry's ids with the ids the definitions were built from, and on a mismatch schedules one `refresh()` (= `update()`) right after the render. Each plugin row does the same against the installed plugins' ids. The desktop integration test registers a switch through the shared state slot, as another plugin's copy of the library does, and failed before this.
 - **The component skips its own saves by context.** `DebugSwitchesComponent` saves with its own `editAndSave` context and ignores `saveSettings` events carrying it. A save from anywhere else, such as the demo vault's `configureCommunityPlugin`, applies only the entries it changed. Re-applying on its own saves would race its async listener and could flip a switch back.
 
 ## Testing notes

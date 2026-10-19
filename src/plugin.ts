@@ -9,6 +9,7 @@ import { FileSystemAdapter } from 'obsidian';
 
 import { AbortSharedOperationCommandHandler } from './command-handlers/abort-shared-operation-command.ts';
 import { ToggleDevToolsButtonCommandHandler } from './command-handlers/toggle-dev-tools-button-command.ts';
+import { TogglePluginDebugMessagesCommandHandler } from './command-handlers/toggle-plugin-debug-messages-command.ts';
 import { DebugMode } from './debug-mode.ts';
 import { DebugSwitchesComponent } from './debug-switches-component.ts';
 import { DevToolsComponent } from './dev-tools-component.ts';
@@ -16,6 +17,7 @@ import { EmulateMobileMode } from './emulate-mobile-mode.ts';
 import { ErrorStackTraceLimitComponent } from './error-stack-trace-limit-component.ts';
 import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
 import { LongStackTracesComponent } from './long-stack-traces/long-stack-traces-component.ts';
+import { PluginDebugMessages } from './plugin-debug-messages.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
@@ -38,11 +40,18 @@ export class Plugin extends PluginBase {
       })
     );
 
+    const debugController = getDebugController();
+    const pluginDebugMessages = new PluginDebugMessages({
+      app: this.app,
+      debugController
+    });
+
     const pluginSettingsTab = new PluginSettingsTab({
-      debugController: getDebugController(),
+      debugController,
       debugMode: new DebugMode(this.app),
       emulateMobileMode: new EmulateMobileMode(this.app),
       plugin: this,
+      pluginDebugMessages,
       pluginNoticeComponent: this.pluginNoticeComponent,
       pluginSettingsComponent
     });
@@ -62,6 +71,11 @@ export class Plugin extends PluginBase {
       }),
       new ToggleDevToolsButtonCommandHandler(devToolsComponent),
       new AbortSharedOperationCommandHandler(this.pluginNoticeComponent),
+      new TogglePluginDebugMessagesCommandHandler({
+        app: this.app,
+        pluginDebugMessages,
+        pluginNoticeComponent: this.pluginNoticeComponent
+      }),
       new OpenDemoVaultCommandHandler({
         app: this.app,
         pluginId: this.manifest.id,
