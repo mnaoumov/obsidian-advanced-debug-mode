@@ -1,9 +1,13 @@
 import type { DataHandler } from '@mnaoumov/obsidian-lib/data-handler';
 import type { PluginEventSource } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
 
+import { errorToString } from '@mnaoumov/typescript-lib/error';
 import { noopAsync } from '@mnaoumov/typescript-lib/function';
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
-import { ensureGenericObject } from '@mnaoumov/typescript-lib/type-guards';
+import {
+  ensureGenericObject,
+  ensureNonNullable
+} from '@mnaoumov/typescript-lib/type-guards';
 import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import process from 'node:process';
 import { promiseHooks } from 'node:v8';
@@ -28,6 +32,17 @@ interface CreateComponentResult {
 
 interface StackHolder {
   stack?: unknown;
+}
+
+interface SuppressedErrorLike extends Error {
+  readonly error: unknown;
+  readonly suppressed: unknown;
+}
+
+type SuppressedErrorLikeConstructor = new (error: unknown, suppressed: unknown, message?: string) => SuppressedErrorLike;
+
+interface WindowWithSuppressedError {
+  readonly SuppressedError?: SuppressedErrorLikeConstructor;
 }
 
 function createComponent(settingsOverrides?: Partial<PluginSettings>): CreateComponentResult {
@@ -464,6 +479,113 @@ describe('LongStackTracesComponentDesktop', () => {
     const error = callWithoutNew('no new');
     expect(error).toBeInstanceOf(TypeError);
     expect(error.message).toBe('no new');
+
+    component.unload();
+  });
+
+  it('should keep AggregateError errors and message', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const child1 = new Error('child 1');
+    const child2 = new Error('child 2');
+    const error = new AggregateError([child1, child2], 'aggregate message');
+    expect(error).toBeInstanceOf(AggregateError);
+    expect(error).toBeInstanceOf(Error);
+    expect(error.name).toBe('AggregateError');
+    expect(error.message).toBe('aggregate message');
+    expect(error.errors).toEqual([child1, child2]);
+    expect(error.stack?.startsWith('AggregateError: aggregate message\n')).toBe(true);
+
+    component.unload();
+  });
+
+  it('should keep AggregateError options', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const cause = new Error('root cause');
+    const error = new AggregateError([], 'aggregate message', { cause });
+    expect(error.errors).toEqual([]);
+    expect(error.cause).toBe(cause);
+
+    component.unload();
+  });
+
+  it('should handle AggregateError called without new', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const child = new Error('child');
+    const callWithoutNew = castTo<(errors: unknown[], message: string) => AggregateError>(window.AggregateError);
+    const error = callWithoutNew([child], 'no new');
+    expect(error).toBeInstanceOf(AggregateError);
+    expect(error.message).toBe('no new');
+    expect(error.errors).toEqual([child]);
+
+    component.unload();
+  });
+
+  it('should add long stack frames to AggregateError', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const parentStackError = new window.Error('parent');
+    component.parentStackFrame = { parentStackError, title: 'parentTitle' };
+    const error = new AggregateError([], 'aggregate message');
+    component.parentStackFrame = undefined;
+
+    expect(error.stack).toContain('at --- parentTitle --- (0)');
+
+    component.unload();
+  });
+
+  it('should keep SuppressedError error and suppressed when available', () => {
+    const windowWithErrors = castTo<WindowWithSuppressedError>(window);
+    if (!windowWithErrors.SuppressedError) {
+      return;
+    }
+
+    const { component } = createComponent();
+    component.load();
+
+    // Read again after load: the patch replaced the class on `window`.
+    const PatchedSuppressedError = ensureNonNullable(castTo<WindowWithSuppressedError>(window).SuppressedError);
+    const inner = new Error('inner');
+    const suppressed = new Error('suppressed');
+    const error = new PatchedSuppressedError(inner, suppressed, 'suppressed message');
+    expect(error).toBeInstanceOf(PatchedSuppressedError);
+    expect(error.message).toBe('suppressed message');
+    expect(error.error).toBe(inner);
+    expect(error.suppressed).toBe(suppressed);
+
+    component.unload();
+  });
+
+  it('should keep cause on TypeError and RangeError', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const cause = new Error('root cause');
+    const typeError = new TypeError('type error', { cause });
+    const rangeError = new RangeError('range error', { cause });
+    expect(typeError.message).toBe('type error');
+    expect(typeError.cause).toBe(cause);
+    expect(rangeError.message).toBe('range error');
+    expect(rangeError.cause).toBe(cause);
+
+    component.unload();
+  });
+
+  it('should let errorToString print the children of an AggregateError', () => {
+    const { component } = createComponent();
+    component.load();
+
+    const error = new AggregateError([new Error('first child'), new TypeError('second child')], 'aggregate message');
+    const text = errorToString(error);
+    expect(text).toContain('AggregateError: aggregate message');
+    expect(text).toContain('first child');
+    expect(text).toContain('second child');
 
     component.unload();
   });
