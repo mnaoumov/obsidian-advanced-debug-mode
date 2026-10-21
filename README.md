@@ -48,7 +48,7 @@ A copy of the vault ships with every release. You can access it via any of the f
 - **Timeouts that do not fire while you are on a breakpoint**, so a slow debugging session does not trip Obsidian's own long-running-task limits. [04 Long running tasks](<./demo-vault/04 Long running tasks.md>)
 - **Every debug switch in one place** — the app-wide switches that libraries and plugins built on `@mnaoumov/typescript-lib` register, such as keeping a timed out `runWithTimeout` operation running, listed as toggles and saved across reloads, with a notice naming any switch left away from its default. [04 Long running tasks](<./demo-vault/04 Long running tasks.md>)
 - **DevTools on mobile**, where the app has none, plus a UI for the `debug` library's namespaces. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
-- **Any plugin's debug messages in one step** — a command that lists every installed plugin, marked on or off, and flips the one you pick, plus a toggle per plugin in settings, instead of the `window.DEBUG.enable('<plugin-id>')` line a README asks you to type. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
+- **Any plugin's debug messages in one step** — a view listing every installed plugin with a checkbox, a filter and all on / all off, so you can change several at once; a command that flips the one you pick; and a toggle per plugin in settings — instead of the `window.DEBUG.enable('<plugin-id>')` line a README asks you to type. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
 - **A panic button for a runaway operation** — the app-wide shared abort, as a hotkey-bindable command and a settings button instead of a line typed into the console. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
 - **Every setting**, by the key it is stored under. [06 Settings](<./demo-vault/06 Settings.md>)
 
@@ -66,7 +66,7 @@ To install the latest beta release of this plugin (regardless if it is available
 
 ## Debugging
 
-Every other plugin documents a console command here. This one does not need to: **turning debug messages on and off is what it does**. Run **`Advanced Debug Mode`: Toggle debug messages for a plugin...** and pick `Advanced Debug Mode` — or any other installed plugin — or toggle it in the **Plugin debug messages** group of `Settings -> Community plugins -> Advanced Debug Mode`. Neither touches the console or `localStorage`. See [05 More debug tools](<./demo-vault/05 More debug tools.md>).
+Every other plugin documents a console command here. This one does not need to: **turning debug messages on and off is what it does**. Run **`Advanced Debug Mode`: Open plugin debug messages** (or click the bug icon in the ribbon) and tick `Advanced Debug Mode` — or any other installed plugins, as many as you like. For a single plugin, **`Advanced Debug Mode`: Toggle debug messages for a plugin...** flips the one you pick, and the **Plugin debug messages** group of `Settings -> Community plugins -> Advanced Debug Mode` has a toggle per plugin. None of them touches the console or `localStorage`. See [05 More debug tools](<./demo-vault/05 More debug tools.md>).
 
 The console form still works, and is the one to use if this plugin is not loaded yet, which is exactly when you would need it:
 

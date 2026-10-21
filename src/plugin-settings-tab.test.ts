@@ -8,6 +8,7 @@ import type {
   SettingDefinitionGroup,
   SettingGroup
 } from 'obsidian';
+import type { Mock } from 'vitest';
 
 import { SettingEx } from '@mnaoumov/obsidian-lib/setting-ex';
 import { getSharedAbortController } from '@mnaoumov/typescript-lib/abort-controller';
@@ -74,6 +75,7 @@ interface CreatePluginSettingsTabOverrides {
 }
 
 interface CreatePluginSettingsTabResult {
+  readonly openPluginDebugMessagesView: Mock<() => Promise<void>>;
   readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly pluginSettingsComponent: PluginSettingsComponent;
   readonly tab: PluginSettingsTab;
@@ -165,17 +167,20 @@ function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): 
     debugController
   });
 
+  const openPluginDebugMessagesView = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+
   const tab = new PluginSettingsTab({
     debugController,
     debugMode,
     emulateMobileMode,
+    openPluginDebugMessagesView,
     plugin,
     pluginDebugMessages,
     pluginNoticeComponent,
     pluginSettingsComponent
   });
 
-  return { pluginNoticeComponent, pluginSettingsComponent, tab };
+  return { openPluginDebugMessagesView, pluginNoticeComponent, pluginSettingsComponent, tab };
 }
 
 /**
@@ -643,8 +648,8 @@ describe('PluginSettingsTab', () => {
       renderRows(tab);
 
       const group = getGroup(tab, 'Plugin debug messages');
-      expect(group.items.map((item) => 'name' in item ? item.name : '')).toEqual(['Alpha', 'Beta']);
-      const alphaRowDescription = castTo<DescribedRow | undefined>(group.items[0])?.desc;
+      expect(group.items.map((item) => 'name' in item ? item.name : '')).toEqual(['Plugin debug messages view', 'Alpha', 'Beta']);
+      const alphaRowDescription = castTo<DescribedRow | undefined>(group.items[1])?.desc;
       expect(alphaRowDescription?.textContent).toBe('Show the debug messages of Alpha: turns on the plugin-a and plugin-a:* debug namespaces.');
 
       const toggles = renderGroupToggles(tab, group);
@@ -686,6 +691,17 @@ describe('PluginSettingsTab', () => {
       // Syncing the toggles must not write the namespaces back over what the user typed.
       expect(debugController.set).toHaveBeenCalledOnce();
       expect(debugController.get()).toEqual(['plugin-a']);
+    });
+
+    it('should open the view from the first row of the group', async () => {
+      const { openPluginDebugMessagesView, tab } = createPluginSettingsTab({ pluginManifests });
+      renderRows(tab);
+
+      const button = [...tab.containerEl.querySelectorAll('button')].find((buttonEl) => buttonEl.textContent === 'Open as a view');
+      button?.click();
+      await sleep({ milliseconds: 0 });
+
+      expect(openPluginDebugMessagesView).toHaveBeenCalledOnce();
     });
 
     it('should rebuild the rows once when a plugin is installed after the definitions were built', async () => {

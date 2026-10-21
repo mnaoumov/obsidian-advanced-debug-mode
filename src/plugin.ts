@@ -4,10 +4,14 @@ import { PluginSettingsTabComponent } from '@mnaoumov/obsidian-lib/components/pl
 import { PluginDataHandler } from '@mnaoumov/obsidian-lib/data-handler';
 import { PluginBase } from '@mnaoumov/obsidian-lib/plugin/plugin';
 import { PluginEventSourceImpl } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
+import { PluginRibbonIconRegistrar } from '@mnaoumov/obsidian-lib/ribbon-icon-registrar';
+import { PluginViewRegistrar } from '@mnaoumov/obsidian-lib/view-registrar';
+import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
 import { getDebugController } from '@mnaoumov/typescript-lib/debug';
 import { FileSystemAdapter } from 'obsidian';
 
 import { AbortSharedOperationCommandHandler } from './command-handlers/abort-shared-operation-command.ts';
+import { OpenPluginDebugMessagesViewCommandHandler } from './command-handlers/open-plugin-debug-messages-view-command.ts';
 import { ToggleDevToolsButtonCommandHandler } from './command-handlers/toggle-dev-tools-button-command.ts';
 import { TogglePluginDebugMessagesCommandHandler } from './command-handlers/toggle-plugin-debug-messages-command.ts';
 import { DebugMode } from './debug-mode.ts';
@@ -17,6 +21,11 @@ import { EmulateMobileMode } from './emulate-mobile-mode.ts';
 import { ErrorStackTraceLimitComponent } from './error-stack-trace-limit-component.ts';
 import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
 import { LongStackTracesComponent } from './long-stack-traces/long-stack-traces-component.ts';
+import {
+  openPluginDebugMessagesView,
+  PLUGIN_DEBUG_MESSAGES_VIEW_TYPE,
+  PluginDebugMessagesView
+} from './plugin-debug-messages-view.ts';
 import { PluginDebugMessages } from './plugin-debug-messages.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
@@ -46,10 +55,23 @@ export class Plugin extends PluginBase {
       debugController
     });
 
+    new PluginViewRegistrar(this).registerView({
+      type: PLUGIN_DEBUG_MESSAGES_VIEW_TYPE,
+      viewCreator: (leaf) => new PluginDebugMessagesView({ leaf, pluginDebugMessages })
+    });
+    new PluginRibbonIconRegistrar(this).addRibbonIcon({
+      callback: () => {
+        invokeAsyncSafely(() => openPluginDebugMessagesView(this.app));
+      },
+      icon: 'bug',
+      title: 'Open plugin debug messages'
+    });
+
     const pluginSettingsTab = new PluginSettingsTab({
       debugController,
       debugMode: new DebugMode(this.app),
       emulateMobileMode: new EmulateMobileMode(this.app),
+      openPluginDebugMessagesView: (): Promise<void> => openPluginDebugMessagesView(this.app),
       plugin: this,
       pluginDebugMessages,
       pluginNoticeComponent: this.pluginNoticeComponent,
@@ -76,6 +98,7 @@ export class Plugin extends PluginBase {
         pluginDebugMessages,
         pluginNoticeComponent: this.pluginNoticeComponent
       }),
+      new OpenPluginDebugMessagesViewCommandHandler(this.app),
       new OpenDemoVaultCommandHandler({
         app: this.app,
         pluginId: this.manifest.id,

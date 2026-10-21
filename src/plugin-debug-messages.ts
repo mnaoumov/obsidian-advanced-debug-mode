@@ -8,9 +8,20 @@ import { escapeRegExp } from '@mnaoumov/typescript-lib/reg-exp';
 
 const DISABLED_PREFIX = '-';
 
+// The shared library logs under `<plugin id>:obsidian-lib:*` in every plugin that bundles it, and under the legacy
+// `obsidian-dev-utils` name in plugins built on the older library.
+const LIBRARY_NAMESPACES = ['*:obsidian-lib:*', '*:obsidian-dev-utils:*'] as const;
+
 interface PluginDebugMessagesConstructorParams {
   readonly app: App;
   readonly debugController: DebugController;
+}
+
+interface SetNamespacesEnabledParams {
+  readonly currentNamespaces: readonly string[];
+  readonly entries: readonly string[];
+  readonly isEnabled: boolean;
+  readonly stateNames: readonly string[];
 }
 
 // Turns one installed plugin's debug messages on or off: its own `<id>` namespace and its `<id>:*` submodules, which
@@ -28,24 +39,49 @@ export class PluginDebugMessages {
     return Object.values(this.app.plugins.manifests).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
   }
 
+  // A cheap fingerprint of everything a list of plugin rows shows, for a view that has no change event to listen to.
+  public getStateSnapshot(): string {
+    const enabledPluginIds = [...this.app.plugins.enabledPlugins].sort();
+    const pluginIds = this.getPluginManifests().map((manifest) => `${manifest.id}\t${manifest.name}`);
+    return JSON.stringify([this.debugController.get(), enabledPluginIds, pluginIds]);
+  }
+
   public isEnabled(pluginId: string): boolean {
     return isNamespaceEnabled(this.debugController.get(), pluginId);
   }
 
-  public setEnabled(pluginId: string, isEnabled: boolean): void {
-    const pluginNamespaces = getPluginNamespaces(pluginId);
-    const removedNamespaces = new Set(isEnabled ? pluginNamespaces.map((namespace) => toDisabledNamespace(namespace)) : pluginNamespaces);
-    const namespaces = this.debugController.get().filter((namespace) => !removedNamespaces.has(namespace));
+  public isLibraryEnabled(): boolean {
+    const namespaces = this.debugController.get();
+    return LIBRARY_NAMESPACES.every((namespace) => isNamespaceEnabled(namespaces, namespace));
+  }
 
-    // Dropping our own entries is not enough when a wildcard such as `*` (on) or `-*` (off) still decides it, so the
-    // explicit pair is added only then, and a plain toggle leaves the list as short as the user wrote it.
-    if (isNamespaceEnabled(namespaces, pluginId) !== isEnabled) {
-      for (const namespace of pluginNamespaces) {
-        const entry = isEnabled ? namespace : toDisabledNamespace(namespace);
-        if (!namespaces.includes(entry)) {
-          namespaces.push(entry);
-        }
-      }
+  public isPluginEnabled(pluginId: string): boolean {
+    return this.app.plugins.enabledPlugins.has(pluginId);
+  }
+
+  public setEnabled(pluginId: string, isEnabled: boolean): void {
+    this.setManyEnabled([pluginId], isEnabled);
+  }
+
+  public setLibraryEnabled(isEnabled: boolean): void {
+    this.debugController.set(setNamespacesEnabled({
+      currentNamespaces: this.debugController.get(),
+      entries: LIBRARY_NAMESPACES,
+      isEnabled,
+      stateNames: LIBRARY_NAMESPACES
+    }));
+  }
+
+  // One write for the whole batch, so a bulk change reaches the `debug` library (and its storage) once.
+  public setManyEnabled(pluginIds: readonly string[], isEnabled: boolean): void {
+    let namespaces = this.debugController.get();
+    for (const pluginId of pluginIds) {
+      namespaces = setNamespacesEnabled({
+        currentNamespaces: namespaces,
+        entries: getPluginNamespaces(pluginId),
+        isEnabled,
+        stateNames: [pluginId]
+      });
     }
 
     this.debugController.set(namespaces);
@@ -80,6 +116,27 @@ function isNamespaceEnabled(namespaces: readonly string[], name: string): boolea
   }
 
   return isEnabled;
+}
+
+// `stateNames` are the names the state is read from: a plugin's own `<id>`, or the library patterns themselves, which a
+// pattern list matches as literal names exactly when it would match every name the patterns stand for.
+function setNamespacesEnabled(params: SetNamespacesEnabledParams): string[] {
+  const { currentNamespaces, entries, isEnabled, stateNames } = params;
+  const removedNamespaces = new Set(isEnabled ? entries.map((namespace) => toDisabledNamespace(namespace)) : entries);
+  const namespaces = currentNamespaces.filter((namespace) => !removedNamespaces.has(namespace));
+
+  // Dropping our own entries is not enough when a wildcard such as `*` (on) or `-*` (off) still decides it, so the
+  // explicit entries are added only then, and a plain toggle leaves the list as short as the user wrote it.
+  if (stateNames.some((name) => isNamespaceEnabled(namespaces, name) !== isEnabled)) {
+    for (const namespace of entries) {
+      const entry = isEnabled ? namespace : toDisabledNamespace(namespace);
+      if (!namespaces.includes(entry)) {
+        namespaces.push(entry);
+      }
+    }
+  }
+
+  return namespaces;
 }
 
 function toDisabledNamespace(namespace: string): string {

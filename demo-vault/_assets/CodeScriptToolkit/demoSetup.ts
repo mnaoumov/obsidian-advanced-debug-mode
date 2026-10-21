@@ -74,3 +74,13 @@ export function toggleDevToolsButton(app: App): void {
 export function abortSharedOperation(app: App): void {
   app.commands.executeCommandById(`${PLUGIN_ID}:abort-shared-operation`);
 }
+
+/**
+ * Opens the Plugin debug messages view: every installed plugin with a checkbox, a filter, and all on / all off.
+ *
+ * Manual equivalent: **Advanced Debug Mode: Open plugin debug messages** in the Command Palette, the bug icon in the
+ * ribbon, or **Open as a view** in the plugin's settings.
+ */
+export function openPluginDebugMessagesView(app: App): void {
+  app.commands.executeCommandById(`${PLUGIN_ID}:open-plugin-debug-messages-view`);
+}
