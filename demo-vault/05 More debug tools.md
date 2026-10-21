@@ -26,10 +26,26 @@ Many plugins - and `obsidian-dev-utils` itself - use the [`debug`](https://githu
 
 Plugins built on `@mnaoumov/obsidian-lib` or `obsidian-dev-utils` log under their own id: the plugin's messages under `<plugin-id>`, its submodules under `<plugin-id>:*`. Their READMEs tell you to type `window.DEBUG.enable('<plugin-id>');` into the console. You do not have to:
 
-- Run **`Advanced Debug Mode`: Toggle debug messages for a plugin...** from the command palette. It lists every installed plugin, marked `On` or `Off`, and choosing one flips it.
-- Or open **Settings -> Community plugins -> `Advanced Debug Mode`** and use the **Plugin debug messages** group, which has a toggle per installed plugin.
+- Run **`Advanced Debug Mode`: Open plugin debug messages** from the command palette, or click the bug icon in the ribbon. A view opens in the right sidebar with every installed plugin and a checkbox each. It stays open, and every checkbox applies at once, so you can turn several plugins on or off in one sitting:
+  - the filter box narrows the list by name or id;
+  - **Only enabled plugins** and **Only checked** narrow it further (disabled plugins are listed, dimmed);
+  - **All on** and **All off** apply to the plugins the list shows right now;
+  - the **Library messages** row turns on the shared library's messages inside every plugin (`*:obsidian-lib:*`, and the legacy `*:obsidian-dev-utils:*`).
 
-Either way, turning a plugin on adds `<plugin-id>` and `<plugin-id>:*` to the namespaces, and turning it off removes them. When a wildcard such as `*` would still show its messages, turning it off adds `-<plugin-id>` and `-<plugin-id>:*` instead, so off really is off. Some plugins read the namespaces only once, at load, and need the app reloaded to pick a change up.
+  The view follows changes made anywhere else - the console, the settings tab, a plugin installed or enabled - while it is open.
+- Run **`Advanced Debug Mode`: Toggle debug messages for a plugin...** to flip a single plugin from a picker that lists every installed plugin, marked `On` or `Off`.
+- Or open **Settings -> Community plugins -> `Advanced Debug Mode`** and use the **Plugin debug messages** group, which has a toggle per installed plugin and an **Open as a view** button.
+
+```code-button
+---
+caption: Open the plugin debug messages view
+---
+require('/demoSetup.ts').openPluginDebugMessagesView(app);
+```
+
+Manual equivalent: run **`Advanced Debug Mode`: Open plugin debug messages** from the command palette.
+
+Whichever you use, turning a plugin on adds `<plugin-id>` and `<plugin-id>:*` to the namespaces, and turning it off removes them. When a wildcard such as `*` would still show its messages, turning it off adds `-<plugin-id>` and `-<plugin-id>:*` instead, so off really is off. Some plugins read the namespaces only once, at load, and need the app reloaded to pick a change up.
 
 For anything finer, the **Debug namespaces** box in the same settings tab takes one namespace per line, and a leading `-` disables one. Enable a namespace, reproduce the behavior, and watch the matching `console.debug` output appear in DevTools.
 

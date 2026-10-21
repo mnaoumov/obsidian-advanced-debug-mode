@@ -24,7 +24,11 @@ function createManifest(id: string, name: string): PluginManifest {
   return { author: 'test', description: '', id, minAppVersion: '0.0.0', name, version: '1.0.0' };
 }
 
-function createPluginDebugMessages(initialNamespaces: string[] = [], manifests: Record<string, PluginManifest> = {}): CreatePluginDebugMessagesResult {
+function createPluginDebugMessages(
+  initialNamespaces: string[] = [],
+  manifests: Record<string, PluginManifest> = {},
+  enabledPlugins = new Set<string>()
+): CreatePluginDebugMessagesResult {
   let namespaces = initialNamespaces;
   const debugController = strictProxy<DebugController>({
     get: vi.fn(() => [...namespaces]),
@@ -32,7 +36,7 @@ function createPluginDebugMessages(initialNamespaces: string[] = [], manifests: 
       namespaces = Array.isArray(value) ? [...value] : value.split(',');
     })
   });
-  const app = strictProxy<App>({ plugins: castTo<App['plugins']>({ manifests }) });
+  const app = strictProxy<App>({ plugins: castTo<App['plugins']>({ enabledPlugins, manifests }) });
   return {
     debugController,
     pluginDebugMessages: new PluginDebugMessages({ app, debugController })
@@ -114,5 +118,63 @@ describe('PluginDebugMessages', () => {
 
     // `-*` still disables it; the toggle cannot outrank a blanket disable, and must not duplicate `foo:*`.
     expect(debugController.get()).toEqual(['foo:*', '-*', 'foo']);
+  });
+
+  it('should turn several plugins on or off in one write', () => {
+    const { debugController, pluginDebugMessages } = createPluginDebugMessages(['*', '-bar', '-bar:*']);
+
+    pluginDebugMessages.setManyEnabled(['foo', 'bar'], false);
+    expect(debugController.get()).toEqual(['*', '-bar', '-bar:*', '-foo', '-foo:*']);
+
+    pluginDebugMessages.setManyEnabled(['foo', 'bar'], true);
+    expect(debugController.get()).toEqual(['*']);
+    expect(debugController.set).toHaveBeenCalledTimes(2);
+  });
+
+  it('should turn the shared library messages on and off under both of its names', () => {
+    const { debugController, pluginDebugMessages } = createPluginDebugMessages(['other']);
+    expect(pluginDebugMessages.isLibraryEnabled()).toBe(false);
+
+    pluginDebugMessages.setLibraryEnabled(true);
+    expect(debugController.get()).toEqual(['other', '*:obsidian-lib:*', '*:obsidian-dev-utils:*']);
+    expect(pluginDebugMessages.isLibraryEnabled()).toBe(true);
+
+    pluginDebugMessages.setLibraryEnabled(false);
+    expect(debugController.get()).toEqual(['other']);
+    expect(pluginDebugMessages.isLibraryEnabled()).toBe(false);
+  });
+
+  it('should read the library as on under `*` and disable it explicitly there', () => {
+    const { debugController, pluginDebugMessages } = createPluginDebugMessages(['*']);
+    expect(pluginDebugMessages.isLibraryEnabled()).toBe(true);
+
+    pluginDebugMessages.setLibraryEnabled(false);
+
+    expect(debugController.get()).toEqual(['*', '-*:obsidian-lib:*', '-*:obsidian-dev-utils:*']);
+    expect(pluginDebugMessages.isLibraryEnabled()).toBe(false);
+  });
+
+  it('should report whether Obsidian has a plugin enabled', () => {
+    const { pluginDebugMessages } = createPluginDebugMessages([], {}, new Set(['foo']));
+
+    expect(pluginDebugMessages.isPluginEnabled('foo')).toBe(true);
+    expect(pluginDebugMessages.isPluginEnabled('bar')).toBe(false);
+  });
+
+  it('should change its state snapshot when the namespaces, the enabled set or the installed plugins change', () => {
+    const manifests: Record<string, PluginManifest> = { foo: createManifest('foo', 'Foo') };
+    const enabledPlugins = new Set<string>();
+    const { pluginDebugMessages } = createPluginDebugMessages([], manifests, enabledPlugins);
+    const initialSnapshot = pluginDebugMessages.getStateSnapshot();
+
+    pluginDebugMessages.setEnabled('foo', true);
+    const namespacesSnapshot = pluginDebugMessages.getStateSnapshot();
+    enabledPlugins.add('foo');
+    const enabledSnapshot = pluginDebugMessages.getStateSnapshot();
+    manifests['bar'] = createManifest('bar', 'Bar');
+    const installedSnapshot = pluginDebugMessages.getStateSnapshot();
+
+    expect(new Set([enabledSnapshot, initialSnapshot, installedSnapshot, namespacesSnapshot]).size).toBe(4);
+    expect(pluginDebugMessages.getStateSnapshot()).toBe(installedSnapshot);
   });
 });

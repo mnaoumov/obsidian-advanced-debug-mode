@@ -13,9 +13,13 @@ import {
   noopAsync
 } from '@mnaoumov/typescript-lib/function';
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { waitForAllAsyncOperations } from '@mnaoumov/typescript-test-toolkit/async-operation-tracking';
 import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import { Component } from 'obsidian';
-import { App } from 'obsidian-test-mocks/obsidian';
+import {
+  App,
+  WorkspaceLeaf
+} from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -25,12 +29,18 @@ import {
 } from 'vitest';
 
 import { AbortSharedOperationCommandHandler } from './command-handlers/abort-shared-operation-command.ts';
+import { OpenPluginDebugMessagesViewCommandHandler } from './command-handlers/open-plugin-debug-messages-view-command.ts';
 import { TogglePluginDebugMessagesCommandHandler } from './command-handlers/toggle-plugin-debug-messages-command.ts';
 import { DebugSwitchesComponent } from './debug-switches-component.ts';
 import { DevToolsComponent } from './dev-tools-component.ts';
 import { ErrorStackTraceLimitComponent } from './error-stack-trace-limit-component.ts';
 import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
 import { LongStackTracesComponent } from './long-stack-traces/long-stack-traces-component.ts';
+import {
+  openPluginDebugMessagesView,
+  PLUGIN_DEBUG_MESSAGES_VIEW_TYPE,
+  PluginDebugMessagesView
+} from './plugin-debug-messages-view.ts';
 import { PluginDebugMessages } from './plugin-debug-messages.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
@@ -66,6 +76,10 @@ vi.mock('@mnaoumov/obsidian-lib/plugin/plugin-event-source', () => ({
 
 vi.mock('./command-handlers/abort-shared-operation-command.ts', () => ({
   AbortSharedOperationCommandHandler: vi.fn()
+}));
+
+vi.mock('./command-handlers/open-plugin-debug-messages-view-command.ts', () => ({
+  OpenPluginDebugMessagesViewCommandHandler: vi.fn()
 }));
 
 vi.mock('./command-handlers/toggle-dev-tools-button-command.ts', () => ({
@@ -117,6 +131,11 @@ vi.mock('./long-stack-traces/long-stack-traces-component.ts', () => ({
   LongStackTracesComponent: vi.fn(function longStackTracesComponentStub() {
     return new Component();
   })
+}));
+
+vi.mock('./plugin-debug-messages-view.ts', async (importOriginal) => ({
+  ...await importOriginal<typeof import('./plugin-debug-messages-view.ts')>(),
+  openPluginDebugMessagesView: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('./plugin-debug-messages.ts', () => ({
@@ -176,6 +195,8 @@ describe('Plugin', () => {
     // The base PluginBase.onload also seeds pluginNoticeComponent before onloadImpl; seed it here so the OpenDemoVaultCommandHandler can read it via the non-null getter.
     internals.pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
     const addChildSpy = vi.spyOn(plugin, 'addChild');
+    const registerViewSpy = vi.spyOn(plugin, 'registerView').mockImplementation(noop);
+    const addRibbonIconSpy = vi.spyOn(plugin, 'addRibbonIcon');
 
     // Awaited because registerCommandHandlers is async since obsidian-dev-utils 90.0.0.
     // So onloadImpl suspends on it, and the components wired after it are not constructed yet.
@@ -201,6 +222,17 @@ describe('Plugin', () => {
     expect(PluginSettingsTab).toHaveBeenCalledWith(expect.objectContaining({
       pluginDebugMessages: vi.mocked(PluginDebugMessages).mock.instances[0]
     }));
+    expect(OpenPluginDebugMessagesViewCommandHandler).toHaveBeenCalledWith(app);
+    // The view, its ribbon icon and the settings row all reach the same view type.
+    expect(registerViewSpy).toHaveBeenCalledWith(PLUGIN_DEBUG_MESSAGES_VIEW_TYPE, expect.any(Function));
+    const view = registerViewSpy.mock.calls[0]?.[1](WorkspaceLeaf.create2__(App.createConfigured__()).asOriginalType3__());
+    expect(view).toBeInstanceOf(PluginDebugMessagesView);
+    expect(addRibbonIconSpy).toHaveBeenCalledWith('bug', 'Open plugin debug messages', expect.any(Function));
+    addRibbonIconSpy.mock.calls[0]?.[2](new MouseEvent('click'));
+    await vi.mocked(PluginSettingsTab).mock.calls[0]?.[0].openPluginDebugMessagesView();
+    await waitForAllAsyncOperations();
+    expect(openPluginDebugMessagesView).toHaveBeenCalledTimes(2);
+    expect(openPluginDebugMessagesView).toHaveBeenCalledWith(app);
     expect(LongRunningTasksComponent).toHaveBeenCalledOnce();
     // Constructing it is not enough: it was constructed but never added for a while, so its FileSystemAdapter patches never loaded. Compared by identity, as every component stub is structurally an empty Component.
     expect(addChildSpy.mock.calls.map(([child]) => child)).toContain(vi.mocked(LongRunningTasksComponent).mock.results[0]?.value);

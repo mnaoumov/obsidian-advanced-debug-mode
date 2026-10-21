@@ -8,3 +8,58 @@
     opacity: 0.2;
   }
 }
+
+.advanced-debug-mode-plugin-debug-messages-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+
+  .advanced-debug-mode-plugin-debug-messages-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-4-2);
+  }
+
+  .advanced-debug-mode-plugin-debug-messages-filters,
+  .advanced-debug-mode-plugin-debug-messages-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--size-4-3);
+  }
+
+  .advanced-debug-mode-plugin-debug-messages-filters label {
+    align-items: center;
+    display: flex;
+    gap: var(--size-4-1);
+  }
+
+  .advanced-debug-mode-plugin-debug-messages-row {
+    align-items: center;
+    border-radius: var(--radius-s);
+    cursor: pointer;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--size-4-2);
+    padding: var(--size-4-1) var(--size-4-2);
+
+    &:hover {
+      background-color: var(--background-modifier-hover);
+    }
+  }
+
+  .advanced-debug-mode-plugin-debug-messages-library-row {
+    border-bottom: 1px solid var(--background-modifier-border);
+    margin-bottom: var(--size-4-1);
+  }
+
+  .advanced-debug-mode-plugin-debug-messages-disabled-plugin {
+    opacity: 0.55;
+  }
+
+  .advanced-debug-mode-plugin-debug-messages-id,
+  .advanced-debug-mode-plugin-debug-messages-badge,
+  .advanced-debug-mode-plugin-debug-messages-empty {
+    color: var(--text-muted);
+    font-size: var(--font-ui-smaller);
+  }
+}

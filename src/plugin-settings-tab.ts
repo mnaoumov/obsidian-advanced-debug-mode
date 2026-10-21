@@ -10,6 +10,7 @@ import type {
 
 import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
 import { PluginSettingsTabBase } from '@mnaoumov/obsidian-lib/plugin/plugin-settings-tab';
+import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
 import { getDebugSwitches } from '@mnaoumov/typescript-lib/debug-switches';
 import { Platform } from 'obsidian';
 
@@ -24,6 +25,7 @@ interface PluginSettingsTabConstructorParams extends PluginSettingsTabBaseConstr
   readonly debugController: DebugController;
   readonly debugMode: DebugMode;
   readonly emulateMobileMode: EmulateMobileMode;
+  readonly openPluginDebugMessagesView: () => Promise<void>;
   readonly pluginDebugMessages: PluginDebugMessages;
   readonly pluginNoticeComponent: PluginNoticeComponent;
 }
@@ -35,6 +37,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   private readonly emulateMobileMode: EmulateMobileMode;
   private isRefreshScheduled = false;
   private isSyncingPluginDebugMessageToggles = false;
+  private readonly openPluginDebugMessagesView: () => Promise<void>;
   private readonly pluginDebugMessages: PluginDebugMessages;
   private readonly pluginDebugMessageToggles = new Map<string, ToggleComponent>();
   private readonly pluginNoticeComponent: PluginNoticeComponent;
@@ -44,6 +47,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
     this.debugController = params.debugController;
     this.debugMode = params.debugMode;
     this.emulateMobileMode = params.emulateMobileMode;
+    this.openPluginDebugMessagesView = params.openPluginDebugMessagesView;
     this.pluginDebugMessages = params.pluginDebugMessages;
     this.pluginNoticeComponent = params.pluginNoticeComponent;
   }
@@ -302,36 +306,51 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
     this.pluginDebugMessageToggles.clear();
     return this.settingGroupEx({
       heading: 'Plugin debug messages',
-      items: manifests.map((manifest) =>
+      items: [
         this.settingEx({
-          desc: createFragment((f) => {
-            f.appendText('Show the debug messages of ');
-            f.createEl('code', { text: manifest.name });
-            f.appendText(': turns on the ');
-            appendCodeBlock(f, manifest.id);
-            f.appendText(' and ');
-            appendCodeBlock(f, `${manifest.id}:*`);
-            f.appendText(' debug namespaces.');
-          }),
-          name: manifest.name,
+          desc: 'Every installed plugin with a checkbox, a filter, and all on / all off, in a pane that stays open while you change several of them.',
+          name: 'Plugin debug messages view',
           render: (setting) => {
-            this.refreshIfChanged(pluginIds, this.getPluginIds());
-            setting.addToggle((toggle) => {
-              toggle
-                .setValue(this.pluginDebugMessages.isEnabled(manifest.id))
-                .onChange((value) => {
-                  if (this.isSyncingPluginDebugMessageToggles) {
-                    return;
-                  }
-
-                  this.pluginDebugMessages.setEnabled(manifest.id, value);
-                  this.debugNamespacesTextArea?.setValue(this.debugController.get().join('\n'));
+            setting.addButton((button) => {
+              button
+                .setButtonText('Open as a view')
+                .onClick(() => {
+                  invokeAsyncSafely(() => this.openPluginDebugMessagesView());
                 });
-              this.pluginDebugMessageToggles.set(manifest.id, toggle);
             });
           }
-        })
-      )
+        }),
+        ...manifests.map((manifest) =>
+          this.settingEx({
+            desc: createFragment((f) => {
+              f.appendText('Show the debug messages of ');
+              f.createEl('code', { text: manifest.name });
+              f.appendText(': turns on the ');
+              appendCodeBlock(f, manifest.id);
+              f.appendText(' and ');
+              appendCodeBlock(f, `${manifest.id}:*`);
+              f.appendText(' debug namespaces.');
+            }),
+            name: manifest.name,
+            render: (setting) => {
+              this.refreshIfChanged(pluginIds, this.getPluginIds());
+              setting.addToggle((toggle) => {
+                toggle
+                  .setValue(this.pluginDebugMessages.isEnabled(manifest.id))
+                  .onChange((value) => {
+                    if (this.isSyncingPluginDebugMessageToggles) {
+                      return;
+                    }
+
+                    this.pluginDebugMessages.setEnabled(manifest.id, value);
+                    this.debugNamespacesTextArea?.setValue(this.debugController.get().join('\n'));
+                  });
+                this.pluginDebugMessageToggles.set(manifest.id, toggle);
+              });
+            }
+          })
+        )
+      ]
     });
   }
 
