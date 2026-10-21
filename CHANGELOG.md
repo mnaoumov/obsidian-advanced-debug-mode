@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.14.0
+
+- feat: add a Plugin debug messages view with a checkbox per plugin
+
 ## 1.13.1
 
 - fix: keep AggregateError errors and message with long stack traces on
