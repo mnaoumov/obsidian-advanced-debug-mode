@@ -108,7 +108,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           f.createEl('br');
           f.appendText('For more information, see the ');
           f.createEl('a', {
-            href: 'https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/'
+            href: 'https://mnaoumov.dev/obsidian-lib/guides/debugging/'
           }).appendText('documentation');
         }),
         name: 'Debug namespaces',

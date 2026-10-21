@@ -157,7 +157,7 @@ vi.mock('./plugin-settings-tab.ts', () => ({
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { Plugin } from './plugin.ts';
 
-// Seeded THROUGH the base accessors: since obsidian-dev-utils 93.2 the components live in a bag behind
+// Seeded THROUGH the base accessors: the components live in a bag behind
 // them, so writing the old `_`-prefixed backing field no longer feeds the getter, which throws when unset.
 interface PluginInternals {
   commandHandlerComponent: CommandHandlerComponent;
@@ -198,7 +198,7 @@ describe('Plugin', () => {
     const registerViewSpy = vi.spyOn(plugin, 'registerView').mockImplementation(noop);
     const addRibbonIconSpy = vi.spyOn(plugin, 'addRibbonIcon');
 
-    // Awaited because registerCommandHandlers is async since obsidian-dev-utils 90.0.0.
+    // Awaited because registerCommandHandlers is async.
     // So onloadImpl suspends on it, and the components wired after it are not constructed yet.
     await internals.onloadImpl();
 
@@ -208,7 +208,7 @@ describe('Plugin', () => {
     expect(PluginSettingsTab).toHaveBeenCalledOnce();
     expect(DevToolsComponent).toHaveBeenCalledOnce();
     expect(registerCommandHandlers).toHaveBeenCalledOnce();
-    // Since obsidian-dev-utils 89.0.0 the handlers are built lazily by a factory, so build them here.
+    // The handlers are built lazily by a factory, so build them here.
     registerCommandHandlers.mock.calls[0]?.[0]();
     expect(OpenDemoVaultCommandHandler).toHaveBeenCalledOnce();
     // The abort command is the only hotkey-bindable way to reach the shared abort controller, so its
@@ -266,7 +266,7 @@ describe('Plugin', () => {
     internals.commandHandlerComponent = strictProxy<CommandHandlerComponent>({ registerCommandHandlers: vi.fn<CommandHandlerComponent['registerCommandHandlers']>() });
     internals.pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
 
-    // Hold the settings load open: since obsidian-dev-utils 90 a child loads as it is added, so without the await the components below would be wired from the default settings while this load is still in flight.
+    // Hold the settings load open: a child loads as it is added, so without the await the components below would be wired from the default settings while this load is still in flight.
     const pluginSettingsComponent = new ComponentEx();
     let resolveSettingsLoad: () => void = noop;
     const settingsLoadPromise = new Promise<void>((resolve) => {
