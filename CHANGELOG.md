@@ -30,7 +30,7 @@
 
 ## 1.11.3
 
-- fix: keep a caller's Error.prepareStackTrace working under long stack traces
+- fix: keep a caller's Error.prepareStackTrace working under long stack traces (re #4 - [BUG] Long stack traces break structured Error stacks and Local REST API loading)
 
 ## 1.11.2
 
