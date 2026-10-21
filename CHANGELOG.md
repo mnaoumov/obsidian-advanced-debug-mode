@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.13.1
+
+- fix: keep AggregateError errors and message with long stack traces on
+
 ## 1.13.0
 
 - feat: toggle any plugin's debug messages from a command or a settings row
