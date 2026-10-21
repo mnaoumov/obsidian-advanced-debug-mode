@@ -22,7 +22,7 @@ Manual equivalent: run **`Advanced Debug Mode`: Toggle DevTools button** from th
 
 ## Debug namespaces
 
-Many plugins - and `obsidian-dev-utils` itself - use the [`debug`](https://github.com/debug-js/debug) library to emit `console.debug` messages that are hidden unless their namespace is enabled. `Advanced Debug Mode` adds a UI for managing those namespaces so you can switch specific channels of debug output on and off without editing `localStorage` by hand.
+Many plugins - and `@mnaoumov/obsidian-lib` itself - use the [`debug`](https://github.com/debug-js/debug) library to emit `console.debug` messages that are hidden unless their namespace is enabled. `Advanced Debug Mode` adds a UI for managing those namespaces so you can switch specific channels of debug output on and off without editing `localStorage` by hand.
 
 Plugins built on `@mnaoumov/obsidian-lib` or `obsidian-dev-utils` log under their own id: the plugin's messages under `<plugin-id>`, its submodules under `<plugin-id>:*`. Their READMEs tell you to type `window.DEBUG.enable('<plugin-id>');` into the console. You do not have to:
 
@@ -49,11 +49,11 @@ Whichever you use, turning a plugin on adds `<plugin-id>` and `<plugin-id>:*` to
 
 For anything finer, the **Debug namespaces** box in the same settings tab takes one namespace per line, and a leading `-` disables one. Enable a namespace, reproduce the behavior, and watch the matching `console.debug` output appear in DevTools.
 
-For the full explanation of debug namespaces, see the [obsidian-dev-utils debugging guide](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/).
+For the full explanation of debug namespaces, see the [`@mnaoumov/obsidian-lib` debugging guide](https://mnaoumov.dev/obsidian-lib/guides/debugging/).
 
 ## Abort the running operation
 
-`obsidian-dev-utils` gives every plugin built on it one shared abort signal. A plugin that hands that signal to a long-running job - a vault-wide rename, an attachment sweep, a link rewrite across thousands of notes - can be stopped mid-flight. Until now the only way to fire it was a line typed into the DevTools console, which is unavailable on mobile, impossible to bind to a hotkey, and awkward to reach at the one moment you want it: while the operation is running.
+`@mnaoumov/obsidian-lib` gives every plugin built on it one shared abort signal. A plugin that hands that signal to a long-running job - a vault-wide rename, an attachment sweep, a link rewrite across thousands of notes - can be stopped mid-flight. Until now the only way to fire it was a line typed into the DevTools console, which is unavailable on mobile, impossible to bind to a hotkey, and awkward to reach at the one moment you want it: while the operation is running.
 
 `Advanced Debug Mode` surfaces it as a command and a settings button.
 

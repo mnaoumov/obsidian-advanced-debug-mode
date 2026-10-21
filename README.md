@@ -74,7 +74,7 @@ The console form still works, and is the one to use if this plugin is not loaded
 window.DEBUG.enable('advanced-debug-mode');
 ```
 
-For more details, refer to the [documentation](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/).
+For more details, refer to the [documentation](https://mnaoumov.dev/obsidian-lib/guides/debugging/).
 
 ## Changelog
 

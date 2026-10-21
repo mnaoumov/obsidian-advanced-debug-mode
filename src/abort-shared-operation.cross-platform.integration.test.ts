@@ -8,7 +8,7 @@ import {
 declare global {
   interface Window {
     /**
-     * `obsidian-dev-utils`' shared-state bag, the seam its own getters read and the one the library
+     * `@mnaoumov/obsidian-lib`' shared-state bag, the seam its own getters read and the one the library
      * documents for the devtools console.
      */
     __obsidianDevUtils: ObsidianDevUtilsStateBag;
@@ -33,7 +33,7 @@ interface ValueWrapperLike<T> {
   value: T;
 }
 
-// The shared abort controller is app-wide state owned by `obsidian-dev-utils`, so the only thing that can
+// The shared abort controller is app-wide state owned by `@mnaoumov/obsidian-lib`, so the only thing that can
 // prove this feature works is firing the command inside a real Obsidian and watching a signal captured
 // beforehand flip. A unit test asserts the same shape against the library, but not that the command is
 // registered, reachable by id, and wired to the SAME controller instance the library hands every other
@@ -43,7 +43,7 @@ describe('Abort the running operation', () => {
     const result = await evalInObsidian({
       callback({ app }): AbortResult {
         // Reached through the shared-state global rather than an import: the closure is serialized into the
-        // renderer, so it cannot import `obsidian-dev-utils/abort-controller`.
+        // renderer, so it cannot import `@mnaoumov/typescript-lib/abort-controller`.
         const stateBag = window.__obsidianDevUtils;
 
         // Captured BEFORE the abort: `ResettableAbortController` replaces its inner controller, so a signal
