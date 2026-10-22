@@ -5,28 +5,26 @@ import {
   it
 } from 'vitest';
 
-declare global {
-  interface Window {
-    /**
-     * `@mnaoumov/obsidian-lib`' shared-state bag, the seam its own getters read and the one the library
-     * documents for the devtools console.
-     */
-    __obsidianDevUtils: ObsidianDevUtilsStateBag;
-  }
-}
-
 interface AbortResult {
   readonly isCapturedSignalAborted: boolean;
   readonly isNextSignalAborted: boolean;
   readonly reasonName: string;
 }
 
-interface ObsidianDevUtilsStateBag {
-  sharedAbortController: ValueWrapperLike<ResettableAbortControllerLike>;
-}
-
 interface ResettableAbortControllerLike {
   signal: AbortSignal;
+}
+
+/**
+ * `@mnaoumov/typescript-lib`'s shared-state slot, the seam its own getters read and the one the library
+ * documents for the devtools console.
+ */
+interface TypescriptLibStateSlotLike {
+  values: TypescriptLibStateValuesLike;
+}
+
+interface TypescriptLibStateValuesLike {
+  sharedAbortController: ValueWrapperLike<ResettableAbortControllerLike>;
 }
 
 interface ValueWrapperLike<T> {
@@ -44,7 +42,14 @@ describe('Abort the running operation', () => {
       callback({ app }): AbortResult {
         // Reached through the shared-state global rather than an import: the closure is serialized into the
         // renderer, so it cannot import `@mnaoumov/typescript-lib/abort-controller`.
-        const stateBag = window.__obsidianDevUtils;
+        const stateSlot = Reflect.get(window, Symbol.for('@mnaoumov/typescript-lib/state')) as
+          | TypescriptLibStateSlotLike
+          | undefined;
+        const stateBag = stateSlot?.values;
+
+        if (!stateBag) {
+          throw new Error('The @mnaoumov/typescript-lib shared-state slot is missing.');
+        }
 
         // Captured BEFORE the abort: `ResettableAbortController` replaces its inner controller, so a signal
         // read afterwards is the fresh one and would never look aborted.

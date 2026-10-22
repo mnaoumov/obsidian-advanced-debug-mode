@@ -63,7 +63,7 @@ export function toggleDevToolsButton(app: App): void {
 
 /**
  * Fires the app-wide shared abort, cancelling whichever long-running operation is in flight — in any
- * plugin built on `@mnaoumov/obsidian-lib` or `obsidian-dev-utils`, not just this one.
+ * plugin built on `@mnaoumov/obsidian-lib`, not just this one.
  *
  * Safe to press with nothing running: the abort is signalled, no listener hears it, and the controller
  * replaces its signal with a fresh one, so the next operation is not born cancelled.

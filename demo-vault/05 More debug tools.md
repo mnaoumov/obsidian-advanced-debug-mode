@@ -24,13 +24,13 @@ Manual equivalent: run **`Advanced Debug Mode`: Toggle DevTools button** from th
 
 Many plugins - and `@mnaoumov/obsidian-lib` itself - use the [`debug`](https://github.com/debug-js/debug) library to emit `console.debug` messages that are hidden unless their namespace is enabled. `Advanced Debug Mode` adds a UI for managing those namespaces so you can switch specific channels of debug output on and off without editing `localStorage` by hand.
 
-Plugins built on `@mnaoumov/obsidian-lib` or `obsidian-dev-utils` log under their own id: the plugin's messages under `<plugin-id>`, its submodules under `<plugin-id>:*`. Their READMEs tell you to type `window.DEBUG.enable('<plugin-id>');` into the console. You do not have to:
+Plugins built on `@mnaoumov/obsidian-lib` log under their own id: the plugin's messages under `<plugin-id>`, its submodules under `<plugin-id>:*`. Their READMEs tell you to type `window.DEBUG.enable('<plugin-id>');` into the console. You do not have to:
 
 - Run **`Advanced Debug Mode`: Open plugin debug messages** from the command palette, or click the bug icon in the ribbon. A view opens in the right sidebar with every installed plugin and a checkbox each. It stays open, and every checkbox applies at once, so you can turn several plugins on or off in one sitting:
   - the filter box narrows the list by name or id;
   - **Only enabled plugins** and **Only checked** narrow it further (disabled plugins are listed, dimmed);
   - **All on** and **All off** apply to the plugins the list shows right now;
-  - the **Library messages** row turns on the shared library's messages inside every plugin (`*:obsidian-lib:*`, and the legacy `*:obsidian-dev-utils:*`).
+  - the **Library messages** row turns on the shared library's messages inside every plugin (`*:obsidian-lib:*`).
 
   The view follows changes made anywhere else - the console, the settings tab, a plugin installed or enabled - while it is open.
 - Run **`Advanced Debug Mode`: Toggle debug messages for a plugin...** to flip a single plugin from a picker that lists every installed plugin, marked `On` or `Off`.
@@ -76,7 +76,7 @@ Manual equivalent: run **`Advanced Debug Mode`: Abort the running operation** fr
 The console form still works, and is the one to reach for when this plugin is not loaded:
 
 ```javascript
-__obsidianDevUtils.sharedAbortController.value.abort();
+globalThis[Symbol.for('@mnaoumov/typescript-lib/state')].values.sharedAbortController.value.abort();
 ```
 
 Head to [06 Settings](<./06 Settings.md>) for the settings-backed features.

@@ -10,9 +10,8 @@
   "dictionaries": [],
   "words": [
     "chobitsu",
-    "GHSA",
-    "hrqm",
     "Invocables",
+    "katex",
     "Microtask",
     "Microtasks",
     "mnaoumov",
@@ -20,11 +19,13 @@
     "obsidianmd",
     "offref",
     "Promisable",
-    "smol",
     "tsbuildinfo",
     "unnumber",
     "unvalidated",
     "wdio"
+  ],
+  "ignoreRegExpList": [
+    "/GHSA(-[0-9a-z]{4}){3}/gi"
   ],
   "ignoreWords": [],
   "import": [],

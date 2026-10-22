@@ -136,7 +136,7 @@ describe('PluginDebugMessages', () => {
     expect(pluginDebugMessages.isLibraryEnabled()).toBe(false);
 
     pluginDebugMessages.setLibraryEnabled(true);
-    expect(debugController.get()).toEqual(['other', '*:obsidian-lib:*', '*:obsidian-dev-utils:*']);
+    expect(debugController.get()).toEqual(['other', '*:obsidian-lib:*']);
     expect(pluginDebugMessages.isLibraryEnabled()).toBe(true);
 
     pluginDebugMessages.setLibraryEnabled(false);
@@ -150,7 +150,7 @@ describe('PluginDebugMessages', () => {
 
     pluginDebugMessages.setLibraryEnabled(false);
 
-    expect(debugController.get()).toEqual(['*', '-*:obsidian-lib:*', '-*:obsidian-dev-utils:*']);
+    expect(debugController.get()).toEqual(['*', '-*:obsidian-lib:*']);
     expect(pluginDebugMessages.isLibraryEnabled()).toBe(false);
   });
 

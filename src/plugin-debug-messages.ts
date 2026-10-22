@@ -8,9 +8,8 @@ import { escapeRegExp } from '@mnaoumov/typescript-lib/reg-exp';
 
 const DISABLED_PREFIX = '-';
 
-// The shared library logs under `<plugin id>:obsidian-lib:*` in every plugin that bundles it, and under the legacy
-// `obsidian-dev-utils` name in plugins built on the older library.
-const LIBRARY_NAMESPACES = ['*:obsidian-lib:*', '*:obsidian-dev-utils:*'] as const;
+// The shared library logs under `<plugin id>:obsidian-lib:*` in every plugin that bundles it.
+const LIBRARY_NAMESPACES = ['*:obsidian-lib:*'] as const;
 
 interface PluginDebugMessagesConstructorParams {
   readonly app: App;
