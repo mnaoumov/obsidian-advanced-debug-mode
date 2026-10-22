@@ -106,7 +106,7 @@ export class PluginDebugMessagesView extends ItemView {
         this.pluginDebugMessages.setLibraryEnabled(isChecked);
         this.renderList();
       },
-      title: 'Debug messages of the shared library inside every plugin, including its legacy obsidian-dev-utils name'
+      title: 'Debug messages of the shared library inside every plugin'
     });
 
     const manifests = this.getVisibleManifests();

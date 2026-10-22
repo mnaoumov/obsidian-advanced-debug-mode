@@ -7,7 +7,7 @@ const ABORT_REASON_MESSAGE = 'Aborted by Advanced Debug Mode.';
 
 /**
  * Aborts the app-wide shared abort controller, cancelling whichever long-running operation is currently in
- * flight — in any plugin built on `@mnaoumov/obsidian-lib` or `obsidian-dev-utils`, not just this one.
+ * flight — in any plugin built on `@mnaoumov/obsidian-lib`, not just this one.
  *
  * The reason is a {@link SilentError} rather than the native `AbortError`: a deliberate user-initiated cancel
  * is not a failure, so a listener that rethrows the reason should not print a red stack for something that

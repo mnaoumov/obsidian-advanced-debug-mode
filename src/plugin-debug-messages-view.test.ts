@@ -143,7 +143,7 @@ describe('PluginDebugMessagesView', () => {
 
     setChecked(getCheckbox(view, 'Library messages'), true);
 
-    expect(debugController.get()).toEqual(['*:obsidian-lib:*', '*:obsidian-dev-utils:*']);
+    expect(debugController.get()).toEqual(['*:obsidian-lib:*']);
     expect(getCheckbox(view, 'Library messages').checked).toBe(true);
   });
 
