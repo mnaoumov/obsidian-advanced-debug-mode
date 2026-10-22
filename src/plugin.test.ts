@@ -45,7 +45,7 @@ import { PluginDebugMessages } from './plugin-debug-messages.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
-// --- Collaborator dev-utils components added as children: stub as constructor spies that return a real Component so the real addChild lifecycle can load them while capturing constructor args. ---
+// --- Collaborator obsidian-lib components added as children: stub as constructor spies that return a real Component so the real addChild lifecycle can load them while capturing constructor args. ---
 
 vi.mock('@mnaoumov/obsidian-lib/data-handler', () => ({
   PluginDataHandler: vi.fn()
@@ -58,7 +58,7 @@ vi.mock('@mnaoumov/obsidian-lib/components/plugin-settings-tab-component', () =>
   })
 }));
 
-// --- Collaborator dev-utils components NOT added as children: bare constructor spies. ---
+// --- Collaborator obsidian-lib components NOT added as children: bare constructor spies. ---
 
 vi.mock('@mnaoumov/obsidian-lib/command-handlers/open-demo-vault-command-handler', () => ({
   OpenDemoVaultCommandHandler: vi.fn()
