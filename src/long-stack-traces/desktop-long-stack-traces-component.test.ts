@@ -25,6 +25,10 @@ import { PluginSettingsComponent } from '../plugin-settings-component.ts';
 import { PluginSettings } from '../plugin-settings.ts';
 import { LongStackTracesDesktopComponent } from './desktop-long-stack-traces-component.ts';
 
+interface BrandedNameHolder {
+  readonly brandedName?: string;
+}
+
 interface CreateComponentResult {
   readonly component: LongStackTracesDesktopComponent;
   readonly pluginSettingsComponent: PluginSettingsComponent;
@@ -600,6 +604,130 @@ describe('LongStackTracesComponentDesktop', () => {
     expect(error.message).toBe('no new');
 
     component.unload();
+  });
+
+  it('should not throw when an ES5-style subclass calls Error and TypeError on this', () => {
+    const { component } = createComponent();
+    component.load();
+
+    // `Base.call(this, message)` has `this instanceof Base` but no `new.target`. A non-null assertion on `new.target`
+    // threw `Value is undefined` there, which aborted pdf.js's module evaluation in the real app.
+    const callOnThis = castTo<(this: unknown, message: string) => Error>(window.Error);
+    const callTypeErrorOnThis = castTo<(this: unknown, message: string) => TypeError>(window.TypeError);
+    const legacyError = Object.create(window.Error.prototype as object) as Error;
+    const legacyTypeError = Object.create(window.TypeError.prototype as object) as TypeError;
+
+    const error = callOnThis.call(legacyError, 'legacy');
+    const typeError = callTypeErrorOnThis.call(legacyTypeError, 'legacy type');
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error).not.toBe(legacyError);
+    expect(error.message).toBe('legacy');
+    expect(typeError).toBeInstanceOf(TypeError);
+    expect(typeError.message).toBe('legacy type');
+
+    component.unload();
+  });
+
+  it('should keep a child error class prototype, so errors from before the patch stay instances of it', () => {
+    const errorBeforePatch = new TypeError('before');
+    const OriginalTypeError = window.TypeError;
+    const { component } = createComponent();
+    component.load();
+
+    expect(window.TypeError).not.toBe(OriginalTypeError);
+    expect(window.TypeError.prototype).toBe(OriginalTypeError.prototype);
+    expect(errorBeforePatch).toBeInstanceOf(window.TypeError);
+    expect(new TypeError('after')).toBeInstanceOf(OriginalTypeError);
+
+    component.unload();
+  });
+
+  it('should let a wrapped constructor brand-check this against its own prototype', () => {
+    // Shaped like core-js's `DOMException` polyfill that pdf.js installs: it throws `Incorrect invocation` unless
+    // `this` inherits from its own prototype, and it keeps its `name` behind a getter-only accessor.
+    const windowWithErrors = ensureGenericObject(window);
+    const OriginalError = window.Error;
+    function BrandCheckedError(this: unknown, message: string, name: string): Error {
+      if (!Object.prototype.isPrototypeOf.call(BrandCheckedError.prototype, castTo<object>(this))) {
+        throw new TypeError('Incorrect invocation');
+      }
+
+      const error = Reflect.construct(OriginalError, [message], castTo<new () => Error>(BrandCheckedError));
+      Object.defineProperty(error, 'brandedName', { value: name });
+      return error;
+    }
+    BrandCheckedError.prototype = Object.create(OriginalError.prototype as object) as Error;
+    Object.defineProperty(BrandCheckedError.prototype, 'name', {
+      configurable: true,
+      get(this: BrandedNameHolder): string {
+        return this.brandedName ?? 'BrandCheckedError';
+      }
+    });
+    windowWithErrors['BrandCheckedError'] = BrandCheckedError;
+
+    const { component } = createComponent();
+    component.load();
+
+    const PatchedBrandCheckedError = castTo<new (message: string, name: string) => Error>(windowWithErrors['BrandCheckedError']);
+    expect(PatchedBrandCheckedError).not.toBe(BrandCheckedError);
+    const error = new PatchedBrandCheckedError('Timed out', 'TimeoutError');
+    expect(error).toBeInstanceOf(BrandCheckedError);
+    expect(error.message).toBe('Timed out');
+    expect(error.name).toBe('TimeoutError');
+
+    component.unload();
+    delete windowWithErrors['BrandCheckedError'];
+  });
+
+  it('should leave an error with no own stack, as Chromium builds a DOMException, unwrapped', () => {
+    class NoOwnStackError extends Error {
+      public constructor(message: string) {
+        super(message);
+        Reflect.deleteProperty(this, 'stack');
+      }
+    }
+    const windowWithErrors = ensureGenericObject(window);
+    windowWithErrors['NoOwnStackError'] = NoOwnStackError;
+
+    const { component } = createComponent();
+    component.load();
+
+    const PatchedNoOwnStackError = castTo<typeof NoOwnStackError>(windowWithErrors['NoOwnStackError']);
+    expect(PatchedNoOwnStackError).not.toBe(NoOwnStackError);
+    const error = new PatchedNoOwnStackError('no own stack');
+    expect(error.message).toBe('no own stack');
+    expect(Object.getOwnPropertyDescriptor(error, 'stack')).toBeUndefined();
+
+    component.unload();
+    delete windowWithErrors['NoOwnStackError'];
+  });
+
+  it('should add long stack frames to an error whose stack is a data property', () => {
+    class DataStackError extends Error {
+      public constructor(message: string) {
+        super(message);
+        Object.defineProperty(this, 'stack', { configurable: true, value: `DataStackError: ${message}\n    at caller (file.js:1:1)`, writable: true });
+      }
+    }
+    const windowWithErrors = ensureGenericObject(window);
+    windowWithErrors['DataStackError'] = DataStackError;
+
+    const { component } = createComponent();
+    component.load();
+
+    const PatchedDataStackError = castTo<typeof DataStackError>(windowWithErrors['DataStackError']);
+    const parentStackError = new window.Error('parent');
+    component.parentStackFrame = { parentStackError, title: 'parentTitle' };
+    const error = new PatchedDataStackError('data stack');
+    component.parentStackFrame = undefined;
+
+    expect(error.stack).toContain('DataStackError: data stack');
+    expect(error.stack).toContain('at caller (file.js:1:1)');
+    expect(error.stack).toContain('at --- parentTitle --- (0)');
+
+    component.unload();
+    delete windowWithErrors['DataStackError'];
   });
 
   it('should restore child error classes on unload', () => {
