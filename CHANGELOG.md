@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.14.1
+
+- fix: show plugin names as inline code in the notice, the Plugin debug messages view and the settings
+- chore(deps): move to obsidian-lib 6 and obsidian-dev-toolkit 5
+
 ## 1.14.0
 
 - feat: add a Plugin debug messages view with a checkbox per plugin
