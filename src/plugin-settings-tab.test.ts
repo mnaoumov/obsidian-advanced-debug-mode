@@ -651,6 +651,13 @@ describe('PluginSettingsTab', () => {
       expect(group.items.map((item) => 'name' in item ? item.name : '')).toEqual(['Plugin debug messages view', 'Alpha', 'Beta']);
       const alphaRowDescription = castTo<DescribedRow | undefined>(group.items[1])?.desc;
       expect(alphaRowDescription?.textContent).toBe('Show the debug messages of Alpha: turns on the plugin-a and plugin-a:* debug namespaces.');
+      const alphaRowDescriptionEl = createDiv();
+      alphaRowDescriptionEl.append(alphaRowDescription ?? '');
+      expect([...alphaRowDescriptionEl.querySelectorAll(':scope .markdown-rendered.code > code')].map((codeEl) => codeEl.textContent)).toEqual([
+        'Alpha',
+        'plugin-a',
+        'plugin-a:*'
+      ]);
 
       const toggles = renderGroupToggles(tab, group);
       expect(toggles.get('Alpha')?.getValue()).toBe(false);

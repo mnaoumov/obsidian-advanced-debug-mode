@@ -82,7 +82,7 @@ function getRows(view: PluginDebugMessagesView): HTMLElement[] {
 }
 
 function getRowTexts(view: PluginDebugMessagesView): string[] {
-  return getRows(view).slice(1).map((rowEl) => rowEl.querySelector('code')?.textContent ?? '');
+  return getRows(view).slice(1).map((rowEl) => rowEl.querySelector(':scope .markdown-rendered.code > code')?.textContent ?? '');
 }
 
 function getToolbarCheckbox(view: PluginDebugMessagesView, label: string): HTMLInputElement {

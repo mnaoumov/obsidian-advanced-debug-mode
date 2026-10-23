@@ -5,6 +5,7 @@ import type {
 } from 'obsidian';
 
 import { GlobalCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/global-command-handler';
+import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
 import { selectItem } from '@mnaoumov/obsidian-lib/modals/select-item';
 
 import type { PluginDebugMessages } from '../plugin-debug-messages.ts';
@@ -47,7 +48,7 @@ export class TogglePluginDebugMessagesCommandHandler extends GlobalCommandHandle
     this.pluginDebugMessages.setEnabled(manifest.id, isEnabled);
     this.pluginNoticeComponent.showNotice(createFragment((f) => {
       f.appendText('Debug messages for ');
-      f.createEl('code', { text: manifest.name });
+      appendCodeBlock(f, manifest.name);
       f.appendText(` are ${isEnabled ? 'on' : 'off'}. Some plugins pick the change up only after the app reloads.`);
     }));
   }

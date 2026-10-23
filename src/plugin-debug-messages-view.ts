@@ -4,6 +4,7 @@ import type {
   WorkspaceLeaf
 } from 'obsidian';
 
+import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
 import {
   ButtonComponent,
   ItemView,
@@ -121,7 +122,7 @@ export class PluginDebugMessagesView extends ItemView {
         cls: isPluginEnabled ? '' : 'advanced-debug-mode-plugin-debug-messages-disabled-plugin',
         containerEl: listEl,
         describe: (rowEl) => {
-          rowEl.createEl('code', { text: manifest.name });
+          appendCodeBlock(rowEl, manifest.name);
           rowEl.createSpan({ cls: 'advanced-debug-mode-plugin-debug-messages-id', text: manifest.id });
           if (!isPluginEnabled) {
             rowEl.createSpan({ cls: 'advanced-debug-mode-plugin-debug-messages-badge', text: 'disabled' });
