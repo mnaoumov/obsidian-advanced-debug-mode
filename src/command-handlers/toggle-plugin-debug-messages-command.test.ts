@@ -99,6 +99,10 @@ describe('TogglePluginDebugMessagesCommandHandler', () => {
     expect([...enabledPluginIds]).toEqual(['plugin-a', 'plugin-b']);
     const notice = pluginNoticeComponent.showNotice.mock.calls[0]?.[0] as DocumentFragment | undefined;
     expect(notice?.textContent).toBe('Debug messages for Beta are on. Some plugins pick the change up only after the app reloads.');
+    // The plugin name renders as inline code: a bare <code> gets no code chip in the app UI.
+    const noticeEl = createDiv();
+    noticeEl.append(notice ?? '');
+    expect(noticeEl.querySelector(':scope .markdown-rendered.code > code')?.textContent).toBe('Beta');
   });
 
   it('should turn an enabled plugin off', async () => {

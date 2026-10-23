@@ -324,7 +324,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           this.settingEx({
             desc: createFragment((f) => {
               f.appendText('Show the debug messages of ');
-              f.createEl('code', { text: manifest.name });
+              appendCodeBlock(f, manifest.name);
               f.appendText(': turns on the ');
               appendCodeBlock(f, manifest.id);
               f.appendText(' and ');
