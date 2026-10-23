@@ -294,12 +294,15 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
 
   private patchBaseErrorClass(): void {
     const thisWrapper = ValueWrapper.of(this);
-    function PatchedError(this: unknown, message?: string, errorOptions?: ErrorOptions): Error {
-      if (!(this instanceof window.Error)) {
+    function PatchedError(message?: string, errorOptions?: ErrorOptions): Error {
+      // Decided by `new.target`, not by `this instanceof`: an ES5-style subclass runs `Error.call(this, message)`, where
+      // `this` IS an error but there is no `new.target` to construct with. The native class returns a fresh error then.
+      const newTarget = castTo<GenericConstructor | undefined>(new.target);
+      if (newTarget === undefined) {
         return new window.Error(message, errorOptions);
       }
 
-      const error = Reflect.construct(thisWrapper.value.OriginalError, [message, errorOptions], castTo<GenericConstructor>(ensureNonNullable(new.target as unknown)));
+      const error = Reflect.construct(thisWrapper.value.OriginalError, [message, errorOptions], newTarget);
       error.name = 'Error';
       thisWrapper.value.wrapErrorStack(error);
       return error;
@@ -368,25 +371,30 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
         continue;
       }
 
-      function PatchedChildError(this: unknown, ...$arguments: unknown[]): unknown {
-        const PatchedChildErrorWrapper = ensureNonNullable(windowWithErrorConstructors[childErrorClassName]);
-
-        if (!(this instanceof PatchedChildErrorWrapper)) {
+      function PatchedChildError(...$arguments: unknown[]): unknown {
+        // See `PatchedError`: a call without `new`, including an ES5 subclass's `Base.call(this)`, gets a fresh error.
+        const newTarget = castTo<GenericConstructor | undefined>(new.target);
+        if (newTarget === undefined) {
+          const PatchedChildErrorWrapper = ensureNonNullable(windowWithErrorConstructors[childErrorClassName]);
           return new (castTo<GenericConstructor>(PatchedChildErrorWrapper))(...$arguments);
         }
 
         // The ORIGINAL child constructor builds the error, so each class keeps its own argument handling:
         // `AggregateError(errors, message, options)` sets `errors`, `SuppressedError(error, suppressed, message)` sets
         // `error` and `suppressed`. Passing the arguments to the patched base `Error` instead stringified `errors` into
-        // `message` and left `errors` undefined.
-        const error = Reflect.construct(OriginalChildError, $arguments, castTo<GenericConstructor>(ensureNonNullable(new.target as unknown))) as Error;
-        error.name = childErrorClassName;
+        // `message` and left `errors` undefined. Its `name` comes from the shared prototype below, so it is not
+        // assigned: `DOMException`'s `name` is the second argument behind a getter-only accessor, and an assignment
+        // either throws or overwrites `AbortError` with `DOMException`.
+        const error = Reflect.construct(OriginalChildError, $arguments, newTarget) as Error;
         thisWrapper.value.wrapErrorStack(error);
         return error;
       }
 
-      PatchedChildError.prototype = Object.create(PatchedBaseError.prototype as object);
-      PatchedChildError.prototype.constructor = PatchedChildError;
+      // The ORIGINAL prototype, not a copy, exactly as `PatchedError` shares `Error.prototype`. A constructor that
+      // brand-checks `this` sees the instance it expects: pdf.js bundles core-js's `DOMException` polyfill, which may
+      // replace `window.DOMException` before this patch wraps it, and throws `Incorrect invocation` on any `this` not
+      // inheriting from the native `DOMException.prototype`. Errors built before the patch stay `instanceof` it, too.
+      PatchedChildError.prototype = OriginalChildError.prototype as object;
       Object.setPrototypeOf(PatchedChildError, OriginalChildError);
 
       originalPrototypeToPatchedClassMap.set(OriginalChildError.prototype, PatchedChildError);
@@ -426,7 +434,14 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
 
     let cachedStack: unknown;
 
-    const originalStackPropertyDescriptor = ensureNonNullable(Object.getOwnPropertyDescriptor(error, 'stack'));
+    // A host error class may keep `stack` off the instance: Chromium's native `DOMException` has no own `stack`, and
+    // pdf.js's core-js probe `"stack" in new DOMException(1, 2)` runs while it loads. Asserting the descriptor threw
+    // `Value is undefined` there and aborted pdf.js, so such an error is left as it is.
+    const originalStackPropertyDescriptor = Object.getOwnPropertyDescriptor(error, 'stack');
+    if (!originalStackPropertyDescriptor) {
+      return;
+    }
+
     const adjustStackLines = this.adjustStackLines.bind(this);
     Object.defineProperty(error, 'stack', {
       configurable: true,
@@ -436,8 +451,8 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
           return cachedStack;
         }
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method -- Property descriptor getter is not a class method; extracting it is safe.
-        const originalStack: unknown = ensureNonNullable(originalStackPropertyDescriptor.get).call(error);
+        // A data property, as core-js's `DOMException` polyfill defines it, holds the formatted stack as its value.
+        const originalStack: unknown = originalStackPropertyDescriptor.get ? originalStackPropertyDescriptor.get.call(error) : originalStackPropertyDescriptor.value;
         if (typeof originalStack !== 'string') {
           // A caller-installed `Error.prepareStackTrace` returned a non-string (e.g. the `CallSite` array `depd` asks for).
           // Long stack traces only add frames to a formatted string, so the formatter's result is returned as is.
