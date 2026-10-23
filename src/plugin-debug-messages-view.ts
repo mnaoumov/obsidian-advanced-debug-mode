@@ -100,7 +100,9 @@ export class PluginDebugMessagesView extends ItemView {
       containerEl: listEl,
       describe: (rowEl) => {
         rowEl.createSpan({ text: 'Library messages' });
-        rowEl.createEl('code', { cls: 'advanced-debug-mode-plugin-debug-messages-id', text: '*:obsidian-lib:*' });
+        rowEl.createSpan({ cls: 'advanced-debug-mode-plugin-debug-messages-id' }, (spanEl) => {
+          appendCodeBlock(spanEl, '*:obsidian-lib:*');
+        });
       },
       isChecked: this.pluginDebugMessages.isLibraryEnabled(),
       onChange: (isChecked) => {
