@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.14.2
+
+- fix: rewrite a negative stored stackTraceLimit to the default on load
+- fix: merge keeping DOMException and pdf.js working with long stack traces on
+- test(demo-vault): floor `CodeScript Toolkit` at 15.0.0
+- fix: merge rendering the library debug namespace through appendCodeBlock
+
 ## 1.14.1
 
 - fix: show plugin names as inline code in the notice, the Plugin debug messages view and the settings
