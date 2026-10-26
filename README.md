@@ -52,6 +52,14 @@ A copy of the vault ships with every release. You can access it via any of the f
 - **A panic button for a runaway operation** — the app-wide shared abort, as a hotkey-bindable command and a settings button instead of a line typed into the console. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
 - **Every setting**, by the key it is stored under. [06 Settings](<./demo-vault/06 Settings.md>)
 
+## Similar plugins
+
+- [`vConsole`](https://community.obsidian.md/plugins/vconsole) — puts the `vConsole` panel on the page, with logs, network requests, the element tree, storage and a JavaScript prompt; this plugin brings DevTools to mobile through `eruda` instead, and adds long stack traces, debug switches, `debug`-library namespaces and the long-running-task timeouts.
+- [`Logstravaganza`](https://community.obsidian.md/plugins/logstravaganza) — copies every `console.*()` call and uncaught exception into a note in the vault, so a user can send the log with a bug report; this plugin keeps no log file, and changes what the console shows instead.
+- [`Logcollector`](https://community.obsidian.md/plugins/logcollector) — a fork of `Logstravaganza` that can also write the log to a file outside the vault, in local time or UTC, or as plain text.
+
+Last searched for similar plugins on 2026-10-26.
+
 ## Installation
 
 The plugin is available in [the official Community Plugins repository](https://community.obsidian.md/plugins/advanced-debug-mode).
