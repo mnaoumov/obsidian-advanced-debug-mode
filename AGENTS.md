@@ -44,7 +44,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `abort-shared-operation.ts` — `abortSharedOperation`: fires `@mnaoumov/typescript-lib`'s app-wide `ResettableAbortController` with a `SilentError` reason and reports that the abort was signalled
   - `debug-mode.ts` — `DebugMode`: read/toggle Obsidian's debug mode via `app.debugMode`
   - `emulate-mobile-mode.ts` — `EmulateMobileMode`: read/toggle desktop mobile-emulation via `app.emulateMobile`
-  - `dev-tools-component.ts` — `DevToolsComponent`: initializes `eruda` DevTools (mobile) and toggles its entry button
+  - `dev-tools-component.ts` — `DevToolsComponent`: initializes `eruda` DevTools and toggles its entry button. On the mobile app eruda starts at load, so its console holds what was logged before it is opened; on desktop it starts on the first toggle. Unload calls `eruda.destroy()`, which puts the native `console.*` methods back
   - `error-stack-trace-limit-component.ts` — saves and restores `Error.stackTraceLimit` across load/unload
   - `long-running-tasks-component.ts` — coordinates the two `FileSystemAdapter` patches and reloads them on settings change
   - `multi-weak-map.ts` — `MultiWeakMap`: multi-key map mixing `Map`/`WeakMap` storage per key type
@@ -63,6 +63,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `patches/file-system-adapter-queue-patch-component.ts` — patches `FileSystemAdapter.queue` to log timed-out task details
   - `patches/file-system-adapter-things-happening-patch-component.ts` — patches `thingsHappening` to disable the long-running-task timeout
   - `styles/` — `main.scss` (plugin styles) and `scss.d.ts` (SCSS module type declaration)
+- **`scripts/ignore-list-source-map-plugin.ts`** — an esbuild plugin passed to `build()` / `dev()` as a custom plugin, so the bundle carries an ignore-list source map (see below). Its unit tests (`scripts/*.test.ts`) run in the `scripts-unit-tests` vitest project under Node, which `npm test` runs beside `unit-tests`.
 - **`main` field** points to `src/main.ts` (Obsidian plugin source entry; built artifact is `dist/build/main.js`, not published to npm).
 
 ### Node.js built-ins are loaded only in the facade, behind `Platform.isDesktop`
@@ -102,6 +103,16 @@ With long stack traces on, `Error.stackTraceLimit` reads and writes a field on t
 - **Up to 1.11.3 the setter saved every write through an async `editAndSave`, and the getter returned the setting.** Code that bumps the limit for a moment (`Error.stackTraceLimit += k; ...; -= k`) read the old value back before the save landed, so each round moved the setting down by `k`. In a real vault it reached `-33482`, a negative `splice` cut stack traces from the wrong end, and `data.json` was rewritten every few minutes.
 - **Loading repairs such a value, on disk as well as in effect.** `PluginSettingsComponent.onLoadRecord` rewrites a stored `stackTraceLimit` that is not a whole number of 0 or more to the default (100), so `loadFromFile` sees the record differ from `data.json` and saves it once. The validator on `stackTraceLimit` stays for what the user types into the settings tab; on its own it only made the effective value the default, and `data.json` kept the bad number. The repair lives here, not in obsidian-lib's base, because the base keeps invalid input on disk on purpose: a validator may fail on transient context, and rewriting every failed value would erase a setting the user configured.
 - **Unload puts back the `stackTraceLimit` the original `Error` had at load**, not the setting.
+
+### DevTools must not name this plugin as the source of other code's messages
+
+DevTools links a console message to the top frame of its stack, skipping frames it has ignore-listed. This plugin puts frames on top of other code's calls: eruda's console replaces every `console.*` method with a wrapper, and the long stack traces wrap `addEventListener`, the timers and the `Promise` methods. Up to 1.14.2 DevTools named `plugin:advanced-debug-mode` as the source of every `console.debug` in the app, because eruda started at load on desktop too and wrapped `console` for good, even after unload.
+
+- **eruda starts on desktop only when its button is first shown**, and `eruda.destroy()` on unload restores `console`. The desktop integration test checks `console.*` stays native at load and after unload, and fails on the old eager start.
+- **The bundle ships an ignore-list source map.** `scripts/ignore-list-source-map-plugin.ts` lists the wrapper modules in `IGNORED_SOURCE_PATTERNS`. A development build already has a full inline map, and the plugin only adds `ignoreList`. A production build has none, so the plugin has esbuild write an external map, builds a minimal one from it that maps ONLY the ignored regions (no `sourcesContent`, no names, eruda's ~350 webpack sources merged into one `webpack://eruda`), writes it inline and deletes the `.map` files. That costs about 3.7 KB on an 830 KB bundle; listing eruda's sources one by one cost about 35 KB.
+- **The production bundle must end with `\n/* nosourcemap */`.** Both of Obsidian's loaders (the `plugin-script-root` protocol in the main process and the `eval` fallback in `app.js`) strip a `//# sourceMappingURL=data:application/json;base64,` line unless debug mode is on or the file ends with that marker.
+- **Measured in Chrome's DevTools, not assumed.** A probe drove the real DevTools frontend headless over CDP: with no map, a `console.log` from `other.js` through a wrapper linked to the wrapper; with an ignore-list map it linked to `other.js`; and a map listing ONLY ignored sources still linked the bundle's own unmapped frames to the bundle. So the unmapped rest of the bundle needs no source entry. DevTools' rule is `StackTraceTopFrameLocation.updateLocation` in `front_end/models/bindings/DebuggerWorkspaceBinding.ts`: the first frame whose UI location is not ignore-listed.
+- **Keep the patterns in step with the code.** A new module that wraps a native API belongs in `IGNORED_SOURCE_PATTERNS`. A pattern that no longer matches anything fails silently, so check the built map's `sources` after renaming a wrapper module.
 
 ### Async long stack traces use `v8.promiseHooks`, and the hooks skip console evaluations
 

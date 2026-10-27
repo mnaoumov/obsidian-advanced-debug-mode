@@ -31,6 +31,37 @@ describe('Desktop Integration', () => {
     expect(result.isLoaded).toBe(true);
   });
 
+  it('should leave console methods native until the dev tools button is asked for, and restore them on unload', async () => {
+    interface ConsoleMethodsResult {
+      readonly isNativeAfterLoad: boolean;
+      readonly isNativeAfterToggle: boolean;
+      readonly isNativeAfterUnload: boolean;
+    }
+
+    const result = await evalInObsidian({
+      async callback({ app }): Promise<ConsoleMethodsResult> {
+        const pluginId = 'advanced-debug-mode';
+
+        // Eruda's console wraps every `console.*` method, and DevTools then links each message to this plugin. On desktop
+        // it must not exist until its button is asked for, and unloading the plugin must put the native methods back.
+        function isConsoleNative(): boolean {
+          return ['debug', 'log', 'warn', 'error'].every((methodName) => Function.prototype.toString.call(Reflect.get(console, methodName)).includes('[native code]'));
+        }
+
+        const isNativeAfterLoad = isConsoleNative();
+        app.commands.executeCommandById(`${pluginId}:toggle-dev-tools-button`);
+        const isNativeAfterToggle = isConsoleNative();
+        app.commands.executeCommandById(`${pluginId}:toggle-dev-tools-button`);
+        await app.plugins.disablePlugin(pluginId);
+        const isNativeAfterUnload = isConsoleNative();
+        await app.plugins.enablePlugin(pluginId);
+        return { isNativeAfterLoad, isNativeAfterToggle, isNativeAfterUnload };
+      }
+    });
+
+    expect(result).toEqual({ isNativeAfterLoad: true, isNativeAfterToggle: false, isNativeAfterUnload: true });
+  });
+
   it('should have patched Error class for long stack traces', async () => {
     const result = await evalInObsidian({
       callback() {

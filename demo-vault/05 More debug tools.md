@@ -1,13 +1,14 @@
 # More debug tools
 
-Three smaller features round out the plugin. None has its own setting - they are surfaced through a command and the settings tab.
+A few smaller features round out the plugin. None has its own setting - they are surfaced through a command and the settings tab.
 
 ## DevTools on mobile
 
 Obsidian's desktop app has DevTools built in; the mobile app does not, which makes debugging a plugin on a phone or tablet painful. `Advanced Debug Mode` adds a floating **DevTools** button to the mobile app so you can inspect the console and elements without tethering the device to a desktop.
 
 - Run **`Advanced Debug Mode`: Toggle DevTools button** from the command palette to show or hide the button.
-- On desktop this is unnecessary (`Ctrl` + `Shift` + `I` already opens DevTools), so the button is aimed at mobile.
+- On desktop this is unnecessary (`Ctrl` + `Shift` + `I` already opens DevTools), so the button is aimed at mobile. On desktop the in-page DevTools does not even start until you first show its button, because its console wraps every `console.*` method (see [Console messages keep their real source](#console-messages-keep-their-real-source)).
+- On mobile it starts with the plugin, so its console already holds what was logged before you open it.
 
 ```code-button
 ---
@@ -19,6 +20,17 @@ require('/demoSetup.ts').toggleDevToolsButton(app);
 Manual equivalent: run **`Advanced Debug Mode`: Toggle DevTools button** from the command palette. Press it twice to put things back.
 
 ![The DevTools button floating over the mobile app](<./_assets/images/devtools.jpg>)
+
+## Console messages keep their real source
+
+DevTools links each console message to the place it came from: the `file:line` on the right of the message. Code that sits between a caller and the browser - a wrapper around `console.debug`, `addEventListener`, `setTimeout` or `Promise.then` - takes that place, and DevTools then names the wrapper instead of the code that logged. `Advanced Debug Mode` has such wrappers: the in-page DevTools console wraps every `console.*` method, and long stack traces wrap the timers, event listeners and promise callbacks. Left alone, DevTools would name `plugin:advanced-debug-mode` as the source of messages logged by any plugin.
+
+It does not, for two reasons:
+
+- On desktop the in-page DevTools only starts when you first show its button, and disabling the plugin puts the native `console` methods back.
+- The plugin ships a small source map that marks its wrappers as third-party code. DevTools skips such frames when it picks a message's source, so the link goes to the real caller. This relies on **DevTools -> Settings -> Ignore list -> Known third-party scripts from source maps**, which is on by default. To see the skipped frames in a stack trace, use **Show ignore-listed frames** under the stack.
+
+The plugin's own messages still link to `plugin:advanced-debug-mode`.
 
 ## Debug namespaces
 

@@ -66,6 +66,12 @@ const DEMO_VAULT_TEST_FILES = 'src/**/*.demo-vault.integration.test.ts';
  */
 const DEMO_VAULT_TIMEOUT_IN_MILLISECONDS = 600_000;
 
+/**
+ * Unit tests of the build scripts themselves. They run under Node, not the plugin's mocked-Obsidian `jsdom`, and sit
+ * outside `src/` because nothing in them ships in the plugin.
+ */
+const SCRIPTS_UNIT_TEST_FILES = 'scripts/**/*.test.ts';
+
 export const config = defineObsidianPluginVitestConfig({
   customProjects(context: ObsidianPluginVitestConfigContext): TestProjectConfiguration[] {
     return [
@@ -98,6 +104,13 @@ export const config = defineObsidianPluginVitestConfig({
           include: [DEMO_VAULT_TEST_FILES],
           name: 'integration-tests:demo-vault',
           testTimeout: DEMO_VAULT_TIMEOUT_IN_MILLISECONDS
+        }
+      },
+      {
+        test: {
+          environment: 'node',
+          include: [SCRIPTS_UNIT_TEST_FILES],
+          name: 'scripts-unit-tests'
         }
       }
     ];

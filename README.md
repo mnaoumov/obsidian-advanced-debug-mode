@@ -49,6 +49,7 @@ A copy of the vault ships with every release. You can access it via any of the f
 - **Every debug switch in one place** — the app-wide switches that libraries and plugins built on `@mnaoumov/typescript-lib` register, such as keeping a timed out `runWithTimeout` operation running, listed as toggles and saved across reloads, with a notice naming any switch left away from its default. [04 Long running tasks](<./demo-vault/04 Long running tasks.md>)
 - **DevTools on mobile**, where the app has none, plus a UI for the `debug` library's namespaces. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
 - **Any plugin's debug messages in one step** — a view listing every installed plugin with a checkbox, a filter and all on / all off, so you can change several at once; a command that flips the one you pick; and a toggle per plugin in settings — instead of the `window.DEBUG.enable('<plugin-id>')` line a README asks you to type. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
+- **Console messages that keep their real source** — DevTools links each message to the code that logged it, not to this plugin's wrappers. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
 - **A panic button for a runaway operation** — the app-wide shared abort, as a hotkey-bindable command and a settings button instead of a line typed into the console. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
 - **Every setting**, by the key it is stored under. [06 Settings](<./demo-vault/06 Settings.md>)
 
