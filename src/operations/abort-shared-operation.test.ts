@@ -14,7 +14,7 @@ import {
 import { abortSharedOperation } from './abort-shared-operation.ts';
 
 interface MockPluginNoticeComponent {
-  showNotice: Mock;
+  readonly showNotice: Mock;
 }
 
 function createMockPluginNoticeComponent(): MockPluginNoticeComponent & PluginNoticeComponent {

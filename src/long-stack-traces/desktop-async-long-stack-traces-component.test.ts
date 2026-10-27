@@ -23,17 +23,17 @@ import { AsyncLongStackTracesComponent } from './desktop-async-long-stack-traces
 import { LongStackTracesDesktopComponent } from './desktop-long-stack-traces-component.ts';
 
 interface AsyncComponentPrivateMembers {
-  executingPromises: Promise<unknown>[];
-  promiseHookAfter: (promise: Promise<unknown>) => void;
-  promiseHookBefore: (promise: Promise<unknown>) => void;
-  promiseHookInit: (promise: Promise<unknown>, parent: Promise<unknown> | undefined) => void;
-  promiseStackFrameMap: WeakMap<Promise<unknown>, AsyncStackFrameEntry>;
+  readonly executingPromises: Promise<unknown>[];
+  readonly promiseHookAfter: (promise: Promise<unknown>) => void;
+  readonly promiseHookBefore: (promise: Promise<unknown>) => void;
+  readonly promiseHookInit: (promise: Promise<unknown>, parent: Promise<unknown> | undefined) => void;
+  readonly promiseStackFrameMap: WeakMap<Promise<unknown>, AsyncStackFrameEntry>;
 }
 
 interface AsyncStackFrameEntry {
-  currentError: Error;
-  parentPromise: Promise<unknown> | undefined;
-  parentStackFrame: ParentStackFrame | undefined;
+  readonly currentError: Error;
+  readonly parentPromise: Promise<unknown> | undefined;
+  readonly parentStackFrame: ParentStackFrame | undefined;
 }
 
 interface CreateComponentsResult {
@@ -43,14 +43,15 @@ interface CreateComponentsResult {
 }
 
 interface FakePromiseHooks {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fake hook registration assigns callbacks for tests to invoke later.
   callbacks: HookCallbacks | undefined;
   readonly promiseHooks: PromiseHooks;
   readonly stop: () => void;
 }
 
 interface ParentStackFrame {
-  parentStackError: Error;
-  title: string;
+  readonly parentStackError: Error;
+  readonly title: string;
 }
 
 const COMMAND_LINE_API_PROPERTY_NAME = '$_';

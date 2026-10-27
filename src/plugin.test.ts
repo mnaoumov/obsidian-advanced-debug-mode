@@ -160,12 +160,15 @@ import { Plugin } from './plugin.ts';
 // Seeded THROUGH the base accessors: the components live in a bag behind
 // them, so writing the old `_`-prefixed backing field no longer feeds the getter, which throws when unset.
 interface PluginInternals {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Tests seed the base component before calling onloadImpl directly.
   commandHandlerComponent: CommandHandlerComponent;
-  onloadImpl: () => Promise<void>;
+  readonly onloadImpl: () => Promise<void>;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Tests seed the notice component before calling onloadImpl directly.
   pluginNoticeComponent: PluginNoticeComponent;
 }
 
 interface VaultWithAdapter {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Tests replace the vault adapter to exercise desktop-specific initialization.
   adapter: unknown;
 }
 

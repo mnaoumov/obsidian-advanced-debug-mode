@@ -13,7 +13,7 @@ import {
 import { AbortSharedOperationCommandHandler } from './abort-shared-operation-command.ts';
 
 interface MockPluginNoticeComponent {
-  showNotice: Mock;
+  readonly showNotice: Mock;
 }
 
 function createMockPluginNoticeComponent(): MockPluginNoticeComponent & PluginNoticeComponent {

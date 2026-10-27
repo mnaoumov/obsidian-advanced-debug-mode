@@ -27,8 +27,8 @@ import { EventTargetRemoveEventListenerPatchComponent } from './event-target-rem
 const PREPARE_STACK_TRACE_PROPERTY_NAME = 'prepareStackTrace';
 
 export interface StackFrame {
-  parentStackError: Error;
-  title: string;
+  readonly parentStackError: Error;
+  readonly title: string;
 }
 
 type GenericConstructor = new (...$arguments: unknown[]) => unknown;
