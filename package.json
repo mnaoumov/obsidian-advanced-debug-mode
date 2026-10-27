@@ -51,15 +51,15 @@
     "typescript": "$typescript"
   },
   "dependencies": {
-    "@mnaoumov/obsidian-lib": "^6.0.2",
-    "@mnaoumov/typescript-lib": "^1.6.1"
+    "@mnaoumov/obsidian-lib": "^6.3.0",
+    "@mnaoumov/typescript-lib": "^2.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
     "@mnaoumov/obsidian-dev-toolkit": "^7.0.0",
     "@mnaoumov/typescript-dev-toolkit": "^5.0.0",
-    "@mnaoumov/typescript-test-toolkit": "^1.0.2",
+    "@mnaoumov/typescript-test-toolkit": "^1.0.3",
     "@obsidian-typings/obsidian-public-latest": "^6.50.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@tsconfig/strictest": "^2.0.8",
