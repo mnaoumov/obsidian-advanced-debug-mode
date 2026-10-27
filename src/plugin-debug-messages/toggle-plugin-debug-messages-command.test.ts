@@ -24,7 +24,7 @@ vi.mock('@mnaoumov/obsidian-lib/modals/select-item', () => ({
 import { TogglePluginDebugMessagesCommandHandler } from './toggle-plugin-debug-messages-command.ts';
 
 interface MockPluginNoticeComponent {
-  showNotice: Mock;
+  readonly showNotice: Mock;
 }
 
 interface SetUpResult {

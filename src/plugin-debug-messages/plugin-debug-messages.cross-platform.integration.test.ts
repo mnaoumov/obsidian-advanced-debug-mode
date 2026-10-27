@@ -12,7 +12,7 @@ declare global {
     /**
      * The debug controller `@mnaoumov/typescript-lib` exposes for the DevTools console.
      */
-    DEBUG: DebugController;
+    readonly DEBUG: DebugController;
   }
 }
 

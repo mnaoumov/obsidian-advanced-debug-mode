@@ -12,7 +12,7 @@ interface AbortResult {
 }
 
 interface ResettableAbortControllerLike {
-  signal: AbortSignal;
+  readonly signal: AbortSignal;
 }
 
 /**
@@ -20,15 +20,15 @@ interface ResettableAbortControllerLike {
  * documents for the devtools console.
  */
 interface TypescriptLibStateSlotLike {
-  values: TypescriptLibStateValuesLike;
+  readonly values: TypescriptLibStateValuesLike;
 }
 
 interface TypescriptLibStateValuesLike {
-  sharedAbortController: ValueWrapperLike<ResettableAbortControllerLike>;
+  readonly sharedAbortController: ValueWrapperLike<ResettableAbortControllerLike>;
 }
 
 interface ValueWrapperLike<T> {
-  value: T;
+  readonly value: T;
 }
 
 // The shared abort controller is app-wide state owned by `@mnaoumov/obsidian-lib`, so the only thing that can

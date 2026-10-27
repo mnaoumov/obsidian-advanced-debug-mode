@@ -31,7 +31,7 @@ interface Context {
   readonly dataHandler: DataHandler;
   readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly pluginSettingsComponent: PluginSettingsComponent;
-  reloadSettings: (data: unknown) => Promise<void>;
+  readonly reloadSettings: (data: unknown) => Promise<void>;
 }
 
 async function createContext(data: unknown): Promise<Context> {

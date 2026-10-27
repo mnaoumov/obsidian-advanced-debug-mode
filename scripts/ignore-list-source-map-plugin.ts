@@ -60,12 +60,12 @@ const SOURCE_MAP_VERSION = 3;
  * A version 3 source map, as far as this plugin reads and writes it.
  */
 export interface SourceMap {
-  ignoreList?: number[];
-  mappings: string;
-  names?: string[];
-  sources: string[];
-  sourcesContent?: (null | string)[];
-  version: number;
+  readonly ignoreList?: number[];
+  readonly mappings: string;
+  readonly names?: string[];
+  readonly sources: string[];
+  readonly sourcesContent?: (null | string)[];
+  readonly version: number;
 }
 
 type MappingSegment = [number, number, number, number] | [number];

@@ -35,7 +35,7 @@ interface CreateComponentResult {
 }
 
 interface StackHolder {
-  stack?: unknown;
+  readonly stack?: unknown;
 }
 
 interface SuppressedErrorLike extends Error {

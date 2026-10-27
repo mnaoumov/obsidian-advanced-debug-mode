@@ -12,7 +12,7 @@ import type { DevToolsComponent } from './dev-tools-component.ts';
 import { ToggleDevToolsButtonCommandHandler } from './toggle-dev-tools-button-command.ts';
 
 interface MockDevToolsComponent {
-  toggleDevToolsButton: Mock;
+  readonly toggleDevToolsButton: Mock;
 }
 
 function createMockDevToolsComponent(): DevToolsComponent & MockDevToolsComponent {

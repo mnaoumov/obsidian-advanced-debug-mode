@@ -149,7 +149,7 @@ describe('Desktop Integration', () => {
     }
 
     interface StackHolder {
-      stack?: unknown;
+      readonly stack?: unknown;
     }
 
     // The probe `depd` (and so `Local REST API`) relies on: a formatter that returns the CallSite array.

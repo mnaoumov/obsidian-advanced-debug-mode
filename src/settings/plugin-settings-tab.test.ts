@@ -64,7 +64,7 @@ beforeAll(() => {
  * `simulateClick__` fires the one that was registered.
  */
 interface ClickableButtonComponent {
-  simulateClick__: () => void;
+  readonly simulateClick__: () => void;
 }
 
 interface CreatePluginSettingsTabOverrides {
@@ -82,11 +82,11 @@ interface CreatePluginSettingsTabResult {
 }
 
 interface DescribedRow {
-  desc: DocumentFragment;
+  readonly desc: DocumentFragment;
 }
 
 interface DisabledPredicateRow {
-  disabled: () => boolean;
+  readonly disabled: () => boolean;
 }
 
 /**
@@ -473,8 +473,8 @@ describe('PluginSettingsTab', () => {
     };
 
     interface MockTextArea {
-      inputEl: HTMLTextAreaElement;
-      setValue: (value: string) => unknown;
+      readonly inputEl: HTMLTextAreaElement;
+      readonly setValue: (value: string) => unknown;
     }
 
     const capturedTextAreas: MockTextArea[] = [];

@@ -21,7 +21,7 @@ interface TypescriptLibStateSlot {
 }
 
 interface ValueWrapperLike<T> {
-  value: T;
+  readonly value: T;
 }
 
 // The registry lives in `@mnaoumov/typescript-lib`'s shared state, which every plugin's bundled copy of the library reads.
