@@ -257,8 +257,8 @@ describe('Desktop Integration', () => {
           webSocket.addEventListener('error', reject, { once: true });
         });
         return await new Promise<CdpResponse>((resolve) => {
-          webSocket.addEventListener('message', (event) => {
-            const response = JSON.parse(String(event.data)) as CdpResponse;
+          webSocket.addEventListener('message', ($event) => {
+            const response = JSON.parse(String($event.data)) as CdpResponse;
             if (response.id === 1) {
               resolve(response);
             }
