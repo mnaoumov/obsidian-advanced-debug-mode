@@ -2,10 +2,10 @@ import { registerAsyncEvent } from '@mnaoumov/obsidian-lib/components/async-even
 import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
 import { FileSystemAdapter } from 'obsidian';
 
-import type { PluginSettingsComponent } from './plugin-settings-component.ts';
+import type { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
 
-import { FileSystemAdapterQueuePatchComponent } from './patches/file-system-adapter-queue-patch-component.ts';
-import { FileSystemAdapterThingsHappeningPatchComponent } from './patches/file-system-adapter-things-happening-patch-component.ts';
+import { FileSystemAdapterQueuePatchComponent } from './file-system-adapter-queue-patch-component.ts';
+import { FileSystemAdapterThingsHappeningPatchComponent } from './file-system-adapter-things-happening-patch-component.ts';
 
 export type RejectFunction = (error: Error) => void;
 

@@ -8,9 +8,9 @@ import {
   vi
 } from 'vitest';
 
-import { openPluginDebugMessagesView } from '../plugin-debug-messages-view.ts';
+import { openPluginDebugMessagesView } from './plugin-debug-messages-view.ts';
 
-vi.mock('../plugin-debug-messages-view.ts', () => ({
+vi.mock('./plugin-debug-messages-view.ts', () => ({
   openPluginDebugMessagesView: vi.fn().mockResolvedValue(undefined)
 }));
 

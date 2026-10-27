@@ -19,8 +19,8 @@ import {
   vi
 } from 'vitest';
 
+import { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
 import { DebugSwitchesComponent } from './debug-switches-component.ts';
-import { PluginSettingsComponent } from './plugin-settings-component.ts';
 
 const ON_BY_DEFAULT_ID = 'advanced-debug-mode-test:on-by-default';
 const OFF_BY_DEFAULT_ID = 'advanced-debug-mode-test:off-by-default';

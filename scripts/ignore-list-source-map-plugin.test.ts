@@ -20,7 +20,7 @@ import {
 } from './ignore-list-source-map-plugin.ts';
 
 const OWN_SOURCE = '../../src/plugin.ts';
-const PATCH_SOURCE = '../../src/patches/add-long-stack-traces-patch-component.ts';
+const PATCH_SOURCE = '../../src/long-stack-traces/add-long-stack-traces-patch-component.ts';
 const ERUDA_CONSOLE_SOURCE = 'webpack://eruda/src/Console/Console.js';
 const ERUDA_LICIA_SOURCE = 'webpack://eruda/node_modules/licia/truncate.js';
 
@@ -41,7 +41,7 @@ describe('isIgnoredSource', () => {
     '../../node_modules/@mnaoumov/obsidian-lib/src/components/monkey-around-component.ts',
     '../../node_modules/@mnaoumov/obsidian-lib/dist/lib/esm/components/monkey-around-component.mjs',
     PATCH_SOURCE,
-    String.raw`..\..\src\patches\event-target-remove-event-listener-patch-component.ts`,
+    String.raw`..\..\src\long-stack-traces\event-target-remove-event-listener-patch-component.ts`,
     '../../src/long-stack-traces/desktop-long-stack-traces-component.ts',
     '../../src/long-stack-traces/desktop-async-long-stack-traces-component.ts'
   ])('should ignore-list %s', (source) => {

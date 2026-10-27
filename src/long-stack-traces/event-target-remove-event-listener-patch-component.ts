@@ -1,9 +1,9 @@
 import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 
-import type { GenericFunctionWithOriginalFunction } from '../types.ts';
+import type { GenericFunctionWithOriginalFunction } from './types.ts';
 
-import { eventHandlersMap } from '../long-stack-traces/event-handlers-map.ts';
-import { isEventListenerObject } from '../long-stack-traces/event-listener.ts';
+import { eventHandlersMap } from './event-handlers-map.ts';
+import { isEventListenerObject } from './event-listener.ts';
 
 export class EventTargetRemoveEventListenerPatchComponent extends MonkeyAroundComponent {
   public override onload(): void {

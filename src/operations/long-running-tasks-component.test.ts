@@ -17,8 +17,8 @@ import {
   vi
 } from 'vitest';
 
+import { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
 import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
-import { PluginSettingsComponent } from './plugin-settings-component.ts';
 
 function createDataHandler(): DataHandler {
   return {

@@ -18,7 +18,7 @@ import {
   vi
 } from 'vitest';
 
-import { PluginSettingsComponent } from '../plugin-settings-component.ts';
+import { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
 import { LongStackTracesComponent } from './long-stack-traces-component.ts';
 
 const MockLongStackTracesDesktopComponent = vi.fn();

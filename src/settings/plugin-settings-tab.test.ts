@@ -43,10 +43,10 @@ import {
   vi
 } from 'vitest';
 
-import type { DebugMode } from './debug-mode.ts';
-import type { EmulateMobileMode } from './emulate-mobile-mode.ts';
+import type { DebugMode } from '../debug-controls/debug-mode.ts';
+import type { EmulateMobileMode } from '../debug-controls/emulate-mobile-mode.ts';
 
-import { PluginDebugMessages } from './plugin-debug-messages.ts';
+import { PluginDebugMessages } from '../plugin-debug-messages/plugin-debug-messages.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 

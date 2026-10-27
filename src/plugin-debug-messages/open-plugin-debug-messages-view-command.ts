@@ -2,7 +2,7 @@ import type { App } from 'obsidian';
 
 import { GlobalCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/global-command-handler';
 
-import { openPluginDebugMessagesView } from '../plugin-debug-messages-view.ts';
+import { openPluginDebugMessagesView } from './plugin-debug-messages-view.ts';
 
 export class OpenPluginDebugMessagesViewCommandHandler extends GlobalCommandHandler {
   private readonly app: App;

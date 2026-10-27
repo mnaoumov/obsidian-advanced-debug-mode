@@ -4,7 +4,7 @@ import {
   FileSystemAdapter
 } from 'obsidian';
 
-import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
+import type { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
 
 const THINGS_HAPPENING_DEBOUNCE_TIMEOUT_IN_MS = 60_000;
 

@@ -28,22 +28,22 @@ import {
   vi
 } from 'vitest';
 
-import { AbortSharedOperationCommandHandler } from './command-handlers/abort-shared-operation-command.ts';
-import { OpenPluginDebugMessagesViewCommandHandler } from './command-handlers/open-plugin-debug-messages-view-command.ts';
-import { TogglePluginDebugMessagesCommandHandler } from './command-handlers/toggle-plugin-debug-messages-command.ts';
-import { DebugSwitchesComponent } from './debug-switches-component.ts';
-import { DevToolsComponent } from './dev-tools-component.ts';
-import { ErrorStackTraceLimitComponent } from './error-stack-trace-limit-component.ts';
-import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
+import { DebugSwitchesComponent } from './debug-controls/debug-switches-component.ts';
+import { DevToolsComponent } from './dev-tools/dev-tools-component.ts';
+import { ErrorStackTraceLimitComponent } from './long-stack-traces/error-stack-trace-limit-component.ts';
 import { LongStackTracesComponent } from './long-stack-traces/long-stack-traces-component.ts';
+import { AbortSharedOperationCommandHandler } from './operations/abort-shared-operation-command.ts';
+import { LongRunningTasksComponent } from './operations/long-running-tasks-component.ts';
+import { OpenPluginDebugMessagesViewCommandHandler } from './plugin-debug-messages/open-plugin-debug-messages-view-command.ts';
 import {
   openPluginDebugMessagesView,
   PLUGIN_DEBUG_MESSAGES_VIEW_TYPE,
   PluginDebugMessagesView
-} from './plugin-debug-messages-view.ts';
-import { PluginDebugMessages } from './plugin-debug-messages.ts';
-import { PluginSettingsComponent } from './plugin-settings-component.ts';
-import { PluginSettingsTab } from './plugin-settings-tab.ts';
+} from './plugin-debug-messages/plugin-debug-messages-view.ts';
+import { PluginDebugMessages } from './plugin-debug-messages/plugin-debug-messages.ts';
+import { TogglePluginDebugMessagesCommandHandler } from './plugin-debug-messages/toggle-plugin-debug-messages-command.ts';
+import { PluginSettingsComponent } from './settings/plugin-settings-component.ts';
+import { PluginSettingsTab } from './settings/plugin-settings-tab.ts';
 
 // --- Collaborator obsidian-lib components added as children: stub as constructor spies that return a real Component so the real addChild lifecycle can load them while capturing constructor args. ---
 
@@ -74,52 +74,52 @@ vi.mock('@mnaoumov/obsidian-lib/plugin/plugin-event-source', () => ({
 
 // --- The plugin's OWN sibling modules. ---
 
-vi.mock('./command-handlers/abort-shared-operation-command.ts', () => ({
+vi.mock('./operations/abort-shared-operation-command.ts', () => ({
   AbortSharedOperationCommandHandler: vi.fn()
 }));
 
-vi.mock('./command-handlers/open-plugin-debug-messages-view-command.ts', () => ({
+vi.mock('./plugin-debug-messages/open-plugin-debug-messages-view-command.ts', () => ({
   OpenPluginDebugMessagesViewCommandHandler: vi.fn()
 }));
 
-vi.mock('./command-handlers/toggle-dev-tools-button-command.ts', () => ({
+vi.mock('./dev-tools/toggle-dev-tools-button-command.ts', () => ({
   ToggleDevToolsButtonCommandHandler: vi.fn()
 }));
 
-vi.mock('./command-handlers/toggle-plugin-debug-messages-command.ts', () => ({
+vi.mock('./plugin-debug-messages/toggle-plugin-debug-messages-command.ts', () => ({
   TogglePluginDebugMessagesCommandHandler: vi.fn()
 }));
 
-vi.mock('./debug-mode.ts', () => ({
+vi.mock('./debug-controls/debug-mode.ts', () => ({
   DebugMode: vi.fn()
 }));
 
-vi.mock('./dev-tools-component.ts', () => ({
+vi.mock('./dev-tools/dev-tools-component.ts', () => ({
   // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
   DevToolsComponent: vi.fn(function devToolsComponentStub() {
     return new Component();
   })
 }));
 
-vi.mock('./emulate-mobile-mode.ts', () => ({
+vi.mock('./debug-controls/emulate-mobile-mode.ts', () => ({
   EmulateMobileMode: vi.fn()
 }));
 
-vi.mock('./debug-switches-component.ts', () => ({
+vi.mock('./debug-controls/debug-switches-component.ts', () => ({
   // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
   DebugSwitchesComponent: vi.fn(function debugSwitchesComponentStub() {
     return new Component();
   })
 }));
 
-vi.mock('./error-stack-trace-limit-component.ts', () => ({
+vi.mock('./long-stack-traces/error-stack-trace-limit-component.ts', () => ({
   // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
   ErrorStackTraceLimitComponent: vi.fn(function errorStackTraceLimitComponentStub() {
     return new Component();
   })
 }));
 
-vi.mock('./long-running-tasks-component.ts', () => ({
+vi.mock('./operations/long-running-tasks-component.ts', () => ({
   // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
   LongRunningTasksComponent: vi.fn(function longRunningTasksComponentStub() {
     return new Component();
@@ -133,16 +133,16 @@ vi.mock('./long-stack-traces/long-stack-traces-component.ts', () => ({
   })
 }));
 
-vi.mock('./plugin-debug-messages-view.ts', async (importOriginal) => ({
-  ...await importOriginal<typeof import('./plugin-debug-messages-view.ts')>(),
+vi.mock('./plugin-debug-messages/plugin-debug-messages-view.ts', async (importOriginal) => ({
+  ...await importOriginal<typeof import('./plugin-debug-messages/plugin-debug-messages-view.ts')>(),
   openPluginDebugMessagesView: vi.fn().mockResolvedValue(undefined)
 }));
 
-vi.mock('./plugin-debug-messages.ts', () => ({
+vi.mock('./plugin-debug-messages/plugin-debug-messages.ts', () => ({
   PluginDebugMessages: vi.fn()
 }));
 
-vi.mock('./plugin-settings-component.ts', () => ({
+vi.mock('./settings/plugin-settings-component.ts', () => ({
   // eslint-disable-next-line prefer-arrow-callback -- a vi.fn constructor stub must be a function (not an arrow) so `new` works and returns a loadable Component.
   PluginSettingsComponent: vi.fn(function pluginSettingsComponentStub() {
     // A ComponentEx, not a plain Component: onloadImpl awaits its `loadWithPromises`.
@@ -150,7 +150,7 @@ vi.mock('./plugin-settings-component.ts', () => ({
   })
 }));
 
-vi.mock('./plugin-settings-tab.ts', () => ({
+vi.mock('./settings/plugin-settings-tab.ts', () => ({
   PluginSettingsTab: vi.fn()
 }));
 

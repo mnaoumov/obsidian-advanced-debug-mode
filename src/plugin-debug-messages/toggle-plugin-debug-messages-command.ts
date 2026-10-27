@@ -8,7 +8,7 @@ import { GlobalCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/gl
 import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
 import { selectItem } from '@mnaoumov/obsidian-lib/modals/select-item';
 
-import type { PluginDebugMessages } from '../plugin-debug-messages.ts';
+import type { PluginDebugMessages } from './plugin-debug-messages.ts';
 
 interface TogglePluginDebugMessagesCommandHandlerConstructorParams {
   readonly app: App;

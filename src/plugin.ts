@@ -10,25 +10,25 @@ import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
 import { getDebugController } from '@mnaoumov/typescript-lib/debug';
 import { FileSystemAdapter } from 'obsidian';
 
-import { AbortSharedOperationCommandHandler } from './command-handlers/abort-shared-operation-command.ts';
-import { OpenPluginDebugMessagesViewCommandHandler } from './command-handlers/open-plugin-debug-messages-view-command.ts';
-import { ToggleDevToolsButtonCommandHandler } from './command-handlers/toggle-dev-tools-button-command.ts';
-import { TogglePluginDebugMessagesCommandHandler } from './command-handlers/toggle-plugin-debug-messages-command.ts';
-import { DebugMode } from './debug-mode.ts';
-import { DebugSwitchesComponent } from './debug-switches-component.ts';
-import { DevToolsComponent } from './dev-tools-component.ts';
-import { EmulateMobileMode } from './emulate-mobile-mode.ts';
-import { ErrorStackTraceLimitComponent } from './error-stack-trace-limit-component.ts';
-import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
+import { DebugMode } from './debug-controls/debug-mode.ts';
+import { DebugSwitchesComponent } from './debug-controls/debug-switches-component.ts';
+import { EmulateMobileMode } from './debug-controls/emulate-mobile-mode.ts';
+import { DevToolsComponent } from './dev-tools/dev-tools-component.ts';
+import { ToggleDevToolsButtonCommandHandler } from './dev-tools/toggle-dev-tools-button-command.ts';
+import { ErrorStackTraceLimitComponent } from './long-stack-traces/error-stack-trace-limit-component.ts';
 import { LongStackTracesComponent } from './long-stack-traces/long-stack-traces-component.ts';
+import { AbortSharedOperationCommandHandler } from './operations/abort-shared-operation-command.ts';
+import { LongRunningTasksComponent } from './operations/long-running-tasks-component.ts';
+import { OpenPluginDebugMessagesViewCommandHandler } from './plugin-debug-messages/open-plugin-debug-messages-view-command.ts';
 import {
   openPluginDebugMessagesView,
   PLUGIN_DEBUG_MESSAGES_VIEW_TYPE,
   PluginDebugMessagesView
-} from './plugin-debug-messages-view.ts';
-import { PluginDebugMessages } from './plugin-debug-messages.ts';
-import { PluginSettingsComponent } from './plugin-settings-component.ts';
-import { PluginSettingsTab } from './plugin-settings-tab.ts';
+} from './plugin-debug-messages/plugin-debug-messages-view.ts';
+import { PluginDebugMessages } from './plugin-debug-messages/plugin-debug-messages.ts';
+import { TogglePluginDebugMessagesCommandHandler } from './plugin-debug-messages/toggle-plugin-debug-messages-command.ts';
+import { PluginSettingsComponent } from './settings/plugin-settings-component.ts';
+import { PluginSettingsTab } from './settings/plugin-settings-tab.ts';
 
 export class Plugin extends PluginBase {
   protected override async onloadImpl(): Promise<void> {

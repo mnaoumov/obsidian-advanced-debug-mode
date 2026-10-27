@@ -11,18 +11,18 @@ import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 import { ValueWrapper } from '@mnaoumov/typescript-lib/value-wrapper';
 import { App } from 'obsidian';
 
+import type { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
 import type {
   AfterPatchFunction,
   AfterPatchParams
-} from '../patches/add-long-stack-traces-patch-component.ts';
-import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
-import type { GenericFunctionWithOriginalFunction } from '../types.ts';
+} from './add-long-stack-traces-patch-component.ts';
 import type { PromiseHooks } from './desktop-async-long-stack-traces-component.ts';
+import type { GenericFunctionWithOriginalFunction } from './types.ts';
 
-import { AddLongStackTracesPatchComponent } from '../patches/add-long-stack-traces-patch-component.ts';
-import { EventTargetRemoveEventListenerPatchComponent } from '../patches/event-target-remove-event-listener-patch-component.ts';
+import { AddLongStackTracesPatchComponent } from './add-long-stack-traces-patch-component.ts';
 import { AsyncLongStackTracesComponent } from './desktop-async-long-stack-traces-component.ts';
 import { eventHandlersMap } from './event-handlers-map.ts';
+import { EventTargetRemoveEventListenerPatchComponent } from './event-target-remove-event-listener-patch-component.ts';
 
 const PREPARE_STACK_TRACE_PROPERTY_NAME = 'prepareStackTrace';
 

@@ -5,7 +5,7 @@ import {
   Platform
 } from 'obsidian';
 
-import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
+import type { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
 
 interface LongStackTracesComponentConstructorParams {
   readonly app: App;
