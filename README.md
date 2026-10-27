@@ -53,11 +53,15 @@ A copy of the vault ships with every release. You can access it via any of the f
 - **A panic button for a runaway operation** — the app-wide shared abort, as a hotkey-bindable command and a settings button instead of a line typed into the console. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
 - **Every setting**, by the key it is stored under. [06 Settings](<./demo-vault/06 Settings.md>)
 
-## Similar plugins
+## See also
 
-- [`vConsole`](https://community.obsidian.md/plugins/vconsole) — puts the `vConsole` panel on the page, with logs, network requests, the element tree, storage and a JavaScript prompt; this plugin brings DevTools to mobile through `eruda` instead, and adds long stack traces, debug switches, `debug`-library namespaces and the long-running-task timeouts.
-- [`Logstravaganza`](https://community.obsidian.md/plugins/logstravaganza) — copies every `console.*()` call and uncaught exception into a note in the vault, so a user can send the log with a bug report; this plugin keeps no log file, and changes what the console shows instead.
-- [`Logcollector`](https://community.obsidian.md/plugins/logcollector) — a fork of `Logstravaganza` that can also write the log to a file outside the vault, in local time or UTC, or as plain text.
+[My other Obsidian resources](https://github.com/mnaoumov/obsidian-resources)
+
+| Plugin | Features | How `Advanced Debug Mode` differs |
+| --- | --- | --- |
+| [`Logcollector`](https://community.obsidian.md/plugins/logcollector) | `Logstravaganza` fork; external log files; UTC/local timestamps; plain text | Complementary console tooling; changes console output; no log file |
+| [`Logstravaganza`](https://community.obsidian.md/plugins/logstravaganza) | Console calls and uncaught exceptions saved to a vault note | Complementary console tooling; changes console output; no log file |
+| [`vConsole`](https://community.obsidian.md/plugins/vconsole) | In-page console; network, DOM and storage tools; JavaScript prompt | Alternative mobile DevTools through `eruda`; long stacks, debug namespaces, switches and task timeouts |
 
 Last searched for similar plugins on 2026-10-26.
 
@@ -100,10 +104,6 @@ Contributions are welcome — see [CONTRIBUTING](./CONTRIBUTING.md) to get set u
 <a href="https://www.buymeacoffee.com/mnaoumov" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="60" width="217"></a>
 
 <!-- markdownlint-enable MD033 -->
-
-## My other Obsidian resources
-
-[See my other Obsidian resources](https://github.com/mnaoumov/obsidian-resources).
 
 ## License
 
