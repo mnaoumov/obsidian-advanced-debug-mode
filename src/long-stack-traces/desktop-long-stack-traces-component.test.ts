@@ -21,8 +21,8 @@ import {
   vi
 } from 'vitest';
 
-import { PluginSettingsComponent } from '../plugin-settings-component.ts';
-import { PluginSettings } from '../plugin-settings.ts';
+import { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
+import { PluginSettings } from '../settings/plugin-settings.ts';
 import { LongStackTracesDesktopComponent } from './desktop-long-stack-traces-component.ts';
 
 interface BrandedNameHolder {

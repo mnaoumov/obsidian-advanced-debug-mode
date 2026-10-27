@@ -17,8 +17,8 @@ import {
 
 import type { PromiseHooks } from './desktop-async-long-stack-traces-component.ts';
 
-import { PluginSettingsComponent } from '../plugin-settings-component.ts';
-import { PluginSettings } from '../plugin-settings.ts';
+import { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
+import { PluginSettings } from '../settings/plugin-settings.ts';
 import { AsyncLongStackTracesComponent } from './desktop-async-long-stack-traces-component.ts';
 import { LongStackTracesDesktopComponent } from './desktop-long-stack-traces-component.ts';
 

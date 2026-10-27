@@ -11,7 +11,7 @@ import {
   setDebugSwitch
 } from '@mnaoumov/typescript-lib/debug-switches';
 
-import type { PluginSettingsComponent } from './plugin-settings-component.ts';
+import type { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
 
 const OWN_SAVE_CONTEXT = 'DebugSwitchesComponent';
 

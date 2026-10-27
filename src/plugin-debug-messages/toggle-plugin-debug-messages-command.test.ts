@@ -14,7 +14,7 @@ import {
   vi
 } from 'vitest';
 
-import type { PluginDebugMessages } from '../plugin-debug-messages.ts';
+import type { PluginDebugMessages } from './plugin-debug-messages.ts';
 
 vi.mock('@mnaoumov/obsidian-lib/modals/select-item', () => ({
   selectItem: vi.fn()

@@ -7,7 +7,7 @@ import {
   vi
 } from 'vitest';
 
-import type { DevToolsComponent } from '../dev-tools-component.ts';
+import type { DevToolsComponent } from './dev-tools-component.ts';
 
 import { ToggleDevToolsButtonCommandHandler } from './toggle-dev-tools-button-command.ts';
 

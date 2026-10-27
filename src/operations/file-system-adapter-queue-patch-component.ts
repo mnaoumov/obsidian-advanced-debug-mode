@@ -3,8 +3,8 @@ import type { Promisable } from 'type-fest';
 
 import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 
-import type { RejectFunction } from '../long-running-tasks-component.ts';
-import type { PluginSettingsComponent } from '../plugin-settings-component.ts';
+import type { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
+import type { RejectFunction } from './long-running-tasks-component.ts';
 
 interface FileSystemAdapterQueuePatchComponentConstructorParams {
   readonly fileSystemAdapter: FileSystemAdapter;

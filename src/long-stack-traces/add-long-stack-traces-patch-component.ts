@@ -5,13 +5,13 @@ import { ValueWrapper } from '@mnaoumov/typescript-lib/value-wrapper';
 import type {
   LongStackTracesDesktopComponent,
   StackFrame
-} from '../long-stack-traces/desktop-long-stack-traces-component.ts';
+} from './desktop-long-stack-traces-component.ts';
 import type {
   GenericFunctionWithOriginalFunction,
   GenericFunctionWithOriginalFunctionObject
-} from '../types.ts';
+} from './types.ts';
 
-import { isEventListenerObject } from '../long-stack-traces/event-listener.ts';
+import { isEventListenerObject } from './event-listener.ts';
 
 export type AfterPatchFunction = (this: void, params: AfterPatchParams) => void;
 

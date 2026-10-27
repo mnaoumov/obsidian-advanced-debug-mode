@@ -38,7 +38,8 @@ export const IGNORED_SOURCE_PATTERNS: readonly RegExp[] = [
   /\/node_modules\/monkey-around\//,
   // The library's sources are its `.ts` files, because esbuild chains its inline source maps.
   /\/node_modules\/@mnaoumov\/obsidian-lib\/(?:.*\/)?monkey-around-component\.(?:[cm]?js|ts)$/,
-  /\/src\/patches\//,
+  /\/src\/operations\/file-system-adapter-[^/]+-patch-component\.ts$/,
+  /\/src\/long-stack-traces\/(?:add-long-stack-traces|event-target-remove-event-listener)-patch-component\.ts$/,
   /\/src\/long-stack-traces\/desktop-(?:async-)?long-stack-traces-component\.ts$/
 ];
 

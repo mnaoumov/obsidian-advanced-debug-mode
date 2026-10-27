@@ -9,13 +9,13 @@ import process from 'node:process';
 // mode, long-running-task timeouts) is exercised by the desktop/android integration
 // suites, so here only the PluginSettings config class is reflected.
 registerDemoVaultCoverageSuite({
-  configInterfaces: [{ interfaceName: 'PluginSettings', sourcePath: 'src/plugin-settings.ts' }],
+  configInterfaces: [{ interfaceName: 'PluginSettings', sourcePath: 'src/settings/plugin-settings.ts' }],
   interfaces: [],
   nonTrivialGuard: {
     expectDemoNote: '06 Settings.md',
     expectMember: 'shouldIncludeLongStackTraces',
     interfaceName: 'PluginSettings',
-    sourcePath: 'src/plugin-settings.ts'
+    sourcePath: 'src/settings/plugin-settings.ts'
   },
   rootFolder: getRootFolder() ?? process.cwd()
 });

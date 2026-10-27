@@ -32,36 +32,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Architecture
 
 - **Root config files** are thin re-exports — actual logic lives in `scripts/` (`eslint.config.mts` → `scripts/eslint-config.ts`, etc.).
-- **`src/`** — plugin source:
+- **`src/`** — plugin source, grouped by subject (`settings/`, `debug-controls/`, `plugin-debug-messages/`, `dev-tools/`, `operations/`, `long-stack-traces/`); `demo-vault/` holds the demo-vault and screenshot suites. Tests stay beside their source files:
   - `main.ts` — Obsidian entry point (imports the stylesheet, default-exports `Plugin`)
   - `plugin.ts` — `Plugin extends PluginBase`; `onloadImpl` wires up all child components (settings, settings tab, DevTools, command handler, long-running tasks, error stack-trace limit, long stack traces)
-  - `plugin-settings.ts` — `PluginSettings` data class with the plugin's setting defaults
-  - `plugin-settings-component.ts` — `PluginSettingsComponentBase` subclass that loads/saves settings
-  - `plugin-settings-tab.ts` — settings UI tab (declarative `getSettingDefinitionItems()`) for debug mode, mobile emulation, debug namespaces, long/async stack traces, stack-trace limit, task timeouts, the shared-abort button, a "Plugin debug messages" group with an "Open as a view" button and one toggle per installed plugin (kept in step with the namespaces text area both ways), and a "Debug switches" group with one toggle per switch in `@mnaoumov/typescript-lib`'s registry (`getDebugSwitches()`)
-  - `debug-switches-component.ts` — `DebugSwitchesComponent`: persists the debug switches in `debugSwitches` (only values away from their default), applies them on load, names them in a notice, and puts them back to their defaults on unload
-  - `plugin-debug-messages.ts` — `PluginDebugMessages`: lists the installed plugins and turns one plugin's `<id>` + `<id>:*` debug namespaces on or off, adding `-<id>` / `-<id>:*` only when a wildcard would otherwise keep it on; `isNamespaceEnabled` applies the `debug` library's rule (a matching `-` entry wins)
-  - `plugin-debug-messages-view.ts` — `PluginDebugMessagesView` (`ItemView`, opened in the right sidebar by `openPluginDebugMessagesView`): a filter, "Only enabled plugins" / "Only checked", "All on" / "All off" on the filtered rows, a "Library messages" row (`*:obsidian-lib:*`), and a checkbox per installed plugin. No event announces a namespace change or a plugin install/enable, so while open it compares `PluginDebugMessages.getStateSnapshot()` every 500 ms and re-renders only on a change
-  - `abort-shared-operation.ts` — `abortSharedOperation`: fires `@mnaoumov/typescript-lib`'s app-wide `ResettableAbortController` with a `SilentError` reason and reports that the abort was signalled
-  - `debug-mode.ts` — `DebugMode`: read/toggle Obsidian's debug mode via `app.debugMode`
-  - `emulate-mobile-mode.ts` — `EmulateMobileMode`: read/toggle desktop mobile-emulation via `app.emulateMobile`
-  - `dev-tools-component.ts` — `DevToolsComponent`: initializes `eruda` DevTools and toggles its entry button. On the mobile app eruda starts at load, so its console holds what was logged before it is opened; on desktop it starts on the first toggle. Unload calls `eruda.destroy()`, which puts the native `console.*` methods back
-  - `error-stack-trace-limit-component.ts` — saves and restores `Error.stackTraceLimit` across load/unload
-  - `long-running-tasks-component.ts` — coordinates the two `FileSystemAdapter` patches and reloads them on settings change
-  - `multi-weak-map.ts` — `MultiWeakMap`: multi-key map mixing `Map`/`WeakMap` storage per key type
-  - `types.ts` — shared generic-function types (`GenericFunctionWithOriginalFn`, etc.)
-  - `command-handlers/toggle-dev-tools-button-command.ts` — `GlobalCommandHandler` to toggle the DevTools button
-  - `command-handlers/toggle-plugin-debug-messages-command.ts` — `GlobalCommandHandler` `Toggle debug messages for a plugin...`: a fuzzy picker of installed plugins, each labelled `On` / `Off`, that flips the chosen one; the one-step form of a README's `window.DEBUG.enable('<plugin-id>')`
-  - `command-handlers/open-plugin-debug-messages-view-command.ts` — `GlobalCommandHandler` `Open plugin debug messages`; the ribbon icon and the settings group's "Open as a view" button open the same view
-  - `command-handlers/abort-shared-operation-command.ts` — `GlobalCommandHandler` firing the app-wide shared abort; the hotkey-bindable form of the console's `globalThis[Symbol.for('@mnaoumov/typescript-lib/state')].values.sharedAbortController.value.abort()`
+  - `settings/plugin-settings.ts` — `PluginSettings` data class with the plugin's setting defaults
+  - `settings/plugin-settings-component.ts` — `PluginSettingsComponentBase` subclass that loads/saves settings
+  - `settings/plugin-settings-tab.ts` — settings UI tab (declarative `getSettingDefinitionItems()`) for debug mode, mobile emulation, debug namespaces, long/async stack traces, stack-trace limit, task timeouts, the shared-abort button, a "Plugin debug messages" group with an "Open as a view" button and one toggle per installed plugin (kept in step with the namespaces text area both ways), and a "Debug switches" group with one toggle per switch in `@mnaoumov/typescript-lib`'s registry (`getDebugSwitches()`)
+  - `debug-controls/debug-switches-component.ts` — `DebugSwitchesComponent`: persists the debug switches in `debugSwitches` (only values away from their default), applies them on load, names them in a notice, and puts them back to their defaults on unload
+  - `plugin-debug-messages/plugin-debug-messages.ts` — `PluginDebugMessages`: lists the installed plugins and turns one plugin's `<id>` + `<id>:*` debug namespaces on or off, adding `-<id>` / `-<id>:*` only when a wildcard would otherwise keep it on; `isNamespaceEnabled` applies the `debug` library's rule (a matching `-` entry wins)
+  - `plugin-debug-messages/plugin-debug-messages-view.ts` — `PluginDebugMessagesView` (`ItemView`, opened in the right sidebar by `openPluginDebugMessagesView`): a filter, "Only enabled plugins" / "Only checked", "All on" / "All off" on the filtered rows, a "Library messages" row (`*:obsidian-lib:*`), and a checkbox per installed plugin. No event announces a namespace change or a plugin install/enable, so while open it compares `PluginDebugMessages.getStateSnapshot()` every 500 ms and re-renders only on a change
+  - `operations/abort-shared-operation.ts` — `abortSharedOperation`: fires `@mnaoumov/typescript-lib`'s app-wide `ResettableAbortController` with a `SilentError` reason and reports that the abort was signalled
+  - `debug-controls/debug-mode.ts` — `DebugMode`: read/toggle Obsidian's debug mode via `app.debugMode`
+  - `debug-controls/emulate-mobile-mode.ts` — `EmulateMobileMode`: read/toggle desktop mobile-emulation via `app.emulateMobile`
+  - `dev-tools/dev-tools-component.ts` — `DevToolsComponent`: initializes `eruda` DevTools and toggles its entry button. On the mobile app eruda starts at load, so its console holds what was logged before it is opened; on desktop it starts on the first toggle. Unload calls `eruda.destroy()`, which puts the native `console.*` methods back
+  - `long-stack-traces/error-stack-trace-limit-component.ts` — saves and restores `Error.stackTraceLimit` across load/unload
+  - `operations/long-running-tasks-component.ts` — coordinates the two `FileSystemAdapter` patches and reloads them on settings change
+  - `long-stack-traces/multi-weak-map.ts` — `MultiWeakMap`: multi-key map mixing `Map`/`WeakMap` storage per key type
+  - `long-stack-traces/types.ts` — shared generic-function types (`GenericFunctionWithOriginalFn`, etc.)
+  - `dev-tools/toggle-dev-tools-button-command.ts` — `GlobalCommandHandler` to toggle the DevTools button
+  - `plugin-debug-messages/toggle-plugin-debug-messages-command.ts` — `GlobalCommandHandler` `Toggle debug messages for a plugin...`: a fuzzy picker of installed plugins, each labelled `On` / `Off`, that flips the chosen one; the one-step form of a README's `window.DEBUG.enable('<plugin-id>')`
+  - `plugin-debug-messages/open-plugin-debug-messages-view-command.ts` — `GlobalCommandHandler` `Open plugin debug messages`; the ribbon icon and the settings group's "Open as a view" button open the same view
+  - `operations/abort-shared-operation-command.ts` — `GlobalCommandHandler` firing the app-wide shared abort; the hotkey-bindable form of the console's `globalThis[Symbol.for('@mnaoumov/typescript-lib/state')].values.sharedAbortController.value.abort()`
   - `long-stack-traces/long-stack-traces-component.ts` — cross-platform entry; behind `Platform.isDesktop`, lazy-loads the desktop component, `require()`s `node:process` and `node:v8`, injects `process` and `v8.promiseHooks`, and reloads on settings change
   - `long-stack-traces/desktop-long-stack-traces-component.ts` — desktop core: patches `Error` (and child error classes), timers, microtasks, and `Promise` methods to inject long stack-trace frames
   - `long-stack-traces/desktop-async-long-stack-traces-component.ts` — `v8.promiseHooks`-based async stack-trace capture (desktop only); see below for why not `async_hooks`
   - `long-stack-traces/event-listener.ts` — `isEventListenerObject` type guard
   - `long-stack-traces/event-handlers-map.ts` — `MultiWeakMap` mapping `(target, type, handler)` to wrapped handlers
-  - `patches/add-long-stack-traces-patch-component.ts` — `MonkeyAroundComponent` that wraps handler args so each invocation records a stack frame
-  - `patches/event-target-remove-event-listener-patch-component.ts` — patches `removeEventListener` to remove the wrapped handler
-  - `patches/file-system-adapter-queue-patch-component.ts` — patches `FileSystemAdapter.queue` to log timed-out task details
-  - `patches/file-system-adapter-things-happening-patch-component.ts` — patches `thingsHappening` to disable the long-running-task timeout
+  - `long-stack-traces/add-long-stack-traces-patch-component.ts` — `MonkeyAroundComponent` that wraps handler args so each invocation records a stack frame
+  - `long-stack-traces/event-target-remove-event-listener-patch-component.ts` — patches `removeEventListener` to remove the wrapped handler
+  - `operations/file-system-adapter-queue-patch-component.ts` — patches `FileSystemAdapter.queue` to log timed-out task details
+  - `operations/file-system-adapter-things-happening-patch-component.ts` — patches `thingsHappening` to disable the long-running-task timeout
   - `styles/` — `main.scss` (plugin styles) and `scss.d.ts` (SCSS module type declaration)
 - **`scripts/ignore-list-source-map-plugin.ts`** — an esbuild plugin passed to `build()` / `dev()` as a custom plugin, so the bundle carries an ignore-list source map (see below). Its unit tests (`scripts/*.test.ts`) run in the `scripts-unit-tests` vitest project under Node, which `npm test` runs beside `unit-tests`.
 - **`main` field** points to `src/main.ts` (Obsidian plugin source entry; built artifact is `dist/build/main.js`, not published to npm).

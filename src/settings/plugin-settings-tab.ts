@@ -14,12 +14,12 @@ import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
 import { getDebugSwitches } from '@mnaoumov/typescript-lib/debug-switches';
 import { Platform } from 'obsidian';
 
-import type { DebugMode } from './debug-mode.ts';
-import type { EmulateMobileMode } from './emulate-mobile-mode.ts';
-import type { PluginDebugMessages } from './plugin-debug-messages.ts';
+import type { DebugMode } from '../debug-controls/debug-mode.ts';
+import type { EmulateMobileMode } from '../debug-controls/emulate-mobile-mode.ts';
+import type { PluginDebugMessages } from '../plugin-debug-messages/plugin-debug-messages.ts';
 import type { PluginSettings } from './plugin-settings.ts';
 
-import { abortSharedOperation } from './abort-shared-operation.ts';
+import { abortSharedOperation } from '../operations/abort-shared-operation.ts';
 
 interface PluginSettingsTabConstructorParams extends PluginSettingsTabBaseConstructorParams<PluginSettings> {
   readonly debugController: DebugController;

@@ -2,7 +2,7 @@ import type { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/pl
 
 import { GlobalCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/global-command-handler';
 
-import { abortSharedOperation } from '../abort-shared-operation.ts';
+import { abortSharedOperation } from './abort-shared-operation.ts';
 
 export class AbortSharedOperationCommandHandler extends GlobalCommandHandler {
   public constructor(private readonly pluginNoticeComponent: PluginNoticeComponent) {
