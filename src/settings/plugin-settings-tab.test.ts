@@ -25,7 +25,6 @@ import {
 import { SilentError } from '@mnaoumov/typescript-lib/error';
 import { noop } from '@mnaoumov/typescript-lib/function';
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
-import { ensureGenericObject } from '@mnaoumov/typescript-lib/type-guards';
 import { waitForAllAsyncOperations } from '@mnaoumov/typescript-test-toolkit/async-operation-tracking';
 import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import {
@@ -36,7 +35,6 @@ import {
   ToggleComponent
 } from 'obsidian';
 import {
-  beforeAll,
   describe,
   expect,
   it,
@@ -49,15 +47,6 @@ import type { EmulateMobileMode } from '../debug-controls/emulate-mobile-mode.ts
 import { PluginDebugMessages } from '../plugin-debug-messages/plugin-debug-messages.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
-
-// Patch ToggleComponent to have setPlaceholderValue so that
-// PluginSettingsTabBase.bind() can duck-type it.
-beforeAll(() => {
-  const prototype = ensureGenericObject(ToggleComponent.prototype);
-  if (!('setPlaceholderValue' in prototype)) {
-    prototype['setPlaceholderValue'] = undefined;
-  }
-});
 
 /**
  * The mock `ButtonComponent`'s test-only click trigger. `onClick` REGISTERS a handler; only
