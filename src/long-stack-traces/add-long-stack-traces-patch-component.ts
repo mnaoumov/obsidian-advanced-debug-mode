@@ -92,6 +92,7 @@ export class AddLongStackTracesPatchComponent extends MonkeyAroundComponent {
     const argumentsWithWrappedHandler = [...params.originalArguments];
 
     for (const handlerArgumentIndex of handlerArgumentIndices) {
+      // This patch serves many signatures, so the handler's position comes from its configuration rather than a named binding.
       const handler = params.originalArguments[handlerArgumentIndex];
 
       let $function: GenericFunctionWithOriginalFunction;

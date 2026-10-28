@@ -237,7 +237,7 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
   // eslint-disable-next-line typescript-dev-toolkit/params-options-name-match -- Implements the shared AfterPatchFunction callback signature, so it must reuse AfterPatchParams.
   private afterPatchAddEventListener(params: AfterPatchParams): void {
     const eventTarget = params.originalThis as EventTarget;
-    const type = params.originalArguments[0] as string;
+    const [type] = params.originalArguments as Parameters<EventTarget['addEventListener']>;
     const keys: [EventTarget, string, GenericFunctionWithOriginalFunction] = [eventTarget, type, params.fn];
     const previousWrappedHandler = eventHandlersMap.get(keys);
 
