@@ -20,6 +20,14 @@ import type { PluginDebugMessages } from '../plugin-debug-messages/plugin-debug-
 import type { PluginSettings } from './plugin-settings.ts';
 
 import { abortSharedOperation } from '../operations/abort-shared-operation.ts';
+import {
+  formatPluginLoadDelays,
+  parsePluginLoadDelays
+} from '../plugin-load-delays/plugin-load-delays.ts';
+import {
+  PluginLoadDelayMode,
+  PluginLoadDelayPosition
+} from './plugin-settings.ts';
 
 interface PluginSettingsTabConstructorParams extends PluginSettingsTabBaseConstructorParams<PluginSettings> {
   readonly debugController: DebugController;
@@ -265,6 +273,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           });
         }
       }),
+      this.getPluginLoadDelaysGroup(),
       this.getPluginDebugMessagesGroup(),
       this.getDebugSwitchesGroup()
     ];
@@ -356,6 +365,147 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
 
   private getPluginIds(): string {
     return this.pluginDebugMessages.getPluginManifests().map((manifest) => manifest.id).join('\n');
+  }
+
+  private getPluginLoadDelaysGroup(): SettingDefinitionGroup {
+    const isOff = (): boolean => !this.pluginSettingsComponent.settings.shouldDelayPluginLoading;
+    return this.settingGroupEx({
+      heading: 'Plugin load delays',
+      items: [
+        this.settingEx({
+          desc: createFragment((f) => {
+            f.appendText('Slow down the loading of the other plugins, to see how they behave on a slow or busy machine.');
+            f.createEl('br');
+            f.appendText(
+              'Obsidian loads plugins one at a time, so this plugin keeps itself first in the load order while this is on, and names any plugin that still loaded before it.'
+            );
+            f.createEl('br');
+            f.appendText('⚠️ The startup delays need a reload of the app.');
+          }),
+          name: 'Delay plugin loading',
+          render: (setting) => {
+            setting.addToggle((toggle) => {
+              this.bind({
+                onChanged: () => {
+                  // The rows below only read this value through their `disabled` predicate.
+                  this.refreshDomState();
+                },
+                propertyName: 'shouldDelayPluginLoading',
+                valueComponent: toggle
+              });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: createFragment((f) => {
+            f.appendText('How each delay waits.');
+            f.createEl('br');
+            appendCodeBlock(f, 'Async');
+            f.appendText(' - yields, like a slow plugin that awaits: timers and work that earlier plugins started keep running.');
+            f.createEl('br');
+            appendCodeBlock(f, 'Sync');
+            f.appendText(' - blocks the app completely, like a CPU-heavy plugin.');
+          }),
+          disabled: isOff,
+          name: 'Delay mode',
+          render: (setting) => {
+            setting.addDropdown((dropdown) => {
+              dropdown.addOptions({
+                [PluginLoadDelayMode.Async]: 'Async',
+                [PluginLoadDelayMode.Sync]: 'Sync'
+              });
+              this.bind({ propertyName: 'pluginLoadDelayMode', valueComponent: dropdown });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: createFragment((f) => {
+            f.appendText('When each plugin\'s delay runs.');
+            f.createEl('br');
+            appendCodeBlock(f, 'Before onload');
+            f.appendText(' - before the plugin starts loading, as if the plugins before it were slow.');
+            f.createEl('br');
+            appendCodeBlock(f, 'After onload');
+            f.appendText(' - after the plugin has loaded, as if it were slow itself: what it started already runs.');
+          }),
+          disabled: isOff,
+          name: 'Delay position',
+          render: (setting) => {
+            setting.addDropdown((dropdown) => {
+              dropdown.addOptions({
+                /* eslint-disable perfectionist/sort-objects -- Need to keep order. */
+                [PluginLoadDelayPosition.BeforeOnload]: 'Before onload',
+                [PluginLoadDelayPosition.AfterOnload]: 'After onload'
+                /* eslint-enable perfectionist/sort-objects -- Need to keep order. */
+              });
+              this.bind({ propertyName: 'pluginLoadDelayPosition', valueComponent: dropdown });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: 'The delay, in milliseconds, for every plugin not listed below. 0 delays none of them.',
+          disabled: isOff,
+          name: 'Default delay',
+          render: (setting) => {
+            setting.addNumber((numberComponent) => {
+              this.bind({ propertyName: 'defaultPluginLoadDelayInMilliseconds', valueComponent: numberComponent });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: createFragment((f) => {
+            f.appendText('Delays for single plugins, in milliseconds, one per line: ');
+            appendCodeBlock(f, '<plugin-id>: <milliseconds>');
+            f.appendText('.');
+            f.createEl('br');
+            f.appendText('Use 0 to leave a plugin out of the default delay.');
+          }),
+          disabled: isOff,
+          name: 'Delays per plugin',
+          render: (setting) => {
+            setting.addTextArea((textArea) => {
+              this.bind({
+                componentToPluginSettingsValueConverter: parsePluginLoadDelays,
+                pluginSettingsToComponentValueConverter: formatPluginLoadDelays,
+                propertyName: 'pluginLoadDelaysInMilliseconds',
+                valueComponent: textArea
+              });
+              textArea.inputEl.addClass('plugin-load-delays-setting-control');
+            });
+          }
+        }),
+        this.settingEx({
+          desc: 'Up to this many milliseconds, picked at random, added to each plugin\'s delay, so the timing differs from one start to the next.',
+          disabled: isOff,
+          name: 'Random jitter',
+          render: (setting) => {
+            setting.addNumber((numberComponent) => {
+              this.bind({ propertyName: 'pluginLoadDelayJitterInMilliseconds', valueComponent: numberComponent });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: 'At startup, the delay, in milliseconds, before the metadata cache starts its first resolve, after every plugin has loaded.',
+          disabled: isOff,
+          name: 'Metadata cache delay',
+          render: (setting) => {
+            setting.addNumber((numberComponent) => {
+              this.bind({ propertyName: 'metadataCacheInitializeDelayInMilliseconds', valueComponent: numberComponent });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: 'At startup, the delay, in milliseconds, before the workspace layout loads, which is when the layout becomes ready.',
+          disabled: isOff,
+          name: 'Layout delay',
+          render: (setting) => {
+            setting.addNumber((numberComponent) => {
+              this.bind({ propertyName: 'layoutLoadDelayInMilliseconds', valueComponent: numberComponent });
+            });
+          }
+        })
+      ]
+    });
   }
 
   private refreshIfChanged(renderedIds: string, currentIds: string): void {

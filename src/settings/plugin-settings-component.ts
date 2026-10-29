@@ -5,7 +5,10 @@ import type { GenericObject } from '@mnaoumov/typescript-lib/type-guards';
 
 import { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/plugin-settings-component';
 
+import { isValidDelay } from '../plugin-load-delays/plugin-load-delays.ts';
 import { PluginSettings } from './plugin-settings.ts';
+
+const DELAY_VALIDATION_MESSAGE = 'The delay must be a whole number of milliseconds, 0 or greater';
 
 interface PluginSettingsComponentConstructorParams {
   readonly dataHandler: DataHandler;
@@ -35,6 +38,25 @@ export class PluginSettingsComponent extends PluginSettingsComponentBase<PluginS
     this.registerValidator('stackTraceLimit', (value): MaybeReturn<string> => {
       if (!isValidStackTraceLimit(value)) {
         return 'The stack trace limit must be a whole number, 0 or greater';
+      }
+    });
+    for (
+      const propertyName of [
+        'defaultPluginLoadDelayInMilliseconds',
+        'layoutLoadDelayInMilliseconds',
+        'metadataCacheInitializeDelayInMilliseconds',
+        'pluginLoadDelayJitterInMilliseconds'
+      ] as const
+    ) {
+      this.registerValidator(propertyName, (value): MaybeReturn<string> => {
+        if (!isValidDelay(value)) {
+          return DELAY_VALIDATION_MESSAGE;
+        }
+      });
+    }
+    this.registerValidator('pluginLoadDelaysInMilliseconds', (value): MaybeReturn<string> => {
+      if (!Object.values(value).every(isValidDelay)) {
+        return DELAY_VALIDATION_MESSAGE;
       }
     });
   }

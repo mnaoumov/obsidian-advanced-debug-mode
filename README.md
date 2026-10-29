@@ -52,6 +52,7 @@ A copy of the vault ships with every release. You can access it via any of the f
 - **Console messages that keep their real source** — DevTools links each message to the code that logged it, not to this plugin's wrappers. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
 - **A panic button for a runaway operation** — the app-wide shared abort, as a hotkey-bindable command and a settings button instead of a line typed into the console. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
 - **Every setting**, by the key it is stored under. [06 Settings](<./demo-vault/06 Settings.md>)
+- **Slow plugin loading on purpose** — delays before or after each other plugin's `onload`, the metadata cache's first resolve and the layout load, so you can test how a plugin behaves when its neighbors load slowly. [07 Plugin load delays](<./demo-vault/07 Plugin load delays.md>)
 
 ## See also
 

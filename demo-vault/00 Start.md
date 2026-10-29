@@ -16,3 +16,4 @@ Welcome to the [Advanced Debug Mode](https://github.com/mnaoumov/obsidian-advanc
 - [04 Long running tasks](<./04 Long running tasks.md>)
 - [05 More debug tools](<./05 More debug tools.md>)
 - [06 Settings](<./06 Settings.md>)
+- [07 Plugin load delays](<./07 Plugin load delays.md>)

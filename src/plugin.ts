@@ -27,6 +27,7 @@ import {
 } from './plugin-debug-messages/plugin-debug-messages-view.ts';
 import { PluginDebugMessages } from './plugin-debug-messages/plugin-debug-messages.ts';
 import { TogglePluginDebugMessagesCommandHandler } from './plugin-debug-messages/toggle-plugin-debug-messages-command.ts';
+import { PluginLoadDelaysComponent } from './plugin-load-delays/plugin-load-delays-component.ts';
 import { PluginSettingsComponent } from './settings/plugin-settings-component.ts';
 import { PluginSettingsTab } from './settings/plugin-settings-tab.ts';
 
@@ -41,6 +42,17 @@ export class Plugin extends PluginBase {
     this.pluginSettingsComponent = pluginSettingsComponent;
     // A child is loaded as it is added, so the settings' async load tail runs in parallel with the components added below instead of before them. Those components read the settings in their synchronous `onload` and only re-read them on a later `loadSettings`/`saveSettings` event, never on the initial load, so without this wait they wire themselves up from the defaults for the whole session — a stored `shouldIncludeAsyncLongStackTraces: true` would be read as its default `false`.
     await pluginSettingsComponent.loadWithPromises();
+
+    // Added before anything else that can take time: Obsidian awaits this `onload` before loading the next plugin, so
+    // the patch is in place for every plugin after this one.
+    this.addChild(
+      new PluginLoadDelaysComponent({
+        app: this.app,
+        pluginId: this.manifest.id,
+        pluginNoticeComponent: this.pluginNoticeComponent,
+        pluginSettingsComponent
+      })
+    );
 
     this.addChild(
       new DebugSwitchesComponent({

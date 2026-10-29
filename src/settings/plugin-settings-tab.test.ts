@@ -389,6 +389,57 @@ describe('PluginSettingsTab', () => {
     expect(refreshDomStateSpy).toHaveBeenCalled();
   });
 
+  describe('Plugin load delays group', () => {
+    it('should disable every row but the switch while the delays are off', () => {
+      const { pluginSettingsComponent, tab } = createPluginSettingsTab();
+      const group = getGroup(tab, 'Plugin load delays');
+      function isDisabled(index: number): boolean {
+        return castTo<DisabledPredicateRow>(group.items[index]).disabled();
+      }
+
+      for (let index = 1; index < group.items.length; index++) {
+        expect(isDisabled(index)).toBe(true);
+      }
+
+      vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+        ...pluginSettingsComponent.defaultSettings,
+        shouldDelayPluginLoading: true
+      });
+      for (let index = 1; index < group.items.length; index++) {
+        expect(isDisabled(index)).toBe(false);
+      }
+    });
+
+    it('should re-evaluate the rows in place when the switch changes', async () => {
+      const { pluginSettingsComponent, tab } = createPluginSettingsTab();
+      const toggles = renderGroupToggles(tab, getGroup(tab, 'Plugin load delays'));
+      vi.spyOn(pluginSettingsComponent, 'setProperty').mockResolvedValue('');
+      const refreshDomStateSpy = vi.fn();
+      tab.refreshDomState = refreshDomStateSpy;
+
+      toggles.get('Delay plugin loading')?.onClick();
+      await waitForAllAsyncOperations();
+
+      expect(refreshDomStateSpy).toHaveBeenCalled();
+    });
+
+    it('should store the per-plugin delays typed as lines', async () => {
+      const { pluginSettingsComponent, tab } = createPluginSettingsTab();
+      const setPropertySpy = vi.spyOn(pluginSettingsComponent, 'setProperty').mockResolvedValue('');
+      renderRows(tab);
+
+      const textArea = tab.containerEl.querySelector<HTMLTextAreaElement>('.plugin-load-delays-setting-control');
+      expect(textArea).not.toBeNull();
+      if (textArea) {
+        textArea.value = 'plugin-b: 7';
+        textArea.dispatchEvent(new Event('input'));
+      }
+      await waitForAllAsyncOperations();
+
+      expect(setPropertySpy).toHaveBeenCalledWith('pluginLoadDelaysInMilliseconds', { 'plugin-b': 7 });
+    });
+  });
+
   it('should call debugMode.toggleDebugMode when debug toggle changes', () => {
     const debugModeMock = {
       isDebugMode: vi.fn().mockReturnValue(false),

@@ -142,4 +142,32 @@ describe('PluginSettingsComponent', () => {
     const FRACTIONAL_LIMIT = 12.5;
     expect(await loadStackTraceLimit(FRACTIONAL_LIMIT)).toBe(new PluginSettings().stackTraceLimit);
   });
+
+  it('should reject a negative or fractional delay and accept a whole one', async () => {
+    const component = new PluginSettingsComponent({
+      dataHandler: {
+        loadData: vi.fn().mockResolvedValue(null),
+        saveData: vi.fn().mockResolvedValue(undefined)
+      },
+      pluginEventSource: createListeningPluginEventSource()
+    });
+    await component.loadWithPromises();
+    const DELAY_MESSAGE = 'The delay must be a whole number of milliseconds, 0 or greater';
+    const FRACTIONAL_DELAY = 1.5;
+    const WHOLE_DELAY = 500;
+    for (
+      const propertyName of [
+        'defaultPluginLoadDelayInMilliseconds',
+        'layoutLoadDelayInMilliseconds',
+        'metadataCacheInitializeDelayInMilliseconds',
+        'pluginLoadDelayJitterInMilliseconds'
+      ] as const
+    ) {
+      expect(await component.setProperty(propertyName, -1)).toBe(DELAY_MESSAGE);
+      expect(await component.setProperty(propertyName, FRACTIONAL_DELAY)).toBe(DELAY_MESSAGE);
+      expect(await component.setProperty(propertyName, WHOLE_DELAY)).toBe('');
+    }
+    expect(await component.setProperty('pluginLoadDelaysInMilliseconds', { 'plugin-a': -1 })).toBe(DELAY_MESSAGE);
+    expect(await component.setProperty('pluginLoadDelaysInMilliseconds', { 'plugin-a': WHOLE_DELAY })).toBe('');
+  });
 });
