@@ -25,6 +25,27 @@ Open **Settings -> Community plugins -> `Advanced Debug Mode`** to configure the
 - `debugSwitches`
   - the debug switches described in [04 Long running tasks](<./04 Long running tasks.md>) that are not at their default, keyed by switch id, such as `{ "typescript-lib:terminate-on-timeout": false }`. The **Debug switches** section lists every switch registered by any library or plugin as a toggle; turning one back to its default removes its entry. A notice names every switch away from its default when the plugin loads, and disabling the plugin puts them all back to their defaults.
 
+## Plugin load delays
+
+See [07 Plugin load delays](<./07 Plugin load delays.md>). All delays are in milliseconds, and none runs while the switch is off.
+
+- `shouldDelayPluginLoading`
+  - the switch (off by default). While it is on, the plugin keeps itself first in the load order.
+- `defaultPluginLoadDelayInMilliseconds`
+  - the delay for every plugin not listed in `pluginLoadDelaysInMilliseconds` (0 by default).
+- `pluginLoadDelaysInMilliseconds`
+  - a delay per plugin id, such as `{ "my-plugin": 2000, "other-plugin": 0 }`. A `0` leaves that plugin out of the default delay.
+- `pluginLoadDelayJitterInMilliseconds`
+  - up to this much, picked at random, added to each plugin's delay.
+- `pluginLoadDelayMode`
+  - `Async` yields while waiting, `Sync` blocks the app.
+- `pluginLoadDelayPosition`
+  - `BeforeOnload` or `AfterOnload`: whether a plugin's delay runs before it loads or after.
+- `metadataCacheInitializeDelayInMilliseconds`
+  - at startup, the delay before the metadata cache starts its first resolve.
+- `layoutLoadDelayInMilliseconds`
+  - at startup, the delay before the layout loads and becomes ready.
+
 Change any of these and reproduce the matching scenario to watch the behavior update.
 
 ## Try the trace settings against the Run button

@@ -7,6 +7,8 @@ const PLUGIN_ID = 'advanced-debug-mode';
 
 interface DemoSettingsPatch {
   debugSwitches?: Record<string, boolean>;
+  defaultPluginLoadDelayInMilliseconds?: number;
+  shouldDelayPluginLoading?: boolean;
   shouldIncludeAsyncLongStackTraces?: boolean;
   shouldIncludeInternalStackFrames?: boolean;
   shouldIncludeLongStackTraces?: boolean;
