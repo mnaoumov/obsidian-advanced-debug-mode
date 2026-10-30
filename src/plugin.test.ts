@@ -5,6 +5,7 @@ import type {
   PluginManifest
 } from 'obsidian';
 
+import { OpenBugReportCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/open-bug-report-command-handler';
 import { OpenDemoVaultCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/open-demo-vault-command-handler';
 import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
 import { PluginSettingsTabComponent } from '@mnaoumov/obsidian-lib/components/plugin-settings-tab-component';
@@ -212,7 +213,8 @@ describe('Plugin', () => {
     expect(DevToolsComponent).toHaveBeenCalledOnce();
     expect(registerCommandHandlers).toHaveBeenCalledOnce();
     // The handlers are built lazily by a factory, so build them here.
-    registerCommandHandlers.mock.calls[0]?.[0]();
+    const commandHandlers = registerCommandHandlers.mock.calls[0]?.[0]();
+    expect(commandHandlers).toEqual(expect.arrayContaining([expect.any(OpenBugReportCommandHandler)]));
     expect(OpenDemoVaultCommandHandler).toHaveBeenCalledOnce();
     // The abort command is the only hotkey-bindable way to reach the shared abort controller, so its
     // registration is the thing that makes the feature exist at all.
