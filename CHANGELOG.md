@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 1.15.0
+
+- docs(readme): point bug reports at the Report a bug command
+- feat: add a Report a bug command
+- docs: add issue-filing instructions for AI agents
+- chore(github): give the bug form the field ids bug-report links prefill
+- build(deps): override re2js to ^2.9.1 for GHSA-gg6h-894w-4m9c
+- feat: add plugin load delays
+- build(deps): bump typescript-dev-toolkit to ^5.2.0
+- build(deps): bump @mnaoumov/typescript-dev-toolkit to ^5.1.0
+- refactor: name the patched addEventListener argument
+- test: remove obsolete settings toggle prototype patch
+- refactor: adopt shared source map ignore lists
+- chore: adopt shared keyword identifier checks
+- refactor: adopt readonly interface members
+- chore(deps): update vulnerable browser tooling dependencies
+- refactor: group plugin source files by subject
+- docs(readme): combine related resources and plugin comparisons
+- fix: stop DevTools naming this plugin as the source of other code's messages
+- revert: restore obsidian-lib 6.0 and the setPlaceholderValue test patch
+- test: drop the setPlaceholderValue strict-proxy patch
+- docs: add a Similar plugins section to the README
+
 ## 1.14.2
 
 - fix: rewrite a negative stored stackTraceLimit to the default on load
