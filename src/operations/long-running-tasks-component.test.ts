@@ -131,7 +131,7 @@ describe('LongRunningTasksComponent', () => {
     component.unload();
   });
 
-  it('should handle queued function errors', async () => {
+  it('should rethrow queued function errors without logging them', async () => {
     const component = new LongRunningTasksComponent({
       fileSystemAdapter,
       pluginSettingsComponent
@@ -144,7 +144,9 @@ describe('LongRunningTasksComponent', () => {
     const error = new Error('test error');
     await expect(fileSystemAdapter.queue(() => {
       throw error;
-    })).rejects.toThrow('test error');
+    })).rejects.toBe(error);
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
 
     consoleErrorSpy.mockRestore();
     component.unload();
