@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.15.1
+
+- fix: re #5
+
 ## 1.15.0
 
 - docs(readme): point bug reports at the Report a bug command
