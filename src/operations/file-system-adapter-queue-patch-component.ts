@@ -50,13 +50,6 @@ export class FileSystemAdapterQueuePatchComponent extends MonkeyAroundComponent 
     async function run(): Promise<T> {
       try {
         return await $function();
-      } catch (error) {
-        console.error('Failed function', {
-          // eslint-disable-next-line unicorn/name-replacements -- The rule's replacement `function` is a reserved word and cannot be a binding name.
-          fn: $function
-        });
-        console.error(error);
-        throw error;
       } finally {
         isTimedOut = false;
       }
