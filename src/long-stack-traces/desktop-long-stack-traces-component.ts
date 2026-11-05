@@ -65,8 +65,6 @@ interface PatchParams<$Object extends object> {
   readonly stackFrameTitle: string;
 }
 
-type WindowEx = typeof window & Window;
-
 type WindowWithErrorConstructors = Record<string, GenericConstructor> & typeof window;
 
 export class LongStackTracesDesktopComponent extends ComponentEx {
@@ -143,6 +141,8 @@ export class LongStackTracesDesktopComponent extends ComponentEx {
     if (!this.isEnabled()) {
       return;
     }
+
+    type WindowEx = typeof window & Window;
 
     this.internalStackFrameLocations = [
       `plugin:${this.pluginId}`,

@@ -124,8 +124,8 @@ function createManifest(id: string, name: string): PluginManifest {
   return { author: 'test', description: '', id, minAppVersion: '0.0.0', name, version: '1.0.0' };
 }
 
-function getNoticeText(showNotice: Context['showNotice'], index = 0): string {
-  const message = showNotice.mock.calls[index]?.[0];
+function getNoticeText(showNotice: Context['showNotice']): string {
+  const message = showNotice.mock.calls[0]?.[0];
   return typeof message === 'string' ? message : message?.textContent ?? '';
 }
 

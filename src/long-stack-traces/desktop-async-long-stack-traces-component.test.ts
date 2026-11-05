@@ -2,6 +2,7 @@ import type { DataHandler } from '@mnaoumov/obsidian-lib/data-handler';
 import type { PluginEventSource } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
 import type { HookCallbacks } from 'node:v8';
 
+import { noopAsync } from '@mnaoumov/typescript-lib/function';
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
@@ -90,14 +91,12 @@ function createDataHandler(): DataHandler {
   };
 }
 /**
- * The tests key on promise identity, so every call must return a new promise; `noopAsync()` returns one shared promise.
+ * The tests key on promise identity, so every call must return a new promise. `noopAsync()` returns one shared promise, so it is awaited inside an async function, which returns a new promise on every call.
  *
  * @returns A new resolved promise.
  */
 async function createDistinctPromise(): Promise<void> {
-  await new Promise<void>((resolve) => {
-    resolve();
-  });
+  await noopAsync();
 }
 
 /**

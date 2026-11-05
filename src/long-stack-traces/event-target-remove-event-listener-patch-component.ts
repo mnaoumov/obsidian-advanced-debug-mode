@@ -24,11 +24,7 @@ export class EventTargetRemoveEventListenerPatchComponent extends MonkeyAroundCo
 
         const wrappedHandler = eventHandlersMap.get([originalThis, type, handler as GenericFunctionWithOriginalFunction]);
 
-        if (wrappedHandler) {
-          originalMethodBound(type, wrappedHandler, options);
-        } else {
-          originalMethodBound(type, callback, options);
-        }
+        originalMethodBound(type, wrappedHandler ?? callback, options);
       }
     });
   }
