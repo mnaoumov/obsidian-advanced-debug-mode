@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 1.15.2
+
+This release has 1 fix and 2 documentation changes. 3 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Fixed
+
+- stop logging failures of queued file-system adapter functions
+
+### Documentation
+
+- make issue attachments optional and strongly encouraged
+- link to the Obsidian resources page
+
 ## 1.15.1
 
 - fix: re #5
