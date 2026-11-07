@@ -1,6 +1,8 @@
 import type { DataHandler } from '@mnaoumov/obsidian-lib/data-handler';
 import type { PluginEventSource } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
+import type { MockInstance } from 'vitest';
 
+import { getDebugController } from '@mnaoumov/typescript-lib/debug';
 import {
   noop,
   noopAsync
@@ -18,7 +20,13 @@ import {
 } from 'vitest';
 
 import { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
+import { FailedQueuedOperationLogLevel } from '../settings/plugin-settings.ts';
+import { FAILED_QUEUED_OPERATIONS_DEBUG_NAMESPACE } from './file-system-adapter-queue-patch-component.ts';
 import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
+
+const CONSOLE_LOGGER_METHODS = ['debug', 'error', 'warn'] as const;
+
+type ConsoleLoggerMethod = typeof CONSOLE_LOGGER_METHODS[number];
 
 function createDataHandler(): DataHandler {
   return {
@@ -40,6 +48,14 @@ function createMockFileSystemAdapter(): FileSystemAdapter {
 
 function createMockPluginEventSource(): PluginEventSource {
   return strictProxy<PluginEventSource>({});
+}
+
+function spyOnConsoleLoggers(): Record<ConsoleLoggerMethod, MockInstance> {
+  return {
+    debug: vi.spyOn(console, 'debug').mockImplementation(noop),
+    error: vi.spyOn(console, 'error').mockImplementation(noop),
+    warn: vi.spyOn(console, 'warn').mockImplementation(noop)
+  };
 }
 
 describe('LongRunningTasksComponent', () => {
@@ -131,7 +147,7 @@ describe('LongRunningTasksComponent', () => {
     component.unload();
   });
 
-  it('should rethrow queued function errors without logging them', async () => {
+  it('should rethrow queued function errors without logging them by default', async () => {
     const component = new LongRunningTasksComponent({
       fileSystemAdapter,
       pluginSettingsComponent
@@ -139,16 +155,156 @@ describe('LongRunningTasksComponent', () => {
 
     component.load();
 
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(noop);
+    const spies = spyOnConsoleLoggers();
 
     const error = new Error('test error');
     await expect(fileSystemAdapter.queue(() => {
       throw error;
     })).rejects.toBe(error);
 
+    expect(spies.debug).not.toHaveBeenCalled();
+    expect(spies.error).not.toHaveBeenCalled();
+    expect(spies.warn).not.toHaveBeenCalled();
+
+    component.unload();
+  });
+
+  it.each(
+    [
+      { logLevel: FailedQueuedOperationLogLevel.Debug, method: 'debug' },
+      { logLevel: FailedQueuedOperationLogLevel.Warning, method: 'warn' },
+      { logLevel: FailedQueuedOperationLogLevel.Error, method: 'error' }
+    ] as const
+  )('should log queued function errors with console.$method at level $logLevel, then rethrow', async ({ logLevel, method }) => {
+    const debugController = getDebugController();
+    const originalNamespaces = debugController.get();
+    debugController.set([FAILED_QUEUED_OPERATIONS_DEBUG_NAMESPACE]);
+
+    vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+      ...pluginSettingsComponent.defaultSettings,
+      failedQueuedOperationLogLevel: logLevel
+    });
+
+    const component = new LongRunningTasksComponent({
+      fileSystemAdapter,
+      pluginSettingsComponent
+    });
+
+    component.load();
+
+    const spies = spyOnConsoleLoggers();
+
+    const error = new Error('test error');
+    function throwError(): never {
+      throw error;
+    }
+    await expect(fileSystemAdapter.queue(throwError)).rejects.toBe(error);
+
+    expect(spies[method]).toHaveBeenCalledOnce();
+    // The `debug` library prefixes the message with a timestamp and the namespace, and may append a stack trace.
+    expect(spies[method].mock.calls[0]?.slice(0, 2)).toEqual([
+      expect.stringContaining('Failed queued file-system operation'),
+      {
+        error,
+        // eslint-disable-next-line unicorn/name-replacements -- The logged property keeps the name the removed code used.
+        fn: throwError
+      }
+    ]);
+    for (const otherMethod of CONSOLE_LOGGER_METHODS) {
+      if (otherMethod !== method) {
+        expect(spies[otherMethod]).not.toHaveBeenCalled();
+      }
+    }
+
+    debugController.set(originalNamespaces);
+    component.unload();
+  });
+
+  it('should not log queued function errors at level Debug while the debug namespace is off', async () => {
+    vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+      ...pluginSettingsComponent.defaultSettings,
+      failedQueuedOperationLogLevel: FailedQueuedOperationLogLevel.Debug
+    });
+
+    const debugController = getDebugController();
+    const originalNamespaces = debugController.get();
+    debugController.set([`-${FAILED_QUEUED_OPERATIONS_DEBUG_NAMESPACE}`]);
+
+    const component = new LongRunningTasksComponent({
+      fileSystemAdapter,
+      pluginSettingsComponent
+    });
+
+    component.load();
+
+    const spies = spyOnConsoleLoggers();
+
+    const error = new Error('test error');
+    await expect(fileSystemAdapter.queue(() => {
+      throw error;
+    })).rejects.toBe(error);
+
+    for (const method of CONSOLE_LOGGER_METHODS) {
+      expect(spies[method]).not.toHaveBeenCalled();
+    }
+
+    debugController.set(originalNamespaces);
+    component.unload();
+  });
+
+  it('should not log queued function errors for an unknown stored level', async () => {
+    vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+      ...pluginSettingsComponent.defaultSettings,
+      failedQueuedOperationLogLevel: castTo<FailedQueuedOperationLogLevel>('Verbose')
+    });
+
+    const component = new LongRunningTasksComponent({
+      fileSystemAdapter,
+      pluginSettingsComponent
+    });
+
+    component.load();
+
+    const spies = spyOnConsoleLoggers();
+
+    const error = new Error('test error');
+    await expect(fileSystemAdapter.queue(() => {
+      throw error;
+    })).rejects.toBe(error);
+
+    for (const method of CONSOLE_LOGGER_METHODS) {
+      expect(spies[method]).not.toHaveBeenCalled();
+    }
+
+    component.unload();
+  });
+
+  it('should patch queue but not log timeout details when only the failure log is on', async () => {
+    vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+      ...pluginSettingsComponent.defaultSettings,
+      failedQueuedOperationLogLevel: FailedQueuedOperationLogLevel.Error,
+      shouldIncludeTimedOutTasksDetails: false
+    });
+
+    const component = new LongRunningTasksComponent({
+      fileSystemAdapter,
+      pluginSettingsComponent
+    });
+
+    const originalQueue = fileSystemAdapter.queue;
+    component.load();
+
+    expect(fileSystemAdapter.queue).not.toBe(originalQueue);
+
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(noop);
+
+    const promise = fileSystemAdapter.queue(() => new Promise(noop));
+    await sleep(0);
+    fileSystemAdapter.killLastAction?.(new Error('timeout'));
+
+    await expect(promise).rejects.toThrow('timeout');
     expect(consoleErrorSpy).not.toHaveBeenCalled();
 
-    consoleErrorSpy.mockRestore();
     component.unload();
   });
 

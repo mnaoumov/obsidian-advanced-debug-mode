@@ -68,7 +68,7 @@ Filing from the CLI or the API (`gh issue create --body`, or an AI agent filing 
   - `long-stack-traces/event-handlers-map.ts` — `MultiWeakMap` mapping `(target, type, handler)` to wrapped handlers
   - `long-stack-traces/add-long-stack-traces-patch-component.ts` — `MonkeyAroundComponent` that wraps handler args so each invocation records a stack frame
   - `long-stack-traces/event-target-remove-event-listener-patch-component.ts` — patches `removeEventListener` to remove the wrapped handler
-  - `operations/file-system-adapter-queue-patch-component.ts` — patches `FileSystemAdapter.queue` to log timed-out task details
+  - `operations/file-system-adapter-queue-patch-component.ts` — patches `FileSystemAdapter.queue` (while either setting below is on) to log timed-out task details, and to log a queued operation's error at the `failedQueuedOperationLogLevel` (`Off` by default) and then throw it again. `Debug` goes through the `advanced-debug-mode:failed-queued-operations` debug namespace, not a bare `console.debug`, which the shared `no-console` config forbids and whose disable comment is restricted
   - `operations/file-system-adapter-things-happening-patch-component.ts` — patches `thingsHappening` to disable the long-running-task timeout
   - `styles/` — `main.scss` (plugin styles) and `scss.d.ts` (`SCSS` module type declaration)
 - **`scripts/ignore-list-sources.ts`** — plugin-specific native wrapper patterns passed to the toolkit's `ignoreListSources` option by `build.ts` and `dev.ts`; shared debug and monkey-around patterns come from the toolkit.

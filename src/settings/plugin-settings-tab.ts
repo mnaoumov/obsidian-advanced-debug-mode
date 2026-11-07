@@ -25,6 +25,7 @@ import {
   parsePluginLoadDelays
 } from '../plugin-load-delays/plugin-load-delays.ts';
 import {
+  FailedQueuedOperationLogLevel,
   PluginLoadDelayMode,
   PluginLoadDelayPosition
 } from './plugin-settings.ts';
@@ -246,6 +247,36 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
               propertyName: 'shouldIncludeTimedOutTasksDetails',
               valueComponent: toggle
             });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: createFragment((f) => {
+          f.appendText('Log an error thrown by a queued file-system adapter operation ');
+
+          f.createEl('strong', { text: '(Desktop only)' });
+          f.appendText('.');
+          f.createEl('br');
+          f.appendText('The error still reaches the code that queued it, which usually handles it, so it is not logged by default.');
+          f.createEl('br');
+          appendCodeBlock(f, 'Debug');
+          f.appendText(' logs under the ');
+          appendCodeBlock(f, 'advanced-debug-mode:failed-queued-operations');
+          f.appendText(' debug namespace, so they show only with this plugin\'s debug messages on and the console at the Verbose level.');
+        }),
+        disabled: () => Platform.isMobile,
+        name: 'Desktop: Log failed queued file-system operations',
+        render: (setting) => {
+          setting.addDropdown((dropdown) => {
+            dropdown.addOptions({
+              /* eslint-disable perfectionist/sort-objects -- Need to keep order. */
+              [FailedQueuedOperationLogLevel.Off]: 'Off',
+              [FailedQueuedOperationLogLevel.Debug]: 'Debug',
+              [FailedQueuedOperationLogLevel.Warning]: 'Warning',
+              [FailedQueuedOperationLogLevel.Error]: 'Error'
+              /* eslint-enable perfectionist/sort-objects -- Need to keep order. */
+            });
+            this.bind({ propertyName: 'failedQueuedOperationLogLevel', valueComponent: dropdown });
           });
         }
       }),
