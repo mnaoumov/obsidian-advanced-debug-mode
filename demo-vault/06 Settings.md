@@ -19,6 +19,8 @@ Open **Settings -> Community plugins -> `Advanced Debug Mode`** to configure the
   - keep Obsidian's safety timeouts on for normal use, or turn it off before a debugging session so tasks are not aborted while you sit on a breakpoint. See [04 Long running tasks](<./04 Long running tasks.md>).
 - `shouldIncludeTimedOutTasksDetails`
   - when a task does time out, print extra diagnostic details about it to the console.
+- `failedQueuedOperationLogLevel`
+  - `Off` (the default), `Debug`, `Warning` or `Error`: the console method that logs an error thrown by a queued file-system adapter operation, with the operation and the error. The error still reaches the code that queued it, which usually handles it, so it is not logged by default. `Debug` logs under the `advanced-debug-mode:failed-queued-operations` debug namespace, so it shows only with this plugin's debug messages on and the console at the Verbose level.
 
 ## Debug switches
 
@@ -84,7 +86,7 @@ await require('/demoSetup.ts').changeSettings(app, { stackTraceLimit: 20 });
 ---
 caption: Restore every default on this page
 ---
-await require('/demoSetup.ts').changeSettings(app, { shouldIncludeAsyncLongStackTraces: false, shouldIncludeInternalStackFrames: false, shouldIncludeLongStackTraces: true, shouldIncludeTimedOutTasksDetails: true, shouldTimeoutLongRunningTasks: true, stackTraceLimit: 100, debugSwitches: {} });
+await require('/demoSetup.ts').changeSettings(app, { failedQueuedOperationLogLevel: 'Off', shouldIncludeAsyncLongStackTraces: false, shouldIncludeInternalStackFrames: false, shouldIncludeLongStackTraces: true, shouldIncludeTimedOutTasksDetails: true, shouldTimeoutLongRunningTasks: true, stackTraceLimit: 100, debugSwitches: {} });
 ```
 
 Manual equivalent for all of them: change the matching control in **Settings -> Community plugins -> `Advanced Debug Mode`**.

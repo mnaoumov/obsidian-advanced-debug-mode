@@ -1,3 +1,11 @@
+// The console method that logs an error thrown by a queued file-system adapter operation, if any.
+export enum FailedQueuedOperationLogLevel {
+  Debug = 'Debug',
+  Error = 'Error',
+  Off = 'Off',
+  Warning = 'Warning'
+}
+
 export enum PluginLoadDelayMode {
   // `await sleep(ms)`: the startup waits, but timers and work that earlier plugins started keep running.
   Async = 'Async',
@@ -14,6 +22,7 @@ export class PluginSettings {
   // The `@mnaoumov/typescript-lib` debug switches that are not at their default, keyed by switch id.
   public debugSwitches: Record<string, boolean> = {};
   public defaultPluginLoadDelayInMilliseconds = 0;
+  public failedQueuedOperationLogLevel = FailedQueuedOperationLogLevel.Off;
   public layoutLoadDelayInMilliseconds = 0;
   public metadataCacheInitializeDelayInMilliseconds = 0;
   public pluginLoadDelayJitterInMilliseconds = 0;

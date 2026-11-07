@@ -4,11 +4,15 @@ import {
   it
 } from 'vitest';
 
-import { PluginSettings } from './plugin-settings.ts';
+import {
+  FailedQueuedOperationLogLevel,
+  PluginSettings
+} from './plugin-settings.ts';
 
 describe('PluginSettings', () => {
   it('should have correct default values', () => {
     const settings = new PluginSettings();
+    expect(settings.failedQueuedOperationLogLevel).toBe(FailedQueuedOperationLogLevel.Off);
     expect(settings.shouldIncludeAsyncLongStackTraces).toBe(false);
     expect(settings.shouldIncludeInternalStackFrames).toBe(false);
     expect(settings.shouldIncludeLongStackTraces).toBe(true);
