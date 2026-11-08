@@ -3,6 +3,7 @@ import type { Promisable } from 'type-fest';
 
 import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 import { getDebugger } from '@mnaoumov/typescript-lib/debug';
+import { noop } from '@mnaoumov/typescript-lib/function';
 
 import type { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
 import type { RejectFunction } from './long-running-tasks-component.ts';
@@ -63,10 +64,9 @@ export class FileSystemAdapterQueuePatchComponent extends MonkeyAroundComponent 
         return await $function();
       } catch (error) {
         // The error still rejects the caller's promise; logging it is opt-in, because callers usually handle it.
-        getFailedQueuedOperationLogger(failedQueuedOperationLogLevel)?.('Failed queued file-system operation', {
+        getFailedQueuedOperationLogger(failedQueuedOperationLogLevel)('Failed queued file-system operation', {
           error,
-          // eslint-disable-next-line unicorn/name-replacements -- The rule's replacement `function` is a reserved word and cannot be a binding name.
-          fn: $function
+          function: $function
         });
         throw error;
       } finally {
@@ -82,8 +82,7 @@ export class FileSystemAdapterQueuePatchComponent extends MonkeyAroundComponent 
 
         if (shouldIncludeTimedOutTasksDetails) {
           console.error('Timed out function', {
-            // eslint-disable-next-line unicorn/name-replacements -- The rule's replacement `function` is a reserved word and cannot be a binding name.
-            fn: $function
+            function: $function
           });
         }
         reject(error);
@@ -98,20 +97,24 @@ export class FileSystemAdapterQueuePatchComponent extends MonkeyAroundComponent 
   }
 }
 
-function getFailedQueuedOperationLogger(logLevel: FailedQueuedOperationLogLevel): ConsoleLogger | null {
+function getFailedQueuedOperationLogger(logLevel: FailedQueuedOperationLogLevel): ConsoleLogger {
   switch (logLevel) {
     case FailedQueuedOperationLogLevel.Debug: {
       return getDebugger(FAILED_QUEUED_OPERATIONS_DEBUG_NAMESPACE);
     }
     case FailedQueuedOperationLogLevel.Error: {
-      return console.error;
+      return (message, details): void => {
+        console.error(message, details);
+      };
     }
     case FailedQueuedOperationLogLevel.Warning: {
-      return console.warn;
+      return (message, details): void => {
+        console.warn(message, details);
+      };
     }
     // `Off`, or a value from a hand-edited `data.json`.
     default: {
-      return null;
+      return noop;
     }
   }
 }

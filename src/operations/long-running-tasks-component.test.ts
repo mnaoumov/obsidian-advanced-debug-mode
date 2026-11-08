@@ -206,8 +206,7 @@ describe('LongRunningTasksComponent', () => {
       expect.stringContaining('Failed queued file-system operation'),
       {
         error,
-        // eslint-disable-next-line unicorn/name-replacements -- The logged property keeps the name the removed code used.
-        fn: throwError
+        function: throwError
       }
     ]);
     for (const otherMethod of CONSOLE_LOGGER_METHODS) {
