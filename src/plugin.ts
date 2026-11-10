@@ -107,7 +107,7 @@ export class Plugin extends PluginBase {
 
     const memoryMonitorComponent = this.addChild(
       new MemoryMonitorComponent({
-        addStatusBarItem: (): HTMLElement => this.addStatusBarItem(),
+        addStatusBarItem: this.addStatusBarItem.bind(this),
         app: this.app,
         pluginNoticeComponent: this.pluginNoticeComponent,
         pluginSettingsComponent

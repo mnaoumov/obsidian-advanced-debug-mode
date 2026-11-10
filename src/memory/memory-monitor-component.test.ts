@@ -39,6 +39,7 @@ vi.mock('./memory-history-modal.ts', () => ({
 interface CapturedParams {
   readonly defaultDiagnosticsFolder: string;
   readonly getResidentSetSizeInBytes: () => number;
+  readonly now: () => number;
   readonly onStatusBarClick: () => void;
 }
 
@@ -107,6 +108,7 @@ describe('MemoryMonitorComponent', () => {
     const params = MockDesktopMemoryMonitorComponent.mock.calls[0]?.[0] as CapturedParams;
     expect(params.defaultDiagnosticsFolder).toBe(join(tmpdir(), 'obsidian-advanced-debug-mode', 'My_ Vault'));
     expect(params.getResidentSetSizeInBytes()).toBeGreaterThan(0);
+    expect(params.now()).toBeGreaterThan(0);
     expect(component.getDesktopComponent()).not.toBeNull();
 
     params.onStatusBarClick();

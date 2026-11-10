@@ -37,7 +37,7 @@ interface DesktopMemoryMonitorComponentConstructorParams {
   readonly defaultDiagnosticsFolder: string;
   readonly fs: NodeFs;
   readonly getResidentSetSizeInBytes: () => number;
-  readonly now?: () => number;
+  readonly now: () => number;
   readonly onStatusBarClick: () => void;
   readonly path: NodePath;
   readonly pluginNoticeComponent: PluginNoticeComponent;
@@ -81,7 +81,6 @@ export class DesktopMemoryMonitorComponent extends MonkeyAroundComponent {
   private readonly pluginNoticeComponent: PluginNoticeComponent;
   private readonly pluginSettingsComponent: PluginSettingsComponent;
   private readonly sessionState: MemoryMonitorSessionState;
-  private statusBarItem: HTMLElement | null = null;
   private readonly v8: NodeV8;
 
   public constructor(params: DesktopMemoryMonitorComponentConstructorParams) {
@@ -91,7 +90,7 @@ export class DesktopMemoryMonitorComponent extends MonkeyAroundComponent {
     this.defaultDiagnosticsFolder = params.defaultDiagnosticsFolder;
     this.fs = params.fs;
     this.getResidentSetSizeInBytes = params.getResidentSetSizeInBytes;
-    this.now = params.now ?? Date.now;
+    this.now = params.now;
     this.onStatusBarClick = params.onStatusBarClick;
     this.path = params.path;
     this.pluginNoticeComponent = params.pluginNoticeComponent;
@@ -142,13 +141,11 @@ export class DesktopMemoryMonitorComponent extends MonkeyAroundComponent {
     this.registerDomEvent(statusBarItem, 'click', this.onStatusBarClick);
     this.register(() => {
       statusBarItem.remove();
-      this.statusBarItem = null;
     });
-    this.statusBarItem = statusBarItem;
 
-    this.sample('start');
+    this.sample(statusBarItem, 'start');
     this.registerInterval(window.setInterval(() => {
-      this.sample();
+      this.sample(statusBarItem);
     }, settings.memorySampleIntervalInSeconds * MILLISECONDS_IN_SECOND));
   }
 
@@ -279,7 +276,7 @@ export class DesktopMemoryMonitorComponent extends MonkeyAroundComponent {
     this.lastCommand = { id: command.id, startedAt: this.now() };
   }
 
-  private sample($event?: string): MemorySample {
+  private sample(statusBarItem: HTMLElement, $event?: string): MemorySample {
     const sample = this.readSample();
     this.history.add(sample);
 
@@ -288,7 +285,7 @@ export class DesktopMemoryMonitorComponent extends MonkeyAroundComponent {
       criticalThresholdInPercent: settings.memoryCriticalThresholdInPercent,
       warningThresholdInPercent: settings.memoryWarningThresholdInPercent
     });
-    this.updateStatusBar(sample, level);
+    updateStatusBar(statusBarItem, sample, level);
     this.appendTrail(sample, $event);
 
     const previousLevel = this.lastLevel;
@@ -301,14 +298,10 @@ export class DesktopMemoryMonitorComponent extends MonkeyAroundComponent {
 
     return sample;
   }
+}
 
-  private updateStatusBar(sample: MemorySample, level: MemoryLevel): void {
-    if (!this.statusBarItem) {
-      return;
-    }
-
-    this.statusBarItem.setText(formatStatusBarText(sample));
-    this.statusBarItem.toggleClass(`${STATUS_BAR_CLASS}-warning`, level === MemoryLevel.Warning);
-    this.statusBarItem.toggleClass(`${STATUS_BAR_CLASS}-critical`, level === MemoryLevel.Critical);
-  }
+function updateStatusBar(statusBarItem: HTMLElement, sample: MemorySample, level: MemoryLevel): void {
+  statusBarItem.setText(formatStatusBarText(sample));
+  statusBarItem.toggleClass(`${STATUS_BAR_CLASS}-warning`, level === MemoryLevel.Warning);
+  statusBarItem.toggleClass(`${STATUS_BAR_CLASS}-critical`, level === MemoryLevel.Critical);
 }

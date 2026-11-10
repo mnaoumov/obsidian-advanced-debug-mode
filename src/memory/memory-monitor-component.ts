@@ -64,6 +64,7 @@ export class MemoryMonitorComponent extends ComponentEx {
         defaultDiagnosticsFolder: path.join(os.tmpdir(), DIAGNOSTICS_FOLDER_NAME, toSafeFolderName(this.app.vault.getName())),
         fs,
         getResidentSetSizeInBytes: (): number => nodeProcess.memoryUsage.rss(),
+        now: (): number => Date.now(),
         onStatusBarClick: (): void => {
           this.openHistory();
         },
