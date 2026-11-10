@@ -14,7 +14,7 @@ type ConsoleLogger = (message: string, details: unknown) => void;
 
 // The `Debug` level logs through this `debug`-library namespace, so its messages show only with the plugin's own debug
 // messages turned on (`console.debug` underneath, which the console also hides unless it shows the Verbose level).
-export const FAILED_QUEUED_OPERATIONS_DEBUG_NAMESPACE = 'advanced-debug-mode:failed-queued-operations';
+const FAILED_QUEUED_OPERATIONS_DEBUG_NAMESPACE = 'advanced-debug-mode:failed-queued-operations';
 
 interface FileSystemAdapterQueuePatchComponentConstructorParams {
   readonly fileSystemAdapter: FileSystemAdapter;

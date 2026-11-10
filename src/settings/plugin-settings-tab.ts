@@ -304,6 +304,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           });
         }
       }),
+      this.getMemoryTroubleshootingGroup(),
       this.getPluginLoadDelaysGroup(),
       this.getPluginDebugMessagesGroup(),
       this.getDebugSwitchesGroup()
@@ -337,6 +338,124 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           }
         })
       )
+    });
+  }
+
+  private getMemoryTroubleshootingGroup(): SettingDefinitionGroup {
+    const isOff = (): boolean => !this.pluginSettingsComponent.settings.shouldMonitorMemory || Platform.isMobile;
+    return this.settingGroupEx({
+      heading: 'Memory troubleshooting',
+      items: [
+        this.settingEx({
+          desc: createFragment((f) => {
+            f.appendText('Sample the JavaScript heap on an interval and show it in the status bar ');
+            f.createEl('strong', { text: '(Desktop only)' });
+            f.appendText('.');
+            f.createEl('br');
+            f.appendText('Warns when the heap nears its limit, which is when Obsidian\'s window goes blank from running out of memory.');
+            f.createEl('br');
+            f.appendText('Click the status bar readout for the history.');
+          }),
+          disabled: () => Platform.isMobile,
+          name: 'Desktop: Monitor memory',
+          render: (setting) => {
+            setting.addToggle((toggle) => {
+              this.bind({
+                onChanged: () => {
+                  // The rows below only read this value through their `disabled` predicate.
+                  this.refreshDomState();
+                },
+                propertyName: 'shouldMonitorMemory',
+                valueComponent: toggle
+              });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: 'How often to sample the heap, in seconds.',
+          disabled: isOff,
+          name: 'Sample interval',
+          render: (setting) => {
+            setting.addNumber((numberComponent) => {
+              this.bind({ propertyName: 'memorySampleIntervalInSeconds', valueComponent: numberComponent });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: 'At this share of the heap limit, in percent, show a notice and log the heap spaces, the growth rate and the last command to the console.',
+          disabled: isOff,
+          name: 'Warning threshold',
+          render: (setting) => {
+            setting.addNumber((numberComponent) => {
+              this.bind({ propertyName: 'memoryWarningThresholdInPercent', valueComponent: numberComponent });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: 'At this share of the heap limit, in percent, show a notice that Obsidian may crash, and write a heap snapshot if that is on.',
+          disabled: isOff,
+          name: 'Critical threshold',
+          render: (setting) => {
+            setting.addNumber((numberComponent) => {
+              this.bind({ propertyName: 'memoryCriticalThresholdInPercent', valueComponent: numberComponent });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: createFragment((f) => {
+            f.appendText('Append every sample to ');
+            appendCodeBlock(f, 'memory-trail.jsonl');
+            f.appendText(' in the diagnostics folder, with the last command, so the minutes before a crash survive it.');
+          }),
+          disabled: isOff,
+          name: 'Write the memory trail',
+          render: (setting) => {
+            setting.addToggle((toggle) => {
+              this.bind({ propertyName: 'shouldWriteMemoryTrail', valueComponent: toggle });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: 'When the trail grows past this size, in megabytes, it is renamed to a single backup and started again.',
+          disabled: isOff,
+          name: 'Trail size limit',
+          render: (setting) => {
+            setting.addNumber((numberComponent) => {
+              this.bind({ propertyName: 'memoryTrailMaxSizeInMegabytes', valueComponent: numberComponent });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: createFragment((f) => {
+            f.appendText('Write a heap snapshot the first time in a session that the heap reaches the critical threshold, when the disk has room for it.');
+            f.createEl('br');
+            f.appendText('⚠️ Obsidian stops responding while the snapshot is written, and writing it takes memory too.');
+          }),
+          disabled: isOff,
+          name: 'Heap snapshot at the critical threshold',
+          render: (setting) => {
+            setting.addToggle((toggle) => {
+              this.bind({ propertyName: 'shouldWriteHeapSnapshotOnCritical', valueComponent: toggle });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: createFragment((f) => {
+            f.appendText('The folder for the trail and the heap snapshots, as an absolute path ');
+            f.createEl('strong', { text: '(Desktop only)' });
+            f.appendText('.');
+            f.createEl('br');
+            f.appendText('Leave it empty for a folder under the system temp folder, which keeps snapshots out of the vault and its sync.');
+          }),
+          disabled: () => Platform.isMobile,
+          name: 'Diagnostics folder',
+          render: (setting) => {
+            setting.addText((text) => {
+              this.bind({ propertyName: 'memoryDiagnosticsFolder', valueComponent: text });
+            });
+          }
+        })
+      ]
     });
   }
 

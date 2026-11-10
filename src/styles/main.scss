@@ -64,3 +64,30 @@
     font-size: var(--font-ui-smaller);
   }
 }
+.advanced-debug-mode-memory-status {
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+
+  &.advanced-debug-mode-memory-status-warning {
+    color: var(--text-warning);
+  }
+
+  &.advanced-debug-mode-memory-status-critical {
+    color: var(--text-error);
+    font-weight: var(--font-bold);
+  }
+}
+
+.advanced-debug-mode-memory-history {
+  table {
+    font-size: var(--font-ui-smaller);
+    font-variant-numeric: tabular-nums;
+    width: 100%;
+  }
+
+  th,
+  td {
+    padding: var(--size-2-1) var(--size-4-2);
+    text-align: left;
+  }
+}

@@ -53,6 +53,7 @@ A copy of the vault ships with every release. You can access it via any of the f
 - **A panic button for a runaway operation** — the app-wide shared abort, as a hotkey-bindable command and a settings button instead of a line typed into the console. [05 More debug tools](<./demo-vault/05 More debug tools.md>)
 - **Every setting**, by the key it is stored under. [06 Settings](<./demo-vault/06 Settings.md>)
 - **Slow plugin loading on purpose** — delays before or after each other plugin's `onload`, the metadata cache's first resolve and the layout load, so you can test how a plugin behaves when its neighbors load slowly. [07 Plugin load delays](<./demo-vault/07 Plugin load delays.md>)
+- **Evidence for an out-of-memory crash**, when the window goes blank — a status bar readout of the heap against its limit, a trail of samples on disk that survives the crash, warnings near the limit, and a heap snapshot written automatically or on command, plus how to raise the limit for a diagnosis run and read the snapshot. Desktop only. [08 Memory troubleshooting](<./demo-vault/08 Memory troubleshooting.md>)
 
 ## See also
 

@@ -48,6 +48,27 @@ See [07 Plugin load delays](<./07 Plugin load delays.md>). All delays are in mil
 - `layoutLoadDelayInMilliseconds`
   - at startup, the delay before the layout loads and becomes ready.
 
+## Memory troubleshooting
+
+See [08 Memory troubleshooting](<./08 Memory troubleshooting.md>). Desktop only, and nothing is sampled while the switch is off.
+
+- `shouldMonitorMemory`
+  - the switch (off by default): the status bar readout, the trail, the warnings and the automatic snapshot.
+- `memorySampleIntervalInSeconds`
+  - how often the heap is sampled (10 by default).
+- `memoryWarningThresholdInPercent`
+  - the share of the heap limit that shows a warning (70 by default). It must be below the critical threshold.
+- `memoryCriticalThresholdInPercent`
+  - the share of the heap limit that shows a crash warning and can write a snapshot (90 by default).
+- `shouldWriteMemoryTrail`
+  - whether every sample is appended to `memory-trail.jsonl` (on by default, while the switch is on).
+- `memoryTrailMaxSizeInMegabytes`
+  - past this size the trail is renamed to `memory-trail.jsonl.1` and started again (10 by default).
+- `shouldWriteHeapSnapshotOnCritical`
+  - whether the critical threshold writes a heap snapshot, once per session (off by default).
+- `memoryDiagnosticsFolder`
+  - the absolute folder for the trail and the snapshots. Empty means `obsidian-advanced-debug-mode/<vault name>` under the system temp folder.
+
 Change any of these and reproduce the matching scenario to watch the behavior update.
 
 ## Try the trace settings against the Run button
