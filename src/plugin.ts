@@ -18,6 +18,12 @@ import { DevToolsComponent } from './dev-tools/dev-tools-component.ts';
 import { ToggleDevToolsButtonCommandHandler } from './dev-tools/toggle-dev-tools-button-command.ts';
 import { ErrorStackTraceLimitComponent } from './long-stack-traces/error-stack-trace-limit-component.ts';
 import { LongStackTracesComponent } from './long-stack-traces/long-stack-traces-component.ts';
+import {
+  ForceGarbageCollectionCommandHandler,
+  ShowMemoryHistoryCommandHandler,
+  TakeHeapSnapshotCommandHandler
+} from './memory/memory-commands.ts';
+import { MemoryMonitorComponent } from './memory/memory-monitor-component.ts';
 import { AbortSharedOperationCommandHandler } from './operations/abort-shared-operation-command.ts';
 import { LongRunningTasksComponent } from './operations/long-running-tasks-component.ts';
 import { OpenPluginDebugMessagesViewCommandHandler } from './plugin-debug-messages/open-plugin-debug-messages-view-command.ts';
@@ -99,6 +105,15 @@ export class Plugin extends PluginBase {
 
     const devToolsComponent = this.addChild(new DevToolsComponent());
 
+    const memoryMonitorComponent = this.addChild(
+      new MemoryMonitorComponent({
+        addStatusBarItem: (): HTMLElement => this.addStatusBarItem(),
+        app: this.app,
+        pluginNoticeComponent: this.pluginNoticeComponent,
+        pluginSettingsComponent
+      })
+    );
+
     await this.commandHandlerComponent.registerCommandHandlers(() => [
       new OpenSettingsCommandHandler({
         app: this.app,
@@ -112,6 +127,9 @@ export class Plugin extends PluginBase {
         pluginNoticeComponent: this.pluginNoticeComponent
       }),
       new OpenPluginDebugMessagesViewCommandHandler(this.app),
+      new TakeHeapSnapshotCommandHandler(memoryMonitorComponent),
+      new ShowMemoryHistoryCommandHandler(memoryMonitorComponent),
+      new ForceGarbageCollectionCommandHandler(memoryMonitorComponent),
       new OpenBugReportCommandHandler({
         app: this.app,
         gitHubRepo: 'mnaoumov/obsidian-advanced-debug-mode',

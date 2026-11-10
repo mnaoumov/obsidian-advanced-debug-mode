@@ -24,6 +24,17 @@ export class PluginSettings {
   public defaultPluginLoadDelayInMilliseconds = 0;
   public failedQueuedOperationLogLevel = FailedQueuedOperationLogLevel.Off;
   public layoutLoadDelayInMilliseconds = 0;
+  // eslint-disable-next-line no-magic-numbers -- Magic numbers are OK in settings.
+  public memoryCriticalThresholdInPercent = 90;
+  // Where the memory trail and the heap snapshots go. Empty means a folder under the system temp folder, which keeps a
+  // multi-gigabyte snapshot out of the vault and out of whatever syncs it.
+  public memoryDiagnosticsFolder = '';
+  // eslint-disable-next-line no-magic-numbers -- Magic numbers are OK in settings.
+  public memorySampleIntervalInSeconds = 10;
+  // eslint-disable-next-line no-magic-numbers -- Magic numbers are OK in settings.
+  public memoryTrailMaxSizeInMegabytes = 10;
+  // eslint-disable-next-line no-magic-numbers -- Magic numbers are OK in settings.
+  public memoryWarningThresholdInPercent = 70;
   public metadataCacheInitializeDelayInMilliseconds = 0;
   public pluginLoadDelayJitterInMilliseconds = 0;
   public pluginLoadDelayMode = PluginLoadDelayMode.Async;
@@ -35,7 +46,10 @@ export class PluginSettings {
   public shouldIncludeInternalStackFrames = false;
   public shouldIncludeLongStackTraces = true;
   public shouldIncludeTimedOutTasksDetails = true;
+  public shouldMonitorMemory = false;
   public shouldTimeoutLongRunningTasks = true;
+  public shouldWriteHeapSnapshotOnCritical = false;
+  public shouldWriteMemoryTrail = true;
   // eslint-disable-next-line no-magic-numbers -- Magic numbers are OK in settings.
   public stackTraceLimit = 100;
 }

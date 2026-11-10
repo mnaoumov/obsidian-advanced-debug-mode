@@ -17,3 +17,4 @@ Welcome to the [Advanced Debug Mode](https://github.com/mnaoumov/obsidian-advanc
 - [05 More debug tools](<./05 More debug tools.md>)
 - [06 Settings](<./06 Settings.md>)
 - [07 Plugin load delays](<./07 Plugin load delays.md>)
+- [08 Memory troubleshooting](<./08 Memory troubleshooting.md>)

@@ -21,10 +21,11 @@ import {
 
 import { PluginSettingsComponent } from '../settings/plugin-settings-component.ts';
 import { FailedQueuedOperationLogLevel } from '../settings/plugin-settings.ts';
-import { FAILED_QUEUED_OPERATIONS_DEBUG_NAMESPACE } from './file-system-adapter-queue-patch-component.ts';
 import { LongRunningTasksComponent } from './long-running-tasks-component.ts';
 
 const CONSOLE_LOGGER_METHODS = ['debug', 'error', 'warn'] as const;
+// The namespace the settings tab tells users to turn on, so the test names it as they type it.
+const FAILED_QUEUED_OPERATIONS_DEBUG_NAMESPACE = 'advanced-debug-mode:failed-queued-operations';
 
 type ConsoleLoggerMethod = typeof CONSOLE_LOGGER_METHODS[number];
 

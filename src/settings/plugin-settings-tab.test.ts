@@ -120,6 +120,9 @@ function createPluginSettingsTab(overrides?: CreatePluginSettingsTabOverrides): 
     dataHandler,
     pluginEventSource: createPluginEventSource()
   });
+  // A bound control's change schedules the tab's debounced save, which fires after its test has ended on a slow machine
+  // and throws `Component is not loaded` into whichever test is running then, because this component is never loaded.
+  vi.spyOn(pluginSettingsComponent, 'saveToFile').mockResolvedValue(undefined);
 
   const app = new App();
   const manifest = { author: 'test', id: 'test-plugin', minAppVersion: '0.0.0', name: 'Test Plugin', version: '1.0.0' };
@@ -388,6 +391,46 @@ describe('PluginSettingsTab', () => {
     await waitForAllAsyncOperations();
 
     expect(refreshDomStateSpy).toHaveBeenCalled();
+  });
+
+  describe('Memory troubleshooting group', () => {
+    it('should disable the monitor rows while the monitor is off, but not the switch and the folder', () => {
+      const { pluginSettingsComponent, tab } = createPluginSettingsTab();
+      const group = getGroup(tab, 'Memory troubleshooting');
+      function getDisabledStates(): Record<string, boolean> {
+        return Object.fromEntries(group.items.map((item) => ['name' in item ? item.name : '', castTo<DisabledPredicateRow>(item).disabled()]));
+      }
+
+      expect(getDisabledStates()).toEqual({
+        'Critical threshold': true,
+        'Desktop: Monitor memory': false,
+        'Diagnostics folder': false,
+        'Heap snapshot at the critical threshold': true,
+        'Sample interval': true,
+        'Trail size limit': true,
+        'Warning threshold': true,
+        'Write the memory trail': true
+      });
+
+      vi.spyOn(pluginSettingsComponent, 'settings', 'get').mockReturnValue({
+        ...pluginSettingsComponent.defaultSettings,
+        shouldMonitorMemory: true
+      });
+      expect(Object.values(getDisabledStates()).every((isDisabled) => !isDisabled)).toBe(true);
+    });
+
+    it('should re-evaluate the rows in place when the monitor switch changes', async () => {
+      const { pluginSettingsComponent, tab } = createPluginSettingsTab();
+      const toggles = renderGroupToggles(tab, getGroup(tab, 'Memory troubleshooting'));
+      vi.spyOn(pluginSettingsComponent, 'setProperty').mockResolvedValue('');
+      const refreshDomStateSpy = vi.fn();
+      tab.refreshDomState = refreshDomStateSpy;
+
+      toggles.get('Desktop: Monitor memory')?.onClick();
+      await waitForAllAsyncOperations();
+
+      expect(refreshDomStateSpy).toHaveBeenCalled();
+    });
   });
 
   describe('Plugin load delays group', () => {

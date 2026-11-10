@@ -5,10 +5,15 @@ import type { GenericObject } from '@mnaoumov/typescript-lib/type-guards';
 
 import { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/plugin-settings-component';
 
+import {
+  isValidPositiveNumber,
+  isValidThreshold
+} from '../memory/memory-monitor.ts';
 import { isValidDelay } from '../plugin-load-delays/plugin-load-delays.ts';
 import { PluginSettings } from './plugin-settings.ts';
 
 const DELAY_VALIDATION_MESSAGE = 'The delay must be a whole number of milliseconds, 0 or greater';
+const THRESHOLD_VALIDATION_MESSAGE = 'The threshold must be a percentage greater than 0 and at most 100';
 
 interface PluginSettingsComponentConstructorParams {
   readonly dataHandler: DataHandler;
@@ -57,6 +62,27 @@ export class PluginSettingsComponent extends PluginSettingsComponentBase<PluginS
     this.registerValidator('pluginLoadDelaysInMilliseconds', (value): MaybeReturn<string> => {
       if (!Object.values(value).every(isValidDelay)) {
         return DELAY_VALIDATION_MESSAGE;
+      }
+    });
+    for (const propertyName of ['memorySampleIntervalInSeconds', 'memoryTrailMaxSizeInMegabytes'] as const) {
+      this.registerValidator(propertyName, (value): MaybeReturn<string> => {
+        if (!isValidPositiveNumber(value)) {
+          return 'The value must be a number greater than 0';
+        }
+      });
+    }
+    this.registerValidator('memoryWarningThresholdInPercent', (value, settings): MaybeReturn<string> => {
+      if (!isValidThreshold(value)) {
+        return THRESHOLD_VALIDATION_MESSAGE;
+      }
+
+      if (value >= settings.memoryCriticalThresholdInPercent) {
+        return 'The warning threshold must be below the critical threshold';
+      }
+    });
+    this.registerValidator('memoryCriticalThresholdInPercent', (value): MaybeReturn<string> => {
+      if (!isValidThreshold(value)) {
+        return THRESHOLD_VALIDATION_MESSAGE;
       }
     });
   }

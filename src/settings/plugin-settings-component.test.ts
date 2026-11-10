@@ -170,4 +170,31 @@ describe('PluginSettingsComponent', () => {
     expect(await component.setProperty('pluginLoadDelaysInMilliseconds', { 'plugin-a': -1 })).toBe(DELAY_MESSAGE);
     expect(await component.setProperty('pluginLoadDelaysInMilliseconds', { 'plugin-a': WHOLE_DELAY })).toBe('');
   });
+
+  it('should validate the memory monitor numbers', async () => {
+    const component = new PluginSettingsComponent({
+      dataHandler: {
+        loadData: vi.fn().mockResolvedValue(null),
+        saveData: vi.fn().mockResolvedValue(undefined)
+      },
+      pluginEventSource: createListeningPluginEventSource()
+    });
+    await component.loadWithPromises();
+    const POSITIVE_MESSAGE = 'The value must be a number greater than 0';
+    const THRESHOLD_MESSAGE = 'The threshold must be a percentage greater than 0 and at most 100';
+    const OVER_100 = 101;
+    const VALID_INTERVAL = 5;
+    const WARNING = 60;
+    const CRITICAL = 95;
+    for (const propertyName of ['memorySampleIntervalInSeconds', 'memoryTrailMaxSizeInMegabytes'] as const) {
+      expect(await component.setProperty(propertyName, 0)).toBe(POSITIVE_MESSAGE);
+      expect(await component.setProperty(propertyName, VALID_INTERVAL)).toBe('');
+    }
+
+    expect(await component.setProperty('memoryCriticalThresholdInPercent', OVER_100)).toBe(THRESHOLD_MESSAGE);
+    expect(await component.setProperty('memoryCriticalThresholdInPercent', CRITICAL)).toBe('');
+    expect(await component.setProperty('memoryWarningThresholdInPercent', 0)).toBe(THRESHOLD_MESSAGE);
+    expect(await component.setProperty('memoryWarningThresholdInPercent', CRITICAL)).toBe('The warning threshold must be below the critical threshold');
+    expect(await component.setProperty('memoryWarningThresholdInPercent', WARNING)).toBe('');
+  });
 });
