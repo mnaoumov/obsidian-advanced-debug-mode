@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 1.16.0
+
+This release has 2 new features and 1 documentation change. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
+
+### New
+
+- add memory troubleshooting for renderer out-of-memory crashes
+- make logging of failed queued file-system operations configurable
+
+### Documentation
+
+- **changelog:** regroup the published release notes for readers
+
 ## 1.15.2
 
 This release has 1 fix and 2 documentation changes. 3 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
